@@ -1,0 +1,19 @@
+/* macht aus 1 Spalte automatisch 2, sobald Platz da ist */
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px 24px; /* Zeilen- und Spaltenabstand */
+}
+
+/* optional: leichte optische Trennung jeder Gruppe */
+.category-group {
+  /* z.B. padding: 4px 0; */
+}
+
+.org-avatar.ant-avatar-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;     /* sorgt dafür, dass das ganze Logo sichtbar bleibt */
+  object-position: center; /* mittig platzieren */
+  display: block;
+}

@@ -1,0 +1,13 @@
+{
+  "entryPoints": ["src"],
+  "tsconfig": "tsconfig.json",
+  "out": "docs/api",
+  "exclude": [
+    "**/node_modules/**",
+    "**/prisma/**",
+    "**/types/**",
+    "**/shared/**",
+    "**/*.test.ts"
+  ],
+  "plugin": ["typedoc-umlclass"]
+}

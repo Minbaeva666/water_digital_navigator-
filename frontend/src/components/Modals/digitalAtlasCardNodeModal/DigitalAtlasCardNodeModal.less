@@ -1,0 +1,41 @@
+.da-modal { display: flex; flex-direction: column; gap: 12px; }
+
+.da-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.da-grid.cozy .ant-tag {
+  font-size: 13px;
+  line-height: 22px;
+  padding: 2px 10px;
+}
+
+.da-group {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  min-width: 0;
+}
+
+.da-group-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  background: inherit;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+
+.da-group-title { font-weight: 600; }
+
+.da-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.da-group.is-collapsed .da-tags { display: none; }

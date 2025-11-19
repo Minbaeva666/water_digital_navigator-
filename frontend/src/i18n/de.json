@@ -1,0 +1,75 @@
+{
+  "organizationTypes": {
+    "INDUSTRY": "Industrie",
+    "CRAFT": "Handwerk",
+    "STARTUP": "Start-Up",
+    "COLLEGE_UNIVERSITY": "Hochschule/Universität",
+    "RESEARCH_INSTITUTE": "außeruniversitäres Forschungsinstitut",
+    "MUNICIPALITY": "Kommune",
+    "MUNICIPAL_ORGANIZATION": "kommunale Organisation",
+    "ASSOCIATION": "Verband / Verein",
+    "SME": "KMU"
+  },
+  "publishedByTypes": {
+    "OWNER": "Eigentümer",
+    "ADMIN": "Vom Administrator des Portals auf der Grundlage des bereitgestellten Steckbriefs veröffentlicht",
+    "WEB": "Gefunden im frei zugänglichen Internet",
+    "PUBLICATION": "Gefunden in einer frei zugänglichen Veröffentlichung/Zeitschrift"
+  },
+  "organizationState": {
+    "LITE": "Anwenderorganisation/Projektpartner",
+    "FULL": "Vollumfängliche Organisation"
+  },
+  "countries": {
+    "GERMANY": "Deutschland",
+    "AUSTRIA": "Österreich",
+    "SWITZERLAND": "Schweiz",
+    "DENMARK": "Dänemark",
+    "POLAND": "Polen",
+    "CZECH_REPUBLIC": "Tschechien",
+    "FRANCE": "Frankreich",
+    "LUXEMBOURG": "Luxemburg",
+    "BELGIUM": "Belgien",
+    "NETHERLANDS": "Niederlande"
+  },
+  "salutationTypes": {
+    "MR": "Herr",
+    "MS": "Frau",
+    "MX": "Divers",
+    "PREFER_NOT_TO_SAY": "Keine Angabe"
+  },
+  "presentedByTypes": {
+    "ORGANIZATION": "Die Organisation",
+    "USER": "Die Person"
+  },
+  "digitalSolutionState": {
+    "ACTIVATED": "Aktiviert",
+    "REQUESTED": "Anfrage",
+    "DEACTIVATED": "Deaktiviert",
+    "DRAFT": "Template"
+  },
+  "roleTypes": {
+    "ADMIN": "Administrator",
+    "MODERATOR": "Moderator",
+    "USER": "User"
+  },
+  "accountStateTypes": {
+    "VERIFY_EMAIL": "Email-Verifizierung",
+    "REGISTERED": "Registriert",
+    "REGISTRATION_REVOKED": "Registrierung zurückgezogen"
+  },
+  "offeringCategoryTypes": {
+    "SERVICE": "Dienstleistung",
+    "RESEARCH": "Forschung",
+    "COMPLETE_SOLUTION": "Komplettlösung",
+    "PRODUCT": "Produkt",
+    "PROJECT": "Projekt",
+    "IMPLEMENTATION_ROADMAP": "Umsetzungsfahrplan"
+  },
+  "maturityDegrees": {
+    "DEVELOPMENT_DEMONSTRATION_PHASE": "Entwicklungs- / Demonstrationsphase",
+    "IDEA_CONCEPT_STUDY": "Idee / Konzept / Studie",
+    "MARKET_READY_CONTINUOUS_OPERATION": "Marktreif / Dauerbetrieb",
+    "TEST_PHASE_PROTOTYPE": "Testphase / Prototyp"
+  }
+}

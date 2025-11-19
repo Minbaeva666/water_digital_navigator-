@@ -1,0 +1,34 @@
+/* utilities.css o. ä. */
+
+/* Füllt den verfügbaren Bereich zwischen Header/Footer */
+.page-fill {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Zentriert vertikal + horizontal */
+.page-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Oben starten (Default-Verhalten) */
+.page-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;   /* oder flex-start, je nach Wunsch */
+}
+
+/* Nur vertikal mittig, aber links ausgerichtet */
+.page-vcenter-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.fw-row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box;
+}

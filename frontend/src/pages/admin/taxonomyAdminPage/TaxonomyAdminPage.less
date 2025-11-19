@@ -1,0 +1,25 @@
+.create-edit-view-taxonomy {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;              /* erlaubt Shrinking */
+}
+
+.create-edit-header-taxonomy {
+  flex: 0 0 auto;             /* bleibt immer so hoch wie nötig */
+  margin: 20px;
+}
+
+.create-edit-body-taxonomy {
+  flex: 1 1 auto;             /* füllt den Rest */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 20px;
+  overflow-y: auto;
+}
+
+.add-root-button-taxonomy {
+  max-width: 250px;
+  margin: 0 20px 20px 20px;
+}

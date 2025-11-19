@@ -1,0 +1,90 @@
+.custom-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  width: 300px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+
+.custom-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transform: translateY(-4px);
+}
+
+/* 80% Viewport Größe als Default */
+.responsive-modal .ant-modal {
+  max-width: 80vw; /* Sicherheitsnetz bei sehr breiten Screens */
+}
+
+.responsive-modal .ant-modal-content {
+  /* Höhe kommt bereits aus styles.content (80vh) */
+}
+
+/* Mobile: Vollbild */
+@media (max-width: 767px) {
+  .responsive-modal .ant-modal {
+    width: 100vw !important; /* überschreibt inline width="80vw" */
+    max-width: 100vw !important;
+    margin: 0; /* an den Rand */
+    padding: 0; /* Safari-Fix */
+  }
+
+  .responsive-modal .ant-modal-content {
+    height: 100vh !important; /* volle Höhe */
+    border-radius: 0; /* wie echte Fullscreen-Drawer */
+  }
+
+  .responsive-modal .ant-modal-body {
+    flex: 1;
+    overflow: auto;
+  }
+}
+
+.more-categories-tag {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.node-text {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  word-break: normal; /* nicht mitten im Wort brechen */
+  overflow-wrap: break-word; /* wenn nötig, an sinnvollen Stellen umbrechen */
+  line-height: 20px;
+  font-size: 14px;
+
+  &:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}
+
+.more-categories-link {
+  color: #000 !important;
+  font-weight: 600;
+
+  &:hover,
+  &:focus,
+  &:active {
+    color: #2962fa !important;
+    text-decoration: underline;
+  }
+}
+
+.details-link {
+  &:hover,
+  &:focus,
+  &:active {
+    color: #2962fa !important;
+    text-decoration: underline;
+  }
+
+}
+

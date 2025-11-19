@@ -1,0 +1,33 @@
+// src/components/footer/AppFooter.tsx
+import React from 'react';
+import { Layout, Space, Typography, Grid } from 'antd';
+import { NavLink } from 'react-router-dom';
+import './footer.less';
+
+const { Footer } = Layout;
+const { useBreakpoint } = Grid;
+
+const AppFooter: React.FC = () => {
+    const screens = useBreakpoint();
+    const isMobile = !screens.md;
+
+    return (
+        <Footer className="app-footer" role="contentinfo" aria-label="Fußbereich mit rechtlichen Informationen">
+            <nav className="footer-nav" aria-label="Rechtliche Links">
+                <Space size={isMobile ? 12 : 20} wrap aria-label="Primäre Footer-Navigation">
+                    <NavLink to="/impressum" className="footer-link">Impressum</NavLink>
+                    <NavLink to="/datenschutz" className="footer-link">Datenschutz</NavLink>
+                    <NavLink to="/barrierefreiheit" className="footer-link">Barrierefreiheit</NavLink>
+                    <NavLink to="/nutzungsbedingungen" className="footer-link">Nutzungsbedingungen</NavLink>
+                    <NavLink to="/faq" className="footer-link">FAQ</NavLink>
+                </Space>
+
+                <Typography.Text className="footer-copy">
+                    © {new Date().getFullYear()} Institut für nachhaltige Wassersysteme (inwa)
+                </Typography.Text>
+            </nav>
+        </Footer>
+    );
+};
+
+export default AppFooter;

@@ -1,0 +1,1208 @@
+import {NextFunction, Request, RequestHandler, Response} from "express";
+import path from "path";
+import { mkdir } from "fs/promises";
+import fs from "fs";
+import {
+    MaturityDegree,
+    DigitalSolutionState,
+    ImageType,
+    OfferingCategory,
+    Prisma, PublishedByType,
+} from "@prisma/client";
+import {prisma} from "../prisma/prisma";
+import {DigitalSolutionImageDto} from "../shared/dtos/DigitalSolutionImageDto";
+import {cleanupUploadFolder} from "../utils/cleanupUploadFolder";
+import {randomUUID} from "crypto";
+import { toSet } from "../utils/mapper";
+import {
+    DS_DIR,
+    ensureDir,
+    PUBLIC_DIR,
+    sha256,
+    unlinkIfExists
+} from "../helpers/imagesHelper";
+import {readFile, rename, writeFile} from "node:fs/promises";
+import { parseOrToday } from "../utils/date";
+
+interface MulterErrorRequest extends Request {
+    multerError?: Error;
+}
+
+
+export const createDigitalSolution: RequestHandler = async (req, res, next) => {
+    try {
+        const { user } = req as Request;
+        if (!user) {
+            res.status(401).json({ error: "Nicht authentifiziert" });
+            return;
+        }
+
+        const {
+            state,
+            presentedByUserId,
+            name,
+            link,
+            readyForOperation,
+            maturityDegree,
+            offeringCategory,
+            shortDescription,
+            longDescription,
+            goalDescription,
+            technicalDescription,
+            efficiencyDescription,
+            processDescription,
+            socialRelevanceDescription,
+            hasAcceptedTerms,
+            hasAcceptedPrivacyPolicy,
+            projectPartnerIds,
+            solutionUserIds,
+            solutionPresentedByUser,
+            taxonomyNodeIds,
+            publishedBy,
+            publishedSource
+        } = req.body as {
+            presentedByUserId?: string;
+            name: string;
+            link: string;
+            readyForOperation: string;
+            maturityDegree: string;
+            offeringCategory: string;
+            state: string;
+            publishedBy: string;
+            publishedSource: string;
+            shortDescription: string;
+            longDescription: string;
+            goalDescription: string;
+            technicalDescription: string;
+            efficiencyDescription?: string;
+            processDescription?: string;
+            socialRelevanceDescription?: string;
+            hasAcceptedTerms: string | boolean;
+            hasAcceptedPrivacyPolicy: string | boolean;
+            projectPartnerIds: string[] | string;
+            solutionUserIds: string[] | string;
+            solutionPresentedByUser?: boolean;
+            taxonomyNodeIds?: string[] | string;
+        };
+
+        // Datum parsen
+        let readyDate: Date | null = null;
+        if (typeof readyForOperation === "string" && !readyForOperation.startsWith("Invalid Date")) {
+            const d = new Date(readyForOperation);
+            if (!isNaN(d.getTime())) readyDate = d;
+        }
+
+        const toConnect = (input?: string[] | string) => {
+            const ids = Array.isArray(input) ? input : input ? [input] : [];
+            return ids.length > 0 ? { connect: ids.map((id) => ({ id: `${id}` })) } : undefined;
+        };
+
+        // Taxonomie-IDs flach & dedupliziert
+        const flatTaxIds = Array.isArray(taxonomyNodeIds)
+            ? taxonomyNodeIds
+            : taxonomyNodeIds
+                ? [taxonomyNodeIds]
+                : [];
+        const taxonomyIds = [...new Set(flatTaxIds.filter(Boolean))];
+
+        // (Optional) Validierung: existieren alle TaxonomyNode-IDs?
+        if (taxonomyIds.length > 0) {
+            const existing = await prisma.taxonomyNode.findMany({
+                where: { id: { in: taxonomyIds } },
+                select: { id: true },
+            });
+            const existingSet = new Set(existing.map((n) => n.id));
+            const missing = taxonomyIds.filter((id) => !existingSet.has(id));
+            if (missing.length) {
+                res.status(400).json({
+                    error: {
+                        code: "INVALID_TAXONOMY_NODES",
+                        message: "Einige Taxonomie-IDs existieren nicht.",
+                        missing,
+                    },
+                });
+                return;
+            }
+        }
+
+        // Presenter-Relationen vorbereiten (optional)
+        let presenterConnect: Record<string, any> = {};
+        if (presentedByUserId) {
+            const dbUser = await prisma.user.findUnique({
+                where: { id: presentedByUserId },
+                select: { organizationId: true },
+            });
+            if (!dbUser) {
+                res.status(404).json({ error: "Presenter-User nicht gefunden." });
+                return;
+            }
+            presenterConnect = dbUser.organizationId
+                ? { organization: { connect: { id: dbUser.organizationId } } }
+                : { user: { connect: { id: presentedByUserId } } };
+            presenterConnect = {
+                ...presenterConnect,
+                presentedByUser: { connect: { id: presentedByUserId } },
+            };
+        }
+
+        // Alles in einer Transaktion
+        const result = await prisma.$transaction(async (tx) => {
+            const solution = await tx.digitalSolution.create({
+                data: {
+                    name,
+                    link,
+                    readyForOperation: readyDate,
+                    maturityDegree: maturityDegree as MaturityDegree,
+                    offeringCategory: offeringCategory as OfferingCategory,
+                    publishedBy: publishedBy as PublishedByType,
+                    publishedSource,
+                    shortDescription,
+                    longDescription,
+                    goalDescription,
+                    technicalDescription,
+                    solutionPresentedByUser,
+                    hasAcceptedTerms:
+                        typeof hasAcceptedTerms === "string" ? hasAcceptedTerms === "true" : !!hasAcceptedTerms,
+                    hasAcceptedPrivacyPolicy:
+                        typeof hasAcceptedPrivacyPolicy === "string" ? hasAcceptedPrivacyPolicy === "true" : !!hasAcceptedPrivacyPolicy,
+                    state: state as DigitalSolutionState,
+                    ...(efficiencyDescription ? { efficiencyDescription } : {}),
+                    ...(socialRelevanceDescription ? { socialRelevanceDescription } : {}),
+                    ...(processDescription ? { processDescription } : {}),
+                    ...(toConnect(projectPartnerIds) ? { projectPartners: toConnect(projectPartnerIds) } : {}),
+                    ...(toConnect(solutionUserIds) ? { solutionUsers: toConnect(solutionUserIds) } : {}),
+                    ...presenterConnect,
+                },
+                select: { id: true},
+            });
+
+            // Taxonomie-Relationen anlegen
+            if (taxonomyIds.length > 0) {
+                await tx.digitalSolutionTaxonomy.createMany({
+                    data: taxonomyIds.map((taxonomyNodeId) => ({
+                        digitalSolutionId: solution.id,
+                        taxonomyNodeId,
+                    })),
+                    skipDuplicates: true,
+                });
+            }
+
+            return solution;
+        });
+
+        // Antwort ans Frontend – passend zu deinem Create-Flow:
+        res.status(201).json({ digitalSolutionId: result.id });
+    } catch (error) {
+        console.error("Error creating digital solution:", error);
+        next(error);
+    }
+};
+
+export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
+    try {
+        const { user } = req as Request;
+        if (!user) {
+            res.status(401).json({ error: "Nicht authentifiziert" });
+            return;
+        }
+
+        const { id } = req.params as { id?: string };
+        if (!id) {
+            res.status(400).json({ error: "digitalSolutionId fehlt." });
+            return;
+        }
+
+        const {
+            presentedByUserId,
+            name,
+            link,
+            readyForOperation,
+            createdAtOverride,
+            maturityDegree,
+            offeringCategory,
+            shortDescription,
+            longDescription,
+            goalDescription,
+            technicalDescription,
+            efficiencyDescription,
+            processDescription,
+            socialRelevanceDescription,
+            hasAcceptedTerms,
+            hasAcceptedPrivacyPolicy,
+            projectPartnerIds,
+            solutionUserIds,
+            solutionPresentedByUser,
+            state,
+            taxonomyNodeIds,
+            publishedBy,
+            publishedSource
+        } = req.body as any;
+
+        // Datum parsen
+        let readyDate: Date | null = null;
+        if (typeof readyForOperation === "string" && !readyForOperation.startsWith("Invalid Date")) {
+            const d = new Date(readyForOperation);
+            if (!isNaN(d.getTime())) readyDate = d;
+        }
+
+        let createdAtOverrideDate: Date | null = null;
+        if (typeof createdAtOverride === "string" && !createdAtOverride.startsWith("Invalid Date")) {
+            const d = new Date(createdAtOverride);
+            if (!isNaN(d.getTime())) createdAtOverrideDate = d;
+        }
+
+
+        // taxonomyNodeIds normalisieren + deduplizieren
+        const flatTaxIds = Array.isArray(taxonomyNodeIds)
+            ? taxonomyNodeIds
+            : taxonomyNodeIds
+                ? [taxonomyNodeIds]
+                : [];
+        const taxonomyIds = [...new Set(flatTaxIds.filter(Boolean))];
+
+        // Optional validieren, ob die Nodes existieren
+        if (taxonomyIds.length > 0) {
+            const existing = await prisma.taxonomyNode.findMany({
+                where: { id: { in: taxonomyIds } },
+                select: { id: true },
+            });
+            const existingSet = new Set(existing.map(n => n.id));
+            const missing = taxonomyIds.filter(id => !existingSet.has(id));
+            if (missing.length) {
+                res.status(400).json({
+                    error: {
+                        code: "INVALID_TAXONOMY_NODES",
+                        message: "Einige Taxonomie-IDs existieren nicht.",
+                        missing,
+                    },
+                });
+                return;
+            }
+        }
+
+        // Update in einer Transaktion: Stammdaten + Taxonomie-Mapping
+        await prisma.$transaction(async (tx) => {
+            await tx.digitalSolution.update({
+                where: { id },
+                data: {
+                    name,
+                    link,
+                    readyForOperation: readyDate ?? undefined,
+                    createdAtOverride: parseOrToday(createdAtOverride).toISOString(),
+                    maturityDegree: maturityDegree as MaturityDegree,
+                    offeringCategory: offeringCategory as OfferingCategory,
+                    publishedBy: publishedBy as PublishedByType,
+                    publishedSource,
+                    shortDescription,
+                    longDescription,
+                    goalDescription,
+                    technicalDescription,
+                    solutionPresentedByUser,
+                    ...(toSet(projectPartnerIds) ? { projectPartners: toSet(projectPartnerIds)! } : {}),
+                    ...(toSet(solutionUserIds)   ? { solutionUsers:   toSet(solutionUserIds)!   } : {}),
+                    hasAcceptedTerms: typeof hasAcceptedTerms === "string"
+                        ? hasAcceptedTerms === "true"
+                        : hasAcceptedTerms,
+                    hasAcceptedPrivacyPolicy: typeof hasAcceptedPrivacyPolicy === "string"
+                        ? hasAcceptedPrivacyPolicy === "true"
+                        : hasAcceptedPrivacyPolicy,
+                    state: state as DigitalSolutionState,
+                    ...(efficiencyDescription ? { efficiencyDescription } : {}),
+                    ...(socialRelevanceDescription ? { socialRelevanceDescription } : {}),
+                    ...(processDescription ? { processDescription } : {}),
+
+                    // Presenter-Relationen
+                    ...(presentedByUserId
+                        ? await (async () => {
+                            const dbUser = await prisma.user.findUnique({
+                                where: { id: presentedByUserId },
+                                select: { organizationId: true },
+                            });
+                            if (!dbUser) throw new Error("Presenter-User nicht gefunden.");
+
+                            return dbUser.organizationId
+                                ? {
+                                    organization: { connect: { id: dbUser.organizationId } },
+                                    user: { disconnect: true },
+                                    presentedByUser: { connect: { id: presentedByUserId } },
+                                }
+                                : {
+                                    user: { connect: { id: presentedByUserId } },
+                                    organization: { disconnect: true },
+                                    presentedByUser: { connect: { id: presentedByUserId } },
+                                };
+                        })()
+                        : {
+                            presentedByUser: { disconnect: true },
+                            organization: { disconnect: true },
+                            user: { disconnect: true },
+                        }),
+                },
+            });
+
+            // Taxonomie löschen + neu setzen
+            await tx.digitalSolutionTaxonomy.deleteMany({
+                where: { digitalSolutionId: id },
+            });
+
+            if (taxonomyIds.length > 0) {
+                await tx.digitalSolutionTaxonomy.createMany({
+                    data: taxonomyIds.map(taxonomyNodeId => ({
+                        digitalSolutionId: id,
+                        taxonomyNodeId,
+                    })),
+                    skipDuplicates: true,
+                });
+            }
+        });
+
+        res.json({ id });
+    } catch (error) {
+        console.error("Error updating digital solution:", error);
+        next(error);
+    }
+};
+
+
+export const updateDigitalSolutionTitleImage: RequestHandler = async (req, res, next) => {
+    try {
+        const { id } = req.params as { id?: string };
+        if (!id) {
+            res.status(400).json({ error: "digitalSolutionId fehlt." });
+            return;
+        }
+        const digitalSolutionId = id;
+        const file = req.file;
+
+        // Alte TITLE-Bilder der Lösung löschen (immer zuerst)
+        const old = await prisma.image.findMany({
+            where: { digitalSolutionId, type: ImageType.TITLE },
+        });
+        for (const img of old) {
+            try {
+                fs.unlinkSync(path.join(process.cwd(), "public", img.path.replace(/^\/+/, "")));
+            } catch { /* ignore */ }
+        }
+        if (old.length) {
+            await prisma.image.deleteMany({
+                where: { digitalSolutionId, type: ImageType.TITLE },
+            });
+        }
+
+        // Wenn KEIN neues Bild hochgeladen → nur löschen
+        if (!file) {
+            res.status(200).json({ message: "Titelbild entfernt" });
+            return;
+        }
+
+        // Neues Titelbild speichern
+        const publicDir = path.join(process.cwd(), "public");
+        const webPath = "/" + path.relative(publicDir, file.path).split(path.sep).join("/");
+
+        const created = await prisma.image.create({
+            data: {
+                filename: file.originalname,
+                path: webPath,
+                mimeType: file.mimetype,
+                size: file.size,
+                type: ImageType.TITLE,
+                digitalSolution: { connect: { id: digitalSolutionId } },
+            },
+        });
+
+        res.status(200).json(created);
+    } catch (error) {
+        console.error("Fehler beim Aktualisieren des Titelbildes:", error);
+        next(error);
+    }
+};
+
+
+export const updateDigitalSolutionDetailImages: RequestHandler = async (req, res, next) => {
+    try {
+        const { id: digitalSolutionId } = req.params as { id?: string };
+        if (!digitalSolutionId) { res.status(400).json({ error: "digitalSolutionId fehlt." }); return; }
+
+        const files = (req.files as Express.Multer.File[]) ?? [];
+
+        // 1) keepImageIds lesen
+        let keepImageIds: string[] = [];
+        const raw = (req.body as any)?.keepImageIds;
+        if (Array.isArray(raw)) keepImageIds = raw.map(String);
+        else if (typeof raw === "string" && raw.trim()) { try { keepImageIds = JSON.parse(raw); } catch {} }
+        const keep = new Set(keepImageIds);
+
+        // 2) nicht mehr gewünschte Bilder löschen (DB + Datei)
+        const existing = await prisma.image.findMany({ where: { digitalSolutionId, type: ImageType.DETAIL } });
+        const toDelete = existing.filter(img => !keep.has(img.id));
+        if (toDelete.length) {
+            await Promise.all(toDelete.map(img => unlinkIfExists(path.join(PUBLIC_DIR, img.path.replace(/^\/+/, "")))));
+            await prisma.image.deleteMany({ where: { id: { in: toDelete.map(x => x.id) }, digitalSolutionId, type: ImageType.DETAIL } });
+        }
+
+        // 3) neue Dateien verarbeiten (diskStorage: immer file.path nutzen)
+        if (files.length) {
+            const targetDir = DS_DIR(digitalSolutionId, "images");
+            await ensureDir(targetDir);
+
+            const seenInRequest = new Set<string>(); // gegen doppelte Files im selben Request
+
+            await Promise.all(files.map(async (file) => {
+                if (!file.path) return; // defensive
+                const tmpPath = file.path;
+                const buf = await readFile(tmpPath);
+                const hash = sha256(buf);
+
+                // a) bereits in DB?
+                const exists = await prisma.image.findFirst({
+                    where: { digitalSolutionId, type: ImageType.DETAIL, contentHash: hash },
+                    select: { id: true },
+                });
+                if (exists) { await unlinkIfExists(tmpPath); return; }
+
+                // b) doppelt im selben Request?
+                if (seenInRequest.has(hash)) { await unlinkIfExists(tmpPath); return; }
+                seenInRequest.add(hash);
+
+                const ext = path.extname(file.originalname || "").toLowerCase() || ".bin";
+                const filename = `${randomUUID()}${ext}`;
+                const finalPath = path.join(targetDir, filename);
+
+                // statt kopieren: verschieben
+                await rename(tmpPath, finalPath);
+
+                const webPath = "/" + path.relative(PUBLIC_DIR, finalPath).split(path.sep).join("/");
+                await prisma.image.create({
+                    data: {
+                        filename: file.originalname || filename,
+                        path: webPath,
+                        mimeType: file.mimetype,
+                        size: file.size,
+                        type: ImageType.DETAIL,
+                        digitalSolution: { connect: { id: digitalSolutionId } },
+                    },
+                });
+            }));
+        }
+
+        const images = await prisma.image.findMany({
+            where: { digitalSolutionId, type: ImageType.DETAIL },
+            orderBy: { uploadedAt: "asc" },
+        });
+        res.status(200).json({ images });
+    } catch (e) { next(e); }
+};
+
+
+export const deleteDigitalSolution: RequestHandler = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const {id} = req.params as { id?: string };
+
+    if (!id) {
+        res.status(400).json({error: "digitalSolutionId fehlt."});
+        return;
+    }
+
+    try {
+        // 1) Existenz prüfen
+        const existing = await prisma.digitalSolution.findUnique({
+            where: {id: id},
+            select: {id: true},
+        });
+        if (!existing) {
+            res.status(404).json({error: "DigitalSolution nicht gefunden."});
+            return;
+        }
+
+        // 2) Upload-Ordner komplett löschen
+        const uploadDir = path.join(
+            process.cwd(),
+            "public",
+            "uploads",
+            "digitalSolutions",
+            id
+        );
+        if (fs.existsSync(uploadDir)) {
+            try {
+                fs.rmSync(uploadDir, {recursive: true, force: true});
+            } catch (err) {
+                console.warn(
+                    `Ordner ${uploadDir} konnte nicht gelöscht werden:`,
+                    err
+                );
+            }
+        }
+
+        // 3) DB-Einträge zu Bildern entfernen
+        await prisma.image.deleteMany({
+            where: {id},
+        });
+
+        // 4) DigitalSolution selbst löschen
+        await prisma.digitalSolution.delete({
+            where: {id: id},
+        });
+
+        // 5) No Content
+        res.status(200).json({
+            success: true,
+            message: `DigitalSolution ${id} erfolgreich gelöscht.`
+        });
+    } catch (error) {
+        console.error(
+            `Fehler beim Löschen der DigitalSolution ${id}:`,
+            error
+        );
+        next(error);
+    }
+};
+
+
+
+export const getActiveDigitalSolutionsWithTitleImage = async (req: Request, res: Response) => {
+    try {
+        const page = Math.max(parseInt(String(req.query.page ?? "1"), 10) || 1, 1);
+        const pageSize = Math.min(Math.max(parseInt(String(req.query.pageSize ?? "12"), 10) || 12, 1), 50);
+        const skip = (page - 1) * pageSize;
+        const dateFrom = req.query.dateFrom as string | undefined;
+        const dateTo   = req.query.dateTo as string | undefined;
+
+        const q = (req.query.q as string | undefined)?.trim() || "";
+        const taxonomyNodeId = req.query.taxonomyNodeId as string | undefined;
+        const taxonomyPath   = req.query.taxonomyPath as string | undefined;
+        const sortParam = (req.query.sort as "newest" | "oldest" | "az" | "za") || "newest";
+
+        const where: Prisma.DigitalSolutionWhereInput = {
+            state: "ACTIVATED",
+            ...(dateFrom || dateTo
+                ? {
+                    createdAt: {
+                        ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+                        ...(dateTo   ? { lte: new Date(dateTo) }   : {}),
+                    },
+                }
+                : {}),
+            ...(q ? {
+                OR: [
+                    { name: { contains: q } },
+                    { shortDescription: { contains: q } },
+                    { longDescription: { contains: q } },
+                    { goalDescription: { contains: q } },
+                    { technicalDescription: { contains: q } },
+                    { efficiencyDescription: { contains: q } },
+                    { processDescription: { contains: q } },
+                    { socialRelevanceDescription: { contains: q } },
+                    { organization: { is: { name: { contains: q } } } },
+                ],
+            } : {}),
+            ...(taxonomyPath
+                ? { taxonomyNodes: { some: { taxonomyNode: { is: { path: { startsWith: taxonomyPath } } } } } }
+                : taxonomyNodeId
+                    ? { taxonomyNodes: { some: { taxonomyNodeId } } }
+                    : {}),
+        };
+
+        const orderBy: Prisma.DigitalSolutionOrderByWithRelationInput =
+            sortParam === "oldest" ? { createdAt: "asc" } :
+                sortParam === "az"     ? { name: "asc" } :
+                    sortParam === "za"     ? { name: "desc" } :
+                        { createdAt: "desc" };
+
+        const [total, solutions] = await Promise.all([
+            prisma.digitalSolution.count({ where }),
+            prisma.digitalSolution.findMany({
+                where, orderBy, skip, take: pageSize,
+                include: {
+                    images: { where: { type: "TITLE" }, take: 1, select: { id:true, filename:true, path:true, mimeType:true, type:true } },
+                    taxonomyNodes: { select: { taxonomyNode: { select: { id:true, nameDe:true, color:true, parent:{ select:{ id:true, nameDe:true, color:true } } } } } },
+                    organization: { select: { id:true, name:true, email:true, website:true } },
+                    presentedByUser: { select: { id:true, firstName:true, lastName:true, email:true } },
+                },
+            }),
+        ]);
+
+        const enriched = await Promise.all(solutions.map(async s => {
+            const image = s.images[0];
+            if (!image) return { ...s, titleImage: null };
+            const imagePath = path.join(process.cwd(), "public", image.path);
+            if (!fs.existsSync(imagePath)) return { ...s, titleImage: null };
+            const buf = fs.readFileSync(imagePath);
+            const dataUri = `data:${image.mimeType};base64,${buf.toString("base64")}`;
+            return { ...s, titleImage: { ...image, dataUri } };
+        }));
+
+        res.json({ items: enriched, total, page, pageSize });
+    } catch (err) {
+        console.error("Fehler beim Laden der DigitalSolutions:", err);
+        res.status(500).json({ error: "Serverfehler." });
+    }
+};
+
+
+
+export const uploadDigitalSolutionTitleImage: RequestHandler = async (
+    req: MulterErrorRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const {id} = req.params as { id?: string };
+        const file = req.file;
+
+        if (!id) {
+            res.status(400).json({error: "digitalSolutionId fehlt."});
+            return;
+        }
+
+        // Multer-Fehler zuerst abfangen
+        if (req.multerError) {
+            // Rollback DB
+            await prisma.digitalSolution.delete({where: {id}}).catch(() => {
+            });
+            // Cleanup Ordner
+            await cleanupUploadFolder(id);
+            res
+                .status(400)
+                .json({error: `Upload fehlgeschlagen: ${req.multerError.message}`, rollback: true});
+            return;
+        }
+
+
+        if (!file) {
+            res.status(400).json({error: "Kein Titelbild hochgeladen."});
+            return;
+        }
+
+        // Zielordner
+        const folder = path.join(
+            process.cwd(),
+            "public",
+            "uploads",
+            "digitalSolutions",
+            id,
+            "images"
+        );
+
+        await mkdir(folder, {recursive: true});
+
+        // Dateiname mit Zufalls-UUID
+        const ext = path.extname(file.originalname).toLowerCase();
+        const filename = `${randomUUID()}${ext}`;
+        const absolutePath = path.join(folder, filename);
+
+        try {
+            // ins Dateisystem schreiben
+            await writeFile(absolutePath, file.buffer!);
+
+            // Web-Pfad ermitteln
+            const publicDir = path.join(process.cwd(), "public");
+            const webPath =
+                "/" + path.relative(publicDir, absolutePath).split(path.sep).join("/");
+
+            // DB-Record anlegen
+            const image = await prisma.image.create({
+                data: {
+                    filename: file.originalname,
+                    path: webPath,
+                    mimeType: file.mimetype,
+                    size: file.size,
+                    type: ImageType.TITLE,
+                    digitalSolution: {connect: {id}},
+                },
+            });
+
+            res.status(201).json(image);
+            return;
+        } catch (err) {
+            // Fehler beim Schreiben oder DB → Rollback + Cleanup
+            await prisma.digitalSolution.delete({where: {id}}).catch(() => {
+            });
+            await cleanupUploadFolder(id);
+            res
+                .status(500)
+                .json({error: "Upload fehlgeschlagen, Rollback durchgeführt."});
+            return;
+        }
+    } catch (error) {
+        console.error("Error uploading title image:", error);
+        next(error);
+    }
+};
+
+
+export const uploadDigitalSolutionDetailImages: RequestHandler = async (
+    req: MulterErrorRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const {id} = req.params as { id?: string };
+        const files = req.files as Express.Multer.File[] | undefined;
+
+        if (!id) {
+            res.status(400).json({error: "digitalSolutionId fehlt."});
+            return;
+        }
+
+        // Multer-Fehler zuerst abfangen
+        if (req.multerError) {
+            // Rollback DB
+            await prisma.digitalSolution.delete({where: {id}}).catch(() => {
+            });
+            // Cleanup Ordner
+            await cleanupUploadFolder(id);
+            res
+                .status(400)
+                .json({error: `Upload fehlgeschlagen: ${req.multerError.message}`, rollback: true});
+            return;
+        }
+
+        if (!files || files.length === 0) {
+            res.status(400).json({error: "Keine Detailbilder hochgeladen."});
+            return;
+        }
+
+        // Basis-Ordner für die Bilder
+        const folder = path.join(
+            process.cwd(),
+            "public",
+            "uploads",
+            "digitalSolutions",
+            id,
+            "images"
+        );
+
+        // erst Ordner anlegen
+        await mkdir(folder, {recursive: true});
+
+        // Hier sammeln wir die absoluten Pfade der geschriebenen Dateien
+        const savedPaths: string[] = [];
+
+        try {
+            // 1) Alle Dateien validiert – jetzt auf Platte schreiben
+            for (const file of files) {
+                const ext = path.extname(file.originalname).toLowerCase();
+                const name = `${randomUUID()}${ext}`;
+                const absolutePath = path.join(folder, name);
+                await writeFile(absolutePath, file.buffer!);
+                savedPaths.push(absolutePath);
+            }
+
+            // 2) Nach erfolgreichem Write alle DB-Einträge erstellen
+            const publicDir = path.join(process.cwd(), "public");
+            const created = await Promise.all(
+                savedPaths.map((absPath, idx) => {
+                    const webPath =
+                        "/" +
+                        path
+                            .relative(publicDir, absPath)
+                            .split(path.sep)
+                            .join("/");
+                    const file = files[idx];
+
+                    return prisma.image.create({
+                        data: {
+                            filename: file.originalname,
+                            path: webPath,
+                            mimeType: file.mimetype,
+                            size: file.size,
+                            type: ImageType.DETAIL,
+                            digitalSolution: {connect: {id}},
+                        },
+                    });
+                })
+            );
+
+            res.status(201).json(created);
+            return;
+        } catch (err) {
+            // Fehler beim Schreiben oder DB-Erzeugen → Rollback + Cleanup
+            await prisma.digitalSolution
+                .delete({where: {id}})
+                .catch(() => {
+                });
+            await cleanupUploadFolder(id);
+            res
+                .status(500)
+                .json({error: "Upload fehlgeschlagen, Rollback durchgeführt."});
+            return;
+        }
+    } catch (error) {
+        console.error("Error uploading detail images:", error);
+        next(error);
+    }
+};
+
+
+export const getDigitalSolutionById = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    const {id} = req.params as { id?: string };
+    if (!id) {
+        res.status(400).json({error: "digitalSolutionId ist erforderlich."});
+        return;
+    }
+
+    try {
+        const ds = await prisma.digitalSolution.findUnique({
+            where: {id: id},
+            include: {
+                taxonomyNodes: {
+                    select: { taxonomyNodeId: true },
+                },
+                presentedByUser: {
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                        salutationType: true,
+                        title: true,
+                        phonenumber: true,
+                        role: true,
+                        accountState: true,
+                        emailVerifiedAt: true,
+                        hasAcceptedTerms: true,
+                        hasAcceptedPrivacyPolicy: true,
+                        // Organisation des Users
+                        organization: {
+                            select: {
+                                id: true,
+                                email: true,
+                                name: true,
+                                street: true,
+                                zip: true,
+                                city: true,
+                                region: true,
+                                country: true,
+                                organizationType: true,
+                                website: true,
+                                lat: true,
+                                lon: true,
+                                logoBase64: true,
+                                logoMimeType: true,
+                                logoFilename: true,
+                            }
+                        }
+                    }
+                },
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        id: true,
+                        organization: {select: {id: true}},
+                    },
+                },
+                projectPartners: {
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        street: true,
+                        zip: true,
+                        city: true,
+                        country: true,
+                        region: true,
+                        organizationType: true,
+                        website: true,
+                        lat: true,
+                        lon: true,
+                        logoBase64: true,
+                        logoMimeType: true,
+                        logoFilename: true,
+                    },
+                },
+                solutionUsers: {
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        street: true,
+                        zip: true,
+                        city: true,
+                        country: true,
+                        region: true,
+                        organizationType: true,
+                        website: true,
+                        lat: true,
+                        lon: true,
+                        logoBase64: true,
+                        logoMimeType: true,
+                        logoFilename: true,
+                    },
+                },
+                images: {
+                    select: {
+                        id: true,
+                        filename: true,
+                        path: true,
+                        mimeType: true,
+                        size: true,
+                        type: true,
+                        uploadedAt: true,
+                    },
+                },
+                organization: {
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        street: true,
+                        zip: true,
+                        city: true,
+                        country: true,
+                        region: true,
+                        organizationType: true,
+                        website: true,
+                        lat: true,
+                        lon: true,
+                        logoBase64: true,
+                        logoMimeType: true,
+                        logoFilename: true,
+                    }
+                }
+            },
+        });
+
+        if (!ds) {
+            res.status(404).json({error: "Digitale Lösung nicht gefunden."});
+            return;
+        }
+        res.status(200).json(ds);
+    } catch (error) {
+        console.error(
+            `Fehler beim Abrufen der digitalen Lösung ${id}:`,
+            error
+        );
+        res.status(500).json({error: "Serverfehler beim Abruf der digitalen Lösung."});
+    }
+};
+
+
+export const getDigitalSolutions = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const state = req.query.state as DigitalSolutionState | undefined;
+        const where = state ? {state} : {};
+
+        const list = await prisma.digitalSolution.findMany({
+            where,
+            include: {
+                user: {
+                    include: {organization: true},
+                },
+                presentedByUser: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        phonenumber: true,
+
+                    },
+                },
+                organization: {
+                    select: {
+                        name: true,
+                        email: true,
+                        website: true,
+                    },
+                },
+            },
+            orderBy: {createdAt: "desc"},
+        });
+
+        res.status(200).json(list);
+    } catch (error) {
+        console.error("Fehler beim Abrufen aller digitalen Lösungen:", error);
+        res.status(500).json({error: "Fehler beim Laden der digitalen Lösungen"});
+    }
+};
+
+
+export const getTitleImageByDigitalSolution = async (
+    req: Request,
+    res: Response
+) => {
+    const {digitalSolutionId} = req.query as { digitalSolutionId?: string };
+    if (!digitalSolutionId) {
+        res.status(400).json({error: "digitalSolutionId ist erforderlich."});
+        return;
+    }
+
+    try {
+        const image = await prisma.image.findFirst({
+            where: {digitalSolutionId, type: ImageType.TITLE},
+        });
+        if (!image) {
+            res.status(404).json({error: "Bild nicht gefunden."});
+            return;
+        }
+
+        const p = path.join(process.cwd(), "public", image.path);
+        if (!fs.existsSync(p)) {
+            res.status(404).json({error: "Datei nicht vorhanden."});
+            return;
+        }
+
+        const buf = fs.readFileSync(p);
+        const dataUri = `data:${image.mimeType};base64,${buf.toString("base64")}`;
+        res.json({...image, dataUri});
+    } catch (err) {
+        console.error("Fehler beim Laden des Bildes:", err);
+        res.status(500).json({error: "Serverfehler beim Bildabruf."});
+    }
+};
+
+
+export const getDetailImagesByDigitalSolution = async (req: Request, res: Response): Promise<void> => {
+    const {digitalSolutionId} = req.query as { digitalSolutionId?: string };
+    if (!digitalSolutionId) {
+        res.status(400).json({error: "digitalSolutionId ist erforderlich."});
+        return;
+    }
+
+    try {
+        const images = await prisma.image.findMany({
+            where: {
+                digitalSolutionId,
+                type: "DETAIL",
+            },
+        });
+
+        // if (!images.length) {
+        //     res.status(404).json({ error: "Keine Detailbilder gefunden." });
+        //     return;
+        // }
+
+        // Wir bauen zunächst ein Array von (DigitalSolutionImageDto | null)
+        const mapped = images.map(img => {
+            const imagePath = path.join(process.cwd(), "public", img.path);
+            if (!fs.existsSync(imagePath)) {
+                return null;
+            }
+
+            const buffer = fs.readFileSync(imagePath);
+            const base64 = buffer.toString("base64");
+            const dataUri = `data:${img.mimeType};base64,${base64}`;
+
+            return {
+                id: img.id,
+                digitalSolutionId: img.digitalSolutionId,
+                filename: img.filename ?? "",
+                path: img.path ?? null,
+                mimeType: img.mimeType ?? "",
+                size: img.size ?? 0,
+                uploadedAt: img.uploadedAt ? img.uploadedAt.toISOString() : null,
+                type: img.type,
+                solutionId: img.digitalSolutionId,
+                dataUri,
+            } as DigitalSolutionImageDto;
+        });
+
+        const result: DigitalSolutionImageDto[] = (mapped as Array<DigitalSolutionImageDto | null>).filter(
+            (dto): dto is DigitalSolutionImageDto => dto !== null
+        );
+
+        res.json(result);
+    } catch (err) {
+        console.error("Fehler beim Laden der Detailbilder:", err);
+        res.status(500).json({error: "Serverfehler beim Detailbilder-Abruf."});
+    }
+};
+
+export const getActiveDigitalSolutions = async (req: Request, res: Response) => {
+    try {
+        const solutions = await prisma.digitalSolution.findMany({
+            where: {
+                state: 'ACTIVATED',
+            },
+            include: {
+                organization: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        website: true,
+                    }
+                },
+                presentedByUser: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true
+                    }
+                },
+                images: {
+                    select: {
+                        id: true,
+                        filename: true,
+                        path: true,
+                        type: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        res.status(200).json(solutions);
+    } catch (error) {
+        console.error("Fehler beim Laden aktiver Lösungen mit Organisation:", error);
+        res.status(500).json({ error: "Fehler beim Abrufen der digitalen Lösungen" });
+    }
+};
+
+export const getAllCoordinates = async (req: Request, res: Response) => {
+    try {
+        const solutions = await prisma.digitalSolution.findMany({
+            where: { state: "ACTIVATED" },
+            select: {
+                id: true,
+                name: true,
+                link: true,
+                solutionPresentedByUser: true,
+                organization: {
+                    select: {
+                        id: true,
+                        name: true,
+                        zip: true,
+                        city: true,
+                        website: true,
+                        lat: true,
+                        lon: true,
+                    },
+                },
+                presentedByUser: {
+                    select: {
+                        organization: {
+                            select: {
+                                id: true,
+                                name: true,
+                                zip: true,
+                                city: true,
+                                website: true,
+                                lat: true,
+                                lon: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        res.status(200).json(solutions);
+    } catch (error) {
+        console.error("Fehler beim Laden aller Koordinaten:", error);
+        res.status(500).json({ error: "Fehler beim Abrufen aller Koordinaten" });
+    }
+};
+

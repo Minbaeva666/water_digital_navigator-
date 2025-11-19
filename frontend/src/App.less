@@ -1,0 +1,65 @@
+html, body {
+    height: 100%;
+}
+
+/* Root hat begrenzte Breite und sitzt mittig */
+#root {
+    min-height: 100%;
+    width: 100%;
+    max-width: 2560px;
+    margin-inline: auto;      /* <-- horizontal zentriert */
+    display: flex;
+    flex-direction: column;
+}
+/* Optional, falls du die Headerhöhe anderweitig brauchst */
+:root { --header-height: 72px; }         /* Desktop */
+@media (max-width: 992px) {
+    :root { --header-height: 56px; }       /* Mobile/Tablet */
+}
+
+/* Nur das äußere Layout braucht die volle Höhe */
+.app-layout {
+    min-height: 100vh;       /* wichtig */
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Der Wrapper im Layout spannt sich über die volle Höhe */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;       /* wichtig: volle Viewport-Höhe */
+    overflow: visible;
+}
+
+/* Content nimmt den restlichen Platz ein -> Footer rutscht nach unten */
+.app-content {
+    flex: 1 0 auto;
+    min-height: 0;
+    display: flex;           /* WICHTIG: Flex-Container */
+    flex-direction: column;  /* so kann ein Kind mit flex:1 Höhe füllen */
+}
+
+/* (Optional) Falls du eine Footer-Klasse nutzt, kannst du ihn so fix nach unten drücken */
+.app-footer {
+    margin-top: auto;        /* nur nötig, wenn du kein flex:1 am Content setzt */
+}
+
+/* Fix für Ant Select */
+.rc-virtual-list-scrollbar {
+    visibility: visible !important;
+}
+
+/* Wenn du später sticky Header mit dynamischem Offset brauchst:
+.app-content       { padding-top: var(--sticky-offset, var(--header-height)); }
+.create-edit-header{ top:         var(--sticky-offset, var(--header-height)); }
+*/
+
+.page-center {
+    /* nimmt die volle verbleibende Höhe zwischen Header und Footer ein */
+    display: flex;
+    align-items: center;   /* vertikal zentriert */
+    justify-content: center; /* horizontal zentriert */
+    padding: 24px;         /* optionaler Innenabstand */
+}

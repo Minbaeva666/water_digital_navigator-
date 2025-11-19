@@ -1,0 +1,44 @@
+.taxonomy-simple-tree .ant-tree {
+  background: transparent;
+}
+
+.taxonomy-simple-tree .ant-tree-list-holder-inner .ant-tree-treenode {
+  padding: 2px 0;
+}
+
+.taxonomy-simple-tree .ant-tree-node-content-wrapper {
+  padding: 2px 4px;
+  --node-accent: transparent;
+  border-left: 3px solid var(--node-accent);
+}
+
+.taxonomy-simple-tree .ant-tree-switcher {
+  width: 14px; /* dezentes Caret */
+}
+
+/* Farbindikator (Dot) neben jedem Titel */
+.taxonomy-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: .6;
+  flex: 0 0 8px;
+}
+
+/* Sanfte Ein-/Ausklapp-Animation (rc-motion Klassen) */
+.ant-motion-collapse {
+  overflow: hidden;
+}
+.ant-motion-collapse-active {
+  transition: height 200ms ease, opacity 200ms ease;
+}
+.ant-tree .ant-tree-child-tree {
+  transition: height 200ms ease, opacity 200ms ease;
+}
+
+/* Auswahl dezent hervorheben */
+.taxonomy-simple-tree
+.ant-tree-treenode-selected
+.ant-tree-node-content-wrapper {
+  background: rgba(24, 144, 255, 0.08);
+}

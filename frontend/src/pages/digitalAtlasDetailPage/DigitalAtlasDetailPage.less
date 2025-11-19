@@ -1,0 +1,77 @@
+/* Baseline (xs < 576px) */
+.digital-atlas-detail-container { padding: 0 20px 20px; }
+
+/* sm ≥ 576px */
+@media (min-width: 576px) {
+  .digital-atlas-detail-container { padding: 0 32px 32px; }
+}
+
+/* md ≥ 768px */
+@media (min-width: 768px) {
+  .digital-atlas-detail-container { padding: 0 48px 111px; }
+}
+
+/* lg ≥ 992px */
+@media (min-width: 992px) {
+  .digital-atlas-detail-container { padding: 0 72px 72px; }
+}
+
+/* xl ≥ 1200px */
+@media (min-width: 1200px) {
+  .digital-atlas-detail-container { padding: 0 96px 96px; }
+}
+
+/* xxl ≥ 1600px */
+@media (min-width: 1600px) {
+  .digital-atlas-detail-container { padding: 0 111px 111px; }
+}
+
+
+.custom-segmented .ant-segmented-item-selected {
+  background-color: #2962FA !important;
+  color: white !important;
+  font-weight: 500;
+}
+
+.custom-segmented .ant-segmented-item {
+  transition: all 0.2s;
+}
+
+.description-container {
+  max-width: 420px;
+}
+
+/* Nur auf großen Screens zeigen */
+.desktop-only {
+  max-width: 700px;
+  display: block;
+}
+.mobile-only {
+  display: none;
+  text-align: left;
+}
+
+@media (max-width: 767px) {
+  .desktop-only {
+    display: none;
+  }
+  .mobile-only {
+    display: block;
+    margin-top: 1rem;
+  }
+}
+
+/* Reserviert die Scrollbar-Gasse -> kein Layout-Shift */
+.page-scroll {
+  overflow-y: auto;
+  scrollbar-gutter: stable;           /* modern: Chrome/Edge/Firefox/Safari neu */
+  /* optional: beide Seiten freihalten
+     scrollbar-gutter: stable both-edges; */
+}
+
+/* Fallback für Browser ohne scrollbar-gutter */
+@supports not (scrollbar-gutter: stable) {
+  .page-scroll {
+    overflow-y: scroll;               /* immer anzeigen -> keine Breitenänderung */
+  }
+}

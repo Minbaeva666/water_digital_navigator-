@@ -1,0 +1,96 @@
+/* Marker-Icon mit runder Badge */
+.ds-count-marker {
+  /* Leaflet setzt den Container */
+}
+
+.ds-marker-bg {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1677ff; /* Ant Design primary */
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.ds-marker-count {
+  transform: translateY(1px);
+}
+
+
+/* Popup-Liste */
+.ds-popup a {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+  display: inline;             /* Standard; kann inline-block sein, wenn gewünscht */
+}
+
+.ds-popup-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+  gap: 2px;
+}
+
+.ds-popup-list {
+  max-height: 220px; /* Scrollbar bei vielen Einträgen */
+  overflow-y: auto;
+  padding-right: 2px;
+  display: grid;
+  gap: 8px;
+}
+
+.ds-popup-item {
+  display: grid;
+  gap: 2px;
+  border-left: 3px solid #2962FA;
+  padding-left: 8px;
+}
+
+.ds-popup-title {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.ds-popup-sub {
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 12px;
+}
+
+.ds-popup-link {
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.ds-popup-url {
+  white-space: normal;         /* kein nowrap */
+  overflow-wrap: anywhere;     /* moderne Browser */
+  word-break: break-word;      /* Fallback */
+  max-width: 100%;
+}
+
+/* min width für dieses Popup erzwingen */
+.ds-popup .leaflet-popup-content-wrapper {
+  min-width: 350px;
+}
+
+/* falls der Content-Container relevant ist */
+.ds-popup .leaflet-popup-content {
+  min-width: 350px;
+}
+
+/* auf sehr schmalen Screens nicht überlaufen */
+@media (max-width: 380px) {
+  .ds-popup .leaflet-popup-content-wrapper,
+  .ds-popup .leaflet-popup-content {
+    min-width: calc(100vw - 32px); // 16px Rand links/rechts
+  }
+}

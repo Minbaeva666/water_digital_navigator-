@@ -1,0 +1,63 @@
+import {prisma} from "../../prisma/prisma";
+
+
+export type AllowedResource = "user" | "organization" | "digital_solution" | "faq" | "termsOfUse" | "privacyPolicy" | "accessibilityStatement" | "imprintStatement" | "publicPdf";
+
+export interface ResourceConfig {
+    model: {
+        findUnique: (args: {
+            where: { id: string };
+            select: Record<string, boolean>;
+        }) => Promise<any | null>;
+    };
+    ownerField: string;
+    idParam?: string; // z.B. 'organizationId' statt 'id'
+}
+
+export const RESOURCE_CONFIG: Record<AllowedResource, ResourceConfig> = {
+    user: {
+        model: prisma.user,
+        ownerField: "id",
+        idParam: "id",
+    },
+    organization: {
+        model: prisma.organization,
+        ownerField: "ownerId",
+        idParam: "id",
+    },
+    digital_solution: {
+        model: prisma.digitalSolution,
+        ownerField: "ownerId",
+        idParam: "id",
+    },
+    faq: {
+        model: prisma.faq,
+        ownerField: "ownerId",
+        idParam: "id",
+    },
+    termsOfUse: {
+        model: prisma.termsOfUse,
+        ownerField: "ownerId",
+        idParam: "id",
+    },
+    privacyPolicy: {
+        model: prisma.privacyPolicy,
+        ownerField: "ownerId",
+        idParam: "id",
+    },
+    accessibilityStatement: {
+        model: prisma.accessibilityStatement,
+        ownerField: "ownerId",
+        idParam: "id",
+    },
+    imprintStatement: {
+        model: prisma.imprintStatement,
+        ownerField: "ownerId",
+        idParam: "id",
+    },
+    publicPdf: {
+        model: prisma.publicPdf,
+        ownerField: "ownerId",
+        idParam: "id",
+    }
+};

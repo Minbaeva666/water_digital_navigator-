@@ -1,0 +1,17 @@
+* {
+
+  body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .custom-tag {
+    background-color: #ffffff !important;
+    border: 1px solid #d9d9d9;
+    padding: 4px 12px !important;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+
+}

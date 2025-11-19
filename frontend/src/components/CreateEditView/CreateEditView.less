@@ -1,0 +1,78 @@
+:root {
+  --app-header-h: var(--header-height); /* dein Page-Header (72/56px) */
+  --ce-header-h: 64px;                  /* Create-Edit-Header fix */
+}
+
+.create-edit-view {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.create-edit-header {
+  position: sticky;
+  top: var(--app-header-h, var(--header-height, 72px));
+  height: 64px;
+  box-sizing: border-box;
+  padding: 0 20px;                 /* kein vertikales Padding */
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  z-index: 900;
+  display: grid;
+  grid-template-columns: 1fr auto; /* links flexibel, rechts so breit wie nötig */
+  align-items: center;              /* vertikal mittig */
+  gap: 12px;
+}
+
+/* Titel schön einklemmen, ohne Umbruch */
+.create-edit-header-title {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.create-edit-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+/* Kinder dürfen keine vertikale Höhe „aufblähen“ */
+.create-edit-header .ant-row { height: 100%; }
+.create-edit-header h3, .create-edit-header .ant-typography { margin: 0; }
+
+/* KEIN overflow auf Vorfahren, sonst bricht sticky */
+//.app-layout, .app-content, .app-container, .create-edit-view, .create-edit-body {
+//  overflow: visible;
+//  min-height: 0;
+//}
+
+/* Tabs-Nav sticky mit sauberem Offset */
+.create-edit-body .ant-tabs > .ant-tabs-nav {
+  position: sticky;
+  top: calc(var(--app-header-h, var(--header-height, 72px)) + 64px);
+  z-index: 9;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 20px;
+  box-sizing: border-box;   // verhindert Überbreite
+}
+
+.create-edit-body .ant-tabs > .ant-tabs-content-holder {
+  padding: 20px;            /* ⟵ dein 20px-Rand */
+  box-sizing: border-box;   /* Padding in die Breite einrechnen */
+  overflow: visible;        /* wichtig, damit sticky nicht bricht */
+  box-sizing: border-box;
+}
+
+.pa-tooltip {
+  max-width: calc(100vw - 24px);
+}
+
+.pa-tooltip .ant-tooltip-inner {
+  max-width: 320px;
+  white-space: normal;
+  word-break: break-word;
+}

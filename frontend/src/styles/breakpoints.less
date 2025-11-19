@@ -1,0 +1,94 @@
+// ===============================
+// Ant Design Breakpoints
+// ===============================
+@screen-xs: 480px;
+@screen-sm: 576px;
+@screen-md: 768px;
+@screen-lg: 992px;
+@screen-xl: 1200px;
+@screen-xxl: 1600px;
+
+// ===============================
+// breakpoint-up(@bp, @rules): min-width ab @bp
+// ===============================
+.breakpoint-up(@bp, @rules) when (@bp = xs) {
+  @media (min-width: @screen-xs) { @rules(); }
+}
+.breakpoint-up(@bp, @rules) when (@bp = sm) {
+  @media (min-width: @screen-sm) { @rules(); }
+}
+.breakpoint-up(@bp, @rules) when (@bp = md) {
+  @media (min-width: @screen-md) { @rules(); }
+}
+.breakpoint-up(@bp, @rules) when (@bp = lg) {
+  @media (min-width: @screen-lg) { @rules(); }
+}
+.breakpoint-up(@bp, @rules) when (@bp = xl) {
+  @media (min-width: @screen-xl) { @rules(); }
+}
+.breakpoint-up(@bp, @rules) when (@bp = xxl) {
+  @media (min-width: @screen-xxl) { @rules(); }
+}
+
+// ===============================
+// breakpoint-down(@bp, @rules): max-width bis (bp-1)
+// ===============================
+.breakpoint-down(@bp, @rules) when (@bp = xs) {
+  @media (max-width: (@screen-xs - 1)) { @rules(); }
+}
+.breakpoint-down(@bp, @rules) when (@bp = sm) {
+  @media (max-width: (@screen-sm - 1)) { @rules(); }
+}
+.breakpoint-down(@bp, @rules) when (@bp = md) {
+  @media (max-width: (@screen-md - 1)) { @rules(); }
+}
+.breakpoint-down(@bp, @rules) when (@bp = lg) {
+  @media (max-width: (@screen-lg - 1)) { @rules(); }
+}
+.breakpoint-down(@bp, @rules) when (@bp = xl) {
+  @media (max-width: (@screen-xl - 1)) { @rules(); }
+}
+.breakpoint-down(@bp, @rules) when (@bp = xxl) {
+  @media (max-width: (@screen-xxl - 1)) { @rules(); }
+}
+
+// ===============================
+// breakpoint-only(@bp, @rules): genau zwischen bp und nächstem-1
+// ===============================
+.breakpoint-only(@bp, @rules) when (@bp = xs) {
+  @media (min-width: @screen-xs) and (max-width: (@screen-sm - 1)) {
+    @rules();
+  }
+}
+.breakpoint-only(@bp, @rules) when (@bp = sm) {
+  @media (min-width: @screen-sm) and (max-width: (@screen-md - 1)) {
+    @rules();
+  }
+}
+.breakpoint-only(@bp, @rules) when (@bp = md) {
+  @media (min-width: @screen-md) and (max-width: (@screen-lg - 1)) {
+    @rules();
+  }
+}
+.breakpoint-only(@bp, @rules) when (@bp = lg) {
+  @media (min-width: @screen-lg) and (max-width: (@screen-xl - 1)) {
+    @rules();
+  }
+}
+.breakpoint-only(@bp, @rules) when (@bp = xl) {
+  @media (min-width: @screen-xl) and (max-width: (@screen-xxl - 1)) {
+    @rules();
+  }
+}
+
+// ===============================
+// breakpoint-between(@minBp, @maxBp, @rules): custom range
+// -> kombiniert automatisch up + down
+// ===============================
+.breakpoint-between(@minBp, @maxBp, @rules) {
+  .breakpoint-up(@minBp, {
+    .breakpoint-down(@maxBp, {
+      @rules();
+    });
+  });
+}

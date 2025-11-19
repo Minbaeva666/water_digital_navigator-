@@ -1,0 +1,33 @@
+.pagination-sticky {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 12px 0;
+}
+
+.solutions-area {
+  /* wähle eine sinnvolle Mindesthöhe für deine Cards-Zone */
+  min-height: clamp(360px, 45vh, 640px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* wenn Karten vorhanden sind, soll der Container den Platz nutzen */
+.cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: flex-start;
+  align-content: flex-start;
+  width: 100%;
+}
+
+/* gleiche Maße wie vorher inline */
+.card-cell {
+  flex: 1 1 300px;
+  max-width: 300px;
+}

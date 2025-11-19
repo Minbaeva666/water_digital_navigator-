@@ -1,0 +1,22 @@
+
+/* Box: exakt 50% des Viewports, zentriert */
+.previewHalf__box {
+  width: 50vw;
+  display: grid;
+  place-items: center;
+}
+
+/* Bild: IMMER auf die Box skalieren (auch wenn Quelle klein ist) */
+.previewHalf .ant-image-preview-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+  object-position: center;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* (Optional) Wrapper neutral halten, falls Margins/Maxima stören */
+.previewHalf .ant-image-preview-img-wrapper {
+  margin: 0 !important;
+}

@@ -1,0 +1,31 @@
+/* Container bekommt die Sprache für automatische Silbentrennung */
+.page-de {
+  /* optional allgemeine Typografie-Regeln */
+}
+
+/* Block-Text mit robusten Umbrüchen */
+.text-wrap {
+  white-space: normal;           /* Standard-Umbruch */
+  overflow-wrap: anywhere;       /* bricht auch sehr lange Tokens/URLs */
+  word-break: normal;            /* keine aggressiven Wortbrüche */
+  hyphens: auto;                 /* automatische Silbentrennung */
+  line-height: 1.6;
+}
+
+/* Fallbacks für ältere Browser */
+@supports not (overflow-wrap: anywhere) {
+  .text-wrap {
+    overflow-wrap: break-word;   /* ehemals word-wrap */
+    word-wrap: break-word;
+  }
+}
+
+/* Links in Text ebenfalls sauber umbrechen */
+.text-wrap a {
+  overflow-wrap: anywhere;
+}
+
+/* Wichtig im AntD Grid/Flex: Spalten dürfen schrumpfen */
+.col-shrink {
+  min-width: 0;
+}

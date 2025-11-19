@@ -1,0 +1,43 @@
+/* nicht extra scrollen lassen */
+.appManagementContainer {
+  /* vorher: overflow: hidden; height: …  → entfernt */
+  overflow: visible;
+  padding: 0 16px 16px 16px;
+}
+
+/* Header bleibt kleben, Seite scrollt */
+.create-edit-header {
+  position: sticky;
+  top: var(--app-header-h, var(--header-height, 72px));
+  height: 64px;
+  z-index: 900;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+/* KEIN overflow:auto hier! */
+.create-edit-body { }
+
+/* Tabs-Leiste sticky direkt unter dem Header */
+.create-edit-body .ant-tabs > .ant-tabs-nav {
+  position: sticky;
+  top: calc(var(--app-header-h, var(--header-height, 72px)) + 64px);
+  z-index: 9;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 16px;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* Content normal, kein eigener Scroll */
+.create-edit-body .ant-tabs > .ant-tabs-content-holder {
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: visible;
+}

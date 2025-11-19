@@ -1,0 +1,63 @@
+// PartnersAndUsersTabComponent.less
+
+@gap: 0px;
+@gap-tag: 8px;
+@tag-padding: 4px 8px;
+@tag-margin: 0 0 8px;
+@subtitle-size: 0.85em;
+
+.pa-container {
+  padding: @gap;
+}
+
+.pa-header-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  margin-bottom: @gap;
+}
+
+.pa-title {
+  margin: 0 !important;
+  display: inline-block;
+}
+
+.pa-link-button {
+  padding: 0;
+  line-height: 1;
+}
+
+.pa-description {
+  margin: 4px 0 (@gap / 2);
+}
+
+.pa-tag-space {
+  width: 100%;
+  margin-top: @gap-tag;
+}
+
+.pa-custom-tag {
+  display: inline-flex !important;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.pa-tag-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.pa-tag-subtitle {
+  font-size: @subtitle-size;
+}
+
+.pa-close-icon {
+  font-size: 16px !important;
+  margin-left: 20px !important;
+}
+
+.pa-divider {
+  margin: 32px 0 32px 0;
+}

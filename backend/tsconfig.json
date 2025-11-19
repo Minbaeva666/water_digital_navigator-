@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    /* … deine bisherigen Settings … */
+    "target": "ES2020",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": "src",
+//    "sourceMap": true,
+    "inlineSources": true,
+    "inlineSourceMap": true,
+    // NEU: Hier sagen wir TypeScript, dass es unter src/types
+    // nach zusätzlichen Typ-Definitionen suchen soll:
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  },
+
+  // NEU: Stelle sicher, dass TypeScript wirklich auch alle .ts‐ und .d.ts‐Dateien einliest,
+  // insbesondere unsere custom‐Typen unter src/types.
+  "include": [
+    "src/**/*.ts",
+    "src/types/**/*.d.ts"
+  ]
+}

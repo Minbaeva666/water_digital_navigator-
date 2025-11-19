@@ -1,0 +1,36 @@
+.app-footer {
+  background: #09122C;            // schwarzer Hintergrund
+  padding: 16px 24px;
+  border-top: 1px solid #333;  // dezente Trennung oben
+  color: #09122C;
+}
+
+.footer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-link {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+
+  &:hover,
+  &.active {
+    color: #1890ff;            // Ant Design Blau beim Hover/Active
+  }
+}
+
+.footer-divider {
+  height: 20px;
+  margin-inline: 8px;
+  background-color: #555;
+}
+
+.footer-copy {
+  color: #aaa;
+  font-size: 0.875rem;
+}

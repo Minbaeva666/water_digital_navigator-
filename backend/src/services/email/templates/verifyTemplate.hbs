@@ -1,0 +1,69 @@
+<p><strong>Betreff:</strong> Bitte bestätigen Sie Ihre Registrierung auf dem Portal <em>digital-lotse-wasser.org</em></p>
+
+<p>Sehr geehrte*r <mark>{{name}}</mark>,<br>
+    vielen Dank für Ihre Registrierung auf dem Portal <strong>digital-lotse-wasser.org</strong>.
+</p>
+
+<p>Im Folgenden finden Sie die von Ihnen angegebenen Registrierungsdaten:</p>
+
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+    <tr>
+        <td><strong>Anrede</strong></td>
+        <td>{{salutation}}</td>
+    </tr>
+    <tr>
+        <td><strong>Titel</strong></td>
+        <td>{{title}}</td>
+    </tr>
+    <tr>
+        <td><strong>Vorname</strong></td>
+        <td>{{firstName}}</td>
+    </tr>
+    <tr>
+        <td><strong>Nachname</strong></td>
+        <td>{{lastName}}</td>
+    </tr>
+
+    {{#if organization}}
+        <tr>
+            <td><strong>Organisation</strong></td>
+            <td>{{organization}}</td>
+        </tr>
+    {{/if}}
+
+    <tr>
+        <td><strong>Email</strong></td>
+        <td><a href="mailto:{{email}}">{{email}}</a></td>
+    </tr>
+    <tr>
+        <td><strong>Telefon</strong></td>
+        <td>{{phonenumber}}</td>
+    </tr>
+    <tr>
+        <td><strong>Registrierungsdatum</strong></td>
+        <td>{{date}}</td>
+    </tr>
+    <tr>
+        <td><strong>Datenschutz</strong></td>
+        <td>Ich habe die Datenschutzbestimmungen gelesen und akzeptiert.</td>
+    </tr>
+    <tr>
+        <td><strong><a href="#">Nutzungsbedingungen</a></strong></td>
+        <td>Ich habe die <a href="#">Nutzungsbedingungen</a> gelesen und akzeptiert.</td>
+    </tr>
+</table>
+
+<p><strong>Bitte <u>bestätigen Sie jetzt Ihre E-Mail-Adresse</u></strong>, indem Sie auf den folgenden Link klicken:</p>
+
+<p>✅ <a href="{{confirmLink}}">E-Mail-Adresse bestätigen</a></p>
+
+<p>Wenn Sie sich nicht registriert haben oder die Registrierung abbrechen möchten:</p>
+
+<p>❌ <a href="{{revokeLink}}">Registrierung widerrufen</a></p>
+
+<p>Mit freundlichen Grüßen<br><br>
+    <strong>Portal-Administrator digital-lotse-wasser.org</strong><br>
+    Hochschule Hof<br>
+    Alfons-Goppel-Platz 1<br>
+    95028 Hof / Saale<br>
+    <a href="https://www.digital-lotse-wasser.org/">https://www.digital-lotse-wasser.org/</a></p>

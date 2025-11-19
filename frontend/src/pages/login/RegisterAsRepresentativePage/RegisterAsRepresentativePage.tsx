@@ -1,0 +1,490 @@
+import "./RegisterAsRepresentativePage.css";
+import {
+    Form,
+    Input,
+    Button,
+    Select,
+    Row,
+    Col,
+    Typography,
+    Divider,
+    Checkbox,
+    Tooltip,
+    Upload,
+    GetProp,
+    Image, App
+} from "antd";
+import {UploadOutlined} from '@ant-design/icons';
+import type {UploadFile, UploadProps} from 'antd';
+import React, {useState, useEffect, useRef} from "react";
+import {
+    registerAsRepresentative,
+    RegisterFormValues
+} from "../../../services/registration/registerAsRepresentativeService.ts";
+import PrivatPolicyModal from "../../../components/Modals/PrivacyPolicyAndTermsModal/PrivatPolicyModal.tsx";
+import TermsModal from "../../../components/Modals/PrivacyPolicyAndTermsModal/TermsModal.tsx";
+import RegistrationRequestModal from "../../../components/Modals/RegistrationRequestModal/RegistrationRequestModal.tsx";
+import {fetchOrganizationTypes, fetchSalutationTypes, TranslatedEnumOption} from "../../../services/input/inputService.ts";
+import ValidatedInput from "../../../components/Form/validatedInput.tsx";
+
+const countries = [
+    { code: "DE", nameDe: "Deutschland",  nameEn: "Germany" },
+    { code: "AT", nameDe: "Österreich",   nameEn: "Austria" },
+    { code: "CH", nameDe: "Schweiz",      nameEn: "Switzerland" },
+    { code: "DK", nameDe: "Dänemark",     nameEn: "Denmark" },
+    { code: "PL", nameDe: "Polen",        nameEn: "Poland" },
+    { code: "CZ", nameDe: "Tschechien",   nameEn: "Czech Republic" },
+    { code: "FR", nameDe: "Frankreich",   nameEn: "France" },
+    { code: "LU", nameDe: "Luxemburg",    nameEn: "Luxembourg" },
+    { code: "BE", nameDe: "Belgien",      nameEn: "Belgium" },
+    { code: "NL", nameDe: "Niederlande",  nameEn: "Netherlands" },
+];
+
+const {Title, Text} = Typography;
+const {Option} = Select;
+
+type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
+
+const getBase64 = (file: FileType): Promise<string> =>
+    new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+    });
+
+
+const RegisterAsRepresentativePage: React.FC = () => {
+    const {message} = App.useApp();
+    const [form] = Form.useForm<RegisterFormValues>();
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [agbsChecked, setAgbsChecked] = useState<boolean>(false);
+    const [datenschutzChecked, setDatenschutzChecked] = useState<boolean>(false);
+    const [tooltipVisible, setTooltipVisible] = useState<boolean>(false);
+    const [fileList, setFileList] = useState<UploadFile[]>([]);
+    const [isSubmitDisabled, setIsSubmitDisabled] = useState<boolean>(true);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewImage, setPreviewImage] = useState('');
+    const [isTermsModalOpen, setIsTermsModalOpen] = useState<boolean>(false);
+    const [isPrivatPolicyModalOpen, setIsPrivatPolicyModalOpen] = useState<boolean>(false);
+    const [organizationTypes, setOrganizationTypes] = useState<TranslatedEnumOption[]>([]);
+    const [orgTypLoading, setOrgTypLoading] = useState(false);
+    const hasFetchedOrganizationTypes = useRef(false);
+
+    const [salutationTypes, setSalutationTypes] = useState<TranslatedEnumOption[]>([]);
+    const [salutationTypLoading, setSalutationTypLoading] = useState(false);
+    const hasFetchedSalutationTypes = useRef(false);
+
+
+    const loadOrganizationTypes = async () => {
+        hasFetchedOrganizationTypes.current = true;
+        setOrgTypLoading(true);
+        const types = await fetchOrganizationTypes();
+        setOrganizationTypes(types);
+        setOrgTypLoading(false);
+    };
+
+    const loadSalutationTypes = async () => {
+        hasFetchedSalutationTypes.current = true;
+        setSalutationTypLoading(true);
+        const types = await fetchSalutationTypes();
+        setSalutationTypes(types);
+        setSalutationTypLoading(false);
+    };
+
+    const checkFormValidity = () => {
+        const values = form.getFieldsValue();
+        type RequiredFieldKey = keyof Pick<RegisterFormValues,
+            'salutationType' | 'firstName' | 'lastName' | 'password' | 'confirmPassword' |
+            'orgName' | 'orgEmail' | 'orgWebsite' | 'orgType' |
+            'orgStreet' | 'orgZip' | 'orgCity' | 'orgCountry'>;
+
+        const requiredFields: RequiredFieldKey[] = [
+            'salutationType', 'firstName', 'lastName', 'password', 'confirmPassword',
+            'orgName', 'orgEmail', 'orgWebsite', 'orgType',
+            'orgStreet', 'orgZip', 'orgCity', 'orgCountry'
+        ];
+
+
+        const allRequiredFieldsFilled = requiredFields.every(field => {
+            return values[field] !== undefined && values[field] !== '';
+        });
+
+        const logoUploaded = fileList.length > 0;
+        const matchingPassword = values["password"] == values["confirmPassword"];
+        return allRequiredFieldsFilled && logoUploaded && agbsChecked && datenschutzChecked && matchingPassword;
+    };
+
+
+    useEffect(() => {
+        setIsSubmitDisabled(!checkFormValidity());
+        if (!hasFetchedOrganizationTypes.current) {
+            loadOrganizationTypes();
+        }
+
+        if (!hasFetchedSalutationTypes.current) {
+            loadSalutationTypes();
+        }
+
+    }, [form, fileList, agbsChecked, datenschutzChecked]);
+
+
+    const onFinish = async (values: RegisterFormValues) => {
+        setLoading(true);
+        try {
+            const file = fileList[0]?.originFileObj as File;
+            await registerAsRepresentative(values, file);
+            setIsModalOpen(true);
+        } catch (error) {
+            console.error("Error during registration:", error);
+            if (error instanceof Error) {
+                message.error("Error: " + error.message);
+            } else {
+                message.error("An unexpected error occurred. Please try again.");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Konfiguration des Upload-Bereichs
+    const uploadProps: UploadProps = {
+        beforeUpload: (file) => {
+            const isImage = file.type.startsWith('image/');
+
+            if (!isImage) {
+                message.error('Sie können nur Bilddateien hochladen!');
+                return Upload.LIST_IGNORE;
+            }
+
+            const isAllowedType = file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/svg+xml';
+            if (!isAllowedType) {
+                message.error('Nur JPG-, PNG- oder SVG-Logos sind erlaubt!');
+                return Upload.LIST_IGNORE;
+            }
+
+            const isLt = file.size / 1024 / 1024 < 5;
+            if (!isLt) {
+                message.error('Das Bild muss kleiner als 5MB sein!');
+                return Upload.LIST_IGNORE;
+            }
+
+            return false;
+        },
+        fileList,
+        onChange({fileList: newFileList}) {
+            // Liste auf maximal eine Datei beschränken
+            if (newFileList.length > 1) {
+                setFileList([newFileList[newFileList.length - 1]]);
+            } else {
+                setFileList(newFileList);
+            }
+        },
+        maxCount: 1,
+        listType: "picture",
+        showUploadList: {
+            showRemoveIcon: true,
+        },
+    };
+
+    const handlePreview = async (file: UploadFile) => {
+        if (!file.url && !file.preview) {
+            file.preview = await getBase64(file.originFileObj as FileType);
+        }
+        setPreviewImage(file.url || (file.preview as string));
+        setPreviewOpen(true);
+    };
+
+    return (
+        <>
+            <Row justify="center">
+                <Col xs={20} sm={32} md={20} lg={16} xl={14} xxl={12}>
+                    <Title level={2} style={{textAlign: "center"}}>
+                        Registrierung als Vertreter einer Organisation
+                    </Title>
+                    <Text type="secondary" style={{display: "block", textAlign: "center"}}>
+                        Für Ihre Registrierung benötigen wir Ihre persönlichen Informationen und die ihrer Organisation.
+                    </Text>
+                    <Text type="secondary" style={{display: "block", textAlign: "center", marginBottom: 24}}>
+                        Mit <span className="required">*</span>markierte Felder sind Pflichtfelder.
+                    </Text>
+
+                    <Form
+                        form={form}
+                        layout="vertical"
+                        onFinish={onFinish}
+                        onValuesChange={() => setIsSubmitDisabled(!checkFormValidity())}
+                    >
+                        <Row justify="center" gutter={{xs: 8, sm: 16, md: 24, lg: 88}}>
+                            {/* Persönliche Informationen */}
+                            <Col xs={20} sm={32} md={14} lg={12}>
+                                <Title level={4}>Persönliche Informationen</Title>
+                                <Form.Item name="salutationType" label={"Anrede"} rules={[{
+                                    required: true,
+                                }]}>
+                                    <Select
+                                        placeholder="Anrede auswählen"
+                                        loading={salutationTypLoading}
+                                        disabled={salutationTypLoading}
+                                    >
+                                        {salutationTypes.map(type => (
+                                            <Option key={type.value} value={type.value}>
+                                                {type.label}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                                <ValidatedInput
+                                    name="title"
+                                    label="Titel"
+                                    required={false}
+                                />
+                                <Form.Item name="firstName" label={"Vorname"} rules={[{
+                                    required: true,
+                                    type: "string",
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item name="lastName" label={"Nachname"} rules={[{
+                                    required: true,
+                                    type: "string",
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item name="email" label="Kontakt-Email" rules={[{
+                                    required: true,
+                                    type: "email",
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item name="phonenumber" label="Kontakt-Telefonnummer" rules={[{
+                                    required: false,
+                                    type: "string",
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item name="password" label={"Passwort"} hasFeedback
+                                           rules={[{required: true}]}>
+                                    <Input.Password/>
+                                </Form.Item>
+                                <Form.Item
+                                    name="confirmPassword"
+                                    label="Passwort wiederholen"
+                                    dependencies={["password"]}
+                                    hasFeedback
+                                    validateTrigger={['onChange', 'onBlur']}
+                                    rules={[
+                                        {required: true, message: "Bitte wiederholen Sie Ihr Passwort!"},
+                                        ({getFieldValue}) => ({
+                                            validator(_, value) {
+                                                if (!value || getFieldValue("password") === value) {
+                                                    return Promise.resolve();
+                                                }
+                                                return Promise.reject(new Error("Passwörter stimmen nicht überein!"));
+                                            },
+                                        }),
+                                    ]}
+                                >
+                                    <Input.Password/>
+                                </Form.Item>
+                            </Col>
+
+                            {/* Organisationsinformationen */}
+                            <Col xs={20} sm={32} md={14} lg={12}>
+                                <Title level={4}>Angaben zu Ihrer Organisation</Title>
+                                <Form.Item name="orgName" label={"Name"} rules={[{
+                                    required: true,
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item name="orgEmail" label={"Email Ihrer Organisation"} rules={[{
+                                    required: true,
+                                    type: "email"
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item name="orgWebsite" label={"Webseite Ihrer Organisation"} rules={[{
+                                    required: true,
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item name="orgType" label={"Organisations-Typ"} rules={[{
+                                    required: true,
+                                }]}>
+                                    <Select
+                                        placeholder="Typ auswählen"
+                                        loading={orgTypLoading}
+                                        disabled={orgTypLoading}
+                                    >
+                                        {organizationTypes.map(type => (
+                                            <Option key={type.value} value={type.value}>
+                                                {type.label}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                                <Form.Item name="orgStreet" label={"Straße"} rules={[{
+                                    required: true,
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item name="orgZip" label={"Postleitzahl"} rules={[{
+                                    required: true,
+                                }]}>
+                                    <Input/>
+                                </Form.Item>
+                                <Form.Item
+  name="orgCity"
+  label="Stadt"
+  rules={[{ required: true, message: "Stadt ist erforderlich" }]}
+>
+  <Input />
+</Form.Item>
+                                    <Form.Item
+  name="orgCountry"
+  label="Land"
+  rules={[{ required: true, message: "Bitte wählen Sie ein Land" }]}
+>
+  <Select
+    placeholder="Land auswählen"
+    showSearch
+    optionFilterProp="children"
+  >
+    {countries.map((country) => (
+      <Select.Option key={country.code} value={country.code}>
+        {country.nameDe}
+      </Select.Option>
+    ))}
+  </Select>
+</Form.Item>
+                                <Form.Item
+                                    label={"Logo Ihrer Organisation"}
+                                    required
+                                    extra="Unterstützte Formate: JPG, PNG, SVG"
+                                >
+                                    <div>
+                                        <Upload {...uploadProps} onPreview={handlePreview}>
+                                            <Button icon={<UploadOutlined/>}>Logo auswählen</Button>
+                                        </Upload>
+                                        {previewImage && (
+                                            <Image
+                                                width={"10"}
+                                                wrapperStyle={{display: 'none'}}
+                                                preview={{
+                                                    toolbarRender: () => null,
+                                                    visible: previewOpen,
+                                                    onVisibleChange: (visible) => setPreviewOpen(visible),
+                                                    afterOpenChange: (visible) => !visible && setPreviewImage(''),
+                                                    imageRender: (originalNode) => (
+                                                        <div style={{
+                                                            width: '30vw',
+                                                            maxWidth: '30vw',
+                                                            overflow: 'hidden'
+                                                        }}>
+                                                            {originalNode}
+                                                        </div>
+                                                    ),
+                                                }}
+                                                src={previewImage}
+                                            />
+                                        )}
+                                    </div>
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Row justify="center">
+                            <Col
+                                flex={1}
+                                xs={20} sm={32} md={14} lg={18} xl={18} xxl={15}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    textAlign: "center"
+                                }}
+                            >
+                                <Checkbox
+                                    style={{
+                                        marginTop: "30px",
+                                        marginBottom: "30px",
+                                        maxWidth: "600px",
+                                        textAlign: "left"
+                                    }}
+                                    onChange={() => {
+                                        setAgbsChecked(!agbsChecked);
+                                        setDatenschutzChecked(!datenschutzChecked);
+                                    }}
+                                >
+                                    <span className="required">*</span>
+                                    Ja, ich möchte mich registrieren. Ich habe die{" "}
+                                    <span onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setIsPrivatPolicyModalOpen(true)
+                                    }}
+                                          style={{color: "#1677ff", cursor: "pointer"}}
+                                    >Datenschutzerklärung</span>{" "}und die{" "}
+                                    <span
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setIsTermsModalOpen(true)
+                                        }}
+                                        style={{color: "#1677ff", cursor: "pointer"}}
+                                    >Nutzungsbedingungen</span>{" "}gelesen und bin damit einverstanden.
+                                </Checkbox>
+                            </Col>
+                        </Row>
+
+                        <Form.Item style={{textAlign: "center"}}>
+                            <Tooltip
+                                title="Bitte füllen Sie alle Pflichtfelder aus, stimmen Sie der Datenschutzerklärung und Nutzungsbedingung zu, um die Registrierung absenden zu können."
+                                open={tooltipVisible && isSubmitDisabled}
+                            >
+                                <div
+                                    style={{display: "inline-block"}}
+                                    onMouseEnter={() => setTooltipVisible(true)}
+                                    onMouseLeave={() => setTooltipVisible(false)}
+                                >
+                                    <Button
+                                        type="primary"
+                                        htmlType="submit"
+                                        size="large"
+                                        disabled={isSubmitDisabled}
+                                        loading={loading}
+                                    >
+                                        Registrierung absenden
+                                    </Button>
+                                </div>
+                            </Tooltip>
+                        </Form.Item>
+                    </Form>
+
+                    <Divider/>
+
+                    <Text type="secondary" style={{paddingBottom: "30px", textAlign: "center", display: "block"}}>
+                        Oder doch lieber als Privatperson registrieren? <a
+                        href="/login/registration/register-as-private-person">Dann klicken Sie hier!</a>
+                    </Text>
+                </Col>
+            </Row>
+
+            <RegistrationRequestModal
+                isModalOpen={isModalOpen}
+                setIsModalOpen={setIsModalOpen}
+            />
+            <PrivatPolicyModal
+                isModalOpen={isPrivatPolicyModalOpen}
+                setIsModalOpen={setIsPrivatPolicyModalOpen}
+            />
+            <TermsModal
+                isModalOpen={isTermsModalOpen}
+                setIsModalOpen={setIsTermsModalOpen}
+            />
+        </>
+    );
+};
+
+export default RegisterAsRepresentativePage;

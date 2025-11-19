@@ -1,0 +1,37 @@
+.custom-button {
+    background-color: #2962FA;
+    color: white;
+    padding: 1rem;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 1rem;
+}
+
+.custom-button:hover {
+    background-color: #1d39c4;
+}
+
+.custom-button .icon {
+    font-size: 1.5rem;
+}
+
+.custom-button .text {
+    flex-grow: 1;
+    padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+    .custom-button {
+        min-height: 100px;
+    }
+}
+
+@media (min-width: 769px) {
+    .custom-button {
+        min-height: 100px;
+    }
+}
