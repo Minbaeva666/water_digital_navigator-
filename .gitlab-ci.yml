@@ -1,0 +1,86 @@
+stages:
+  - build
+  - deploy
+
+image: node:20
+
+cache:
+  paths:
+    - node_modules/
+  policy: pull-push
+
+# === Сборка backend ===
+build_backend:
+  stage: build
+  script:
+    - cd backend
+    - npm ci
+    - npm run build         # тут команда, которая делает dist/ (как ты делаешь локально)
+  artifacts:
+    paths:
+      - backend/dist/
+      - backend/prisma/
+      - backend/scripts/
+      - backend/package.json
+      - backend/package-lock.json
+      - backend/docker-compose.yml
+    expire_in: 1 week
+
+# === Сборка frontend ===
+build_frontend:
+  stage: build
+  script:
+    - cd frontend
+    - npm ci
+    - npm run build         # Vite build => dist/
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 week
+
+# === Деплой на сервер (как твоя инструкция, но автоматом) ===
+deploy_production:
+  stage: deploy
+  needs:
+    - build_backend
+    - build_frontend
+  only:
+    - main                  # деплой только из ветки main (можешь поменять)
+  before_script:
+    - 'which ssh-agent || (apt-get update && apt-get install -y openssh-client)'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+  script:
+    # 1) Остановить backend и очистить папку, КРОМЕ public и .env
+    - >
+      ssh "$DEPLOY_USER@$DEPLOY_HOST"
+      "cd $BACKEND_PATH &&
+       pm2 stop dilowa-backend || true &&
+       find . -mindepth 1 -maxdepth 1 ! -name public ! -name .env -exec rm -rf {} +"
+
+    # 2) Скопировать собранный backend
+    - scp -r backend/dist "$DEPLOY_USER@$DEPLOY_HOST:$BACKEND_PATH/"
+    - scp -r backend/prisma "$DEPLOY_USER@$DEPLOY_HOST:$BACKEND_PATH/"
+    - scp -r backend/scripts "$DEPLOY_USER@$DEPLOY_HOST:$BACKEND_PATH/"
+    - scp backend/package.json backend/package-lock.json backend/docker-compose.yml \
+         "$DEPLOY_USER@$DEPLOY_HOST:$BACKEND_PATH/"
+
+    # 3) npm install + docker compose + prisma + pm2
+    - >
+      ssh "$DEPLOY_USER@$DEPLOY_HOST"
+      "cd $BACKEND_PATH &&
+       npm install --production &&
+       docker compose up -d &&
+       npx prisma migrate deploy &&
+       npx prisma generate &&
+       pm2 start dist/index.js --name dilowa-backend --env production"
+
+    # 4) Обновить frontend: очистить и залить свежий dist
+    - >
+      ssh "$DEPLOY_USER@$DEPLOY_HOST"
+      "rm -rf $FRONTEND_PATH/*"
+    - scp -r frontend/dist/* "$DEPLOY_USER@$DEPLOY_HOST:$FRONTEND_PATH/"
