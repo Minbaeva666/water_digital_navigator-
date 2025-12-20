@@ -30,6 +30,19 @@ const RegisterAsPrivatePersonPage: React.FC = () => {
     const [salutationTypLoading, setSalutationTypLoading] = useState(false);
     const hasFetchedSalutationTypes = useRef(false);
 
+    const countries = [
+  { code: "DE", nameDe: "Deutschland", nameEn: "Germany" },
+  { code: "AT", nameDe: "Österreich", nameEn: "Austria" },
+  { code: "CH", nameDe: "Schweiz", nameEn: "Switzerland" },
+  { code: "DK", nameDe: "Dänemark", nameEn: "Denmark" },
+  { code: "PL", nameDe: "Polen", nameEn: "Poland" },
+  { code: "CZ", nameDe: "Tschechien", nameEn: "Czech Republic" },
+  { code: "FR", nameDe: "Frankreich", nameEn: "France" },
+  { code: "LU", nameDe: "Luxemburg", nameEn: "Luxembourg" },
+  { code: "BE", nameDe: "Belgien", nameEn: "Belgium" },
+  { code: "NL", nameDe: "Niederlande", nameEn: "Netherlands" },
+];
+
     const checkFormValidity = () => {
         const values = form.getFieldsValue();
         const requiredFields = [
@@ -160,7 +173,7 @@ const RegisterAsPrivatePersonPage: React.FC = () => {
 
                             <Col xs={20} sm={32} md={14} lg={12}>
                                 <Form.Item name="phonenumber" label="Telefonnummer" rules={[{
-                                    required: true,
+                                    required: false,
                                     type: "string",
                                 }]}>
                                     <Input/>
@@ -187,7 +200,21 @@ const RegisterAsPrivatePersonPage: React.FC = () => {
                                     required: true,
                                     type: "string",
                                 }]}>
-                                    <Input/>
+                                    <Select
+                                                        placeholder="Land auswählen"
+                                                        showSearch
+                                                        optionFilterProp="children"
+                                                      >
+                                                        {countries.map((country) => (
+                                                          <Select.Option
+                                                            key={country.code}
+                                                            value={country.code}
+                                                          >
+                                                            {country.nameDe}
+                                                          </Select.Option>
+                                                        ))}
+                                                      </Select>
+                                    
                                 </Form.Item>
                             </Col>
                         </Row>

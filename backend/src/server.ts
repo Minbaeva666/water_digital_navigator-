@@ -14,6 +14,10 @@ import taxonomyNodesRoutes from "./routes/taxonomyNodes.routes";
 import appOptionsRoutes from "./routes/appOptions.routes";
 import publicPdfRoutes from "./routes/publicPdf.routes";
 import { PDF_DIR } from './config/pdf-dir';
+import expertVideoRoutes from "./routes/expertVideo.routes";
+import path from "path";
+import contactRoutes from "./routes/contact.routes";
+
 
 console.log(process.env.NODE_ENV);
 
@@ -50,6 +54,10 @@ app.use("/api/pdf",
     (req, res, next) => { next(); },
     express.static(PDF_DIR, { index: false, fallthrough: false })
 );
+app.use("/api/expert-videos", expertVideoRoutes);
+app.use(express.static(path.join(process.cwd(), "public")));
+app.use("/api/contact", contactRoutes);
+
 
 
 app.use(errorHandler);

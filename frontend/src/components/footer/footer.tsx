@@ -20,6 +20,8 @@ const AppFooter: React.FC = () => {
                     <NavLink to="/barrierefreiheit" className="footer-link">Barrierefreiheit</NavLink>
                     <NavLink to="/nutzungsbedingungen" className="footer-link">Nutzungsbedingungen</NavLink>
                     <NavLink to="/faq" className="footer-link">FAQ</NavLink>
+                    <NavLink to="/kontakt" className="footer-link">Kontakt</NavLink>
+
                 </Space>
 
                 <Typography.Text className="footer-copy">

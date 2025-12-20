@@ -1,0 +1,65 @@
+/* Общий контейнер для плавающих кнопок */
+.fab-wrapper {
+  position: fixed;
+  right: 24px;
+  bottom: 140px;          /* подняли панель чуть выше */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  transition: right 0.3s ease;
+}
+
+/* Состояние "свернуто": уезжаем немного вправо за край экрана */
+.fab-wrapper-collapsed {
+  right: -32px;           /* видно только часть кнопки-тогглера */
+}
+
+/* Кнопка-тогглер (свернуть/развернуть) */
+.fab-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Основные круглые кнопки */
+.contact-fab,
+.share-fab {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 24px;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 575px) {
+  .fab-wrapper {
+    right: 16px;
+    bottom: 120px;        /* тоже чуть выше, чем было */
+  }
+
+  .fab-wrapper-collapsed {
+    right: -28px;
+  }
+
+  .contact-fab,
+  .share-fab {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+  }
+
+  .fab-toggle {
+    width: 36px;
+    height: 36px;
+  }
+}

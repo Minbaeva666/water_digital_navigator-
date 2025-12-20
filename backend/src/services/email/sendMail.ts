@@ -214,6 +214,53 @@ export async function sendRegistrationRevokedHintEmail(
   }
 }
 
+export async function sendContactMessageFromGuest(params: {
+  name?: string;
+  email: string;
+  message: string;
+}): Promise<void> {
+  const { name, email, message } = params;
+
+  try {
+    const EMAIL_SUBJECT =
+      "Neue Kontaktanfrage über digital-lotse-wasser.org";
+
+    const plainText = `
+Neue Kontaktanfrage über das Kontaktformular:
+
+Name:   ${name || "-"}
+E-Mail: ${email}
+
+Nachricht:
+${message}
+`.trim();
+
+    const html = `
+      <p>Neue Kontaktanfrage über das Kontaktformular:</p>
+      <p>
+        <strong>Name:</strong> ${name || "-"}<br/>
+        <strong>E-Mail:</strong> ${email}
+      </p>
+      <p><strong>Nachricht:</strong></p>
+      <pre style="white-space: pre-wrap;">${message}</pre>
+    `;
+
+    const transporter = createTransporter();
+    await maybeVerifyTransporter(transporter);
+
+    await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: ADMIN_EMAIL,  
+      replyTo: email,   
+      subject: EMAIL_SUBJECT,
+      text: plainText,
+      html,
+    });
+  } catch (error) {
+    rethrowEmail(error, "sendContactMessageFromGuest");
+  }
+}
+
 export async function sendResetPasswordEmail(
   user: UserWithOrganization,
   resetLink: string
@@ -270,6 +317,7 @@ export async function sendRegistrationSuccessEmail(user: User): Promise<void> {
   } catch (error) {
     rethrowEmail(error, "sendRegistrationSuccessEmail");
   }
+  
 }
 
 // import nodemailer from 'nodemailer';

@@ -18,20 +18,17 @@ import { publicPdfService } from "../../services/publicPdfService/publicPdfServi
 const { Title, Paragraph } = Typography;
 
 function absUrl(urlOrPath?: string | null): string | null {
-    if (!urlOrPath) return null;
-    if (/^https?:\/\//i.test(urlOrPath)) return urlOrPath;
+  if (!urlOrPath) return null;
+  if (/^https?:\/\//i.test(urlOrPath)) return urlOrPath;
 
-    const base = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
-    const path = urlOrPath.startsWith("/") ? urlOrPath : `/${urlOrPath}`;
+  const rawBase = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
+  const base = rawBase.replace(/\/api$/, "");
 
-    // Spezialfall: publicUrl beginnt mit /api/
-    // -> VITE_BACKEND_URL endet auch mit /api -> also das doppelte vermeiden
-    if (base.endsWith("/api") && path.startsWith("/api/")) {
-        return `${base.replace(/\/api$/, "")}${path}`;
-    }
+  const path = urlOrPath.startsWith("/") ? urlOrPath : `/${urlOrPath}`;
 
-    return `${base}${path}`;
+  return `${base}${path}`;
 }
+
 
 const DigitalSolutionPdf: React.FC = () => {
     const [loading, setLoading] = useState(true);
@@ -46,6 +43,7 @@ const DigitalSolutionPdf: React.FC = () => {
                 setError(null);
                 const data = await publicPdfService.fetchPublicPdf();
                 if (!alive) return;
+                console.log("PublicPdf from backend:", data);
                 setMeta(data ?? null);
             } catch (e: any) {
                 if (!alive) return;

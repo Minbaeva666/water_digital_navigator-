@@ -10,6 +10,12 @@ import {TaxonomyIndexRecord} from "../../types/UiTreeNode.ts";
 import {DigitalSolutionDto} from "../../types/dtos/DigitalSolutionDto.ts";
 import { RightOutlined } from "@ant-design/icons";
 
+
+// --- EXPERT VIDEOS ---
+import { ExpertVideoDto } from "../../types/dtos/ExpertVideoDto.ts";
+import { expertVideoService } from "../../services/expertVideoService/expertVideoService.ts";
+import ExpertVideoCard from "../../components/expertVideo/expertVideoCard/ExpertVideoCard.tsx";
+
 const {Title, Paragraph} = Typography;
 
 const HomePage: React.FC = () => {
@@ -21,11 +27,15 @@ const HomePage: React.FC = () => {
         useState<Record<string, TaxonomyIndexRecord> | null>(null);
     const [loadingPreview, setLoadingPreview] = useState<boolean>(true);
 
+    // --- EXPERT VIDEOS: State ---
+    const [videos, setVideos] = useState<ExpertVideoDto[]>([]);
+    const [loadingVideos, setLoadingVideos] = useState<boolean>(true);
+
     useEffect(() => {
         let cancelled = false;
         const load = async () => {
             try {
-                const [solutions, structure] = await Promise.all([
+                const [solutions, structure, latestVideos] = await Promise.all([
                     digitalSolutionService.fetchActiveDigitalSolutionsWithTitleImage(
                         1,            // page
                         4,            // pageSize: genau 4 Karten
@@ -37,17 +47,23 @@ const HomePage: React.FC = () => {
                         undefined     // dateTo
                     ),
                     taxonomyNodeService.fetchTaxonomyStructure(),
+                    // --- EXPERT VIDEOS ---
+                    expertVideoService.fetchLatest(4),
                 ]);
 
                 if (cancelled) return;
 
                 setPreview(solutions?.items ?? []);
                 setTaxonomyIndex(structure?.index ?? null);
+                setVideos(latestVideos ?? []);
             } catch (e) {
                 // bewusst kein message.warning hier auf der Startseite, um die Hero-Experience nicht zu stören
                 console.error(e);
             } finally {
-                if (!cancelled) setLoadingPreview(false);
+                if (!cancelled) {
+                    setLoadingPreview(false);
+                    setLoadingVideos(false); // --- EXPERT VIDEOS ---
+                }
             }
         };
         load();
@@ -165,8 +181,68 @@ const HomePage: React.FC = () => {
                     </div>
                 </div>
             </section>
-        </>
+
+            {/* --- EXPERT VIDEOS: Sektion unterhalb der Atlas-Karten --- */}
+            <section className="band">
+                <div className="page-container">
+                    <Row justify="space-between" align="middle" className="atlas-title">
+                        <Col>
+                            <Title level={2} style={{ margin: 0 }}>
+                                Experten Interviews/Videos
+                            </Title>
+                        </Col>
+                    </Row>
+
+                    {loadingVideos ? (
+                        <div style={{minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center"}}>
+                            <Spin tip="Lade Interviews/Videos…"/>
+                        </div>
+                    ) : videos.length === 0 ? (
+                        <Paragraph type="secondary">
+                            Aktuell sind noch keine Interviews/Videos verfügbar.
+                        </Paragraph>
+                    ) : (
+                        <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
+                            {videos.map((video) => (
+                                <Col
+                                    key={video.id}
+                                    xs={24}
+                                    md={12}
+                                    lg={8}
+                                    xl={6}
+                                >
+                                    <ExpertVideoCard video={video} />
+                                </Col>
+                            ))}
+                        </Row>
+                    )}
+
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            marginTop: 32,
+                            marginBottom: 32,
+                        }}
+                    >
+                        <Button
+                            type="primary"
+                            size="large"
+                            icon={<RightOutlined style={{ color: "#fff" }} />}
+                            iconPosition="end"
+                            onClick={() => navigate("/expert-videos")}
+                        >
+                            Alle Interviews/Videos
+                        </Button>
+                    </div>
+                </div>
+            </section>
+            <section className="band">...</section>
+  </>
     );
+
+
+
 };
 
 export default HomePage;

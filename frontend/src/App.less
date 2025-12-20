@@ -31,7 +31,7 @@ html, body {
     flex-direction: column;
     min-height: 100vh;       /* wichtig: volle Viewport-Höhe */
     overflow: visible;
-}
+} 
 
 /* Content nimmt den restlichen Platz ein -> Footer rutscht nach unten */
 .app-content {
@@ -62,4 +62,13 @@ html, body {
     align-items: center;   /* vertikal zentriert */
     justify-content: center; /* horizontal zentriert */
     padding: 24px;         /* optionaler Innenabstand */
+}
+
+/* Общий контейнер для всех страниц (публичные + админка) */
+.page-container {
+  width: 100%;
+  max-width: 1200px;      /* можешь подогнать под дизайн */
+  margin: 0 auto;         /* центр по горизонтали */
+  padding: 24px 24px 32px;/* внутренние отступы сверху/сбоку/снизу */
+  box-sizing: border-box; /* чтобы padding не раздувал ширину */
 }

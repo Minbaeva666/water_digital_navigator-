@@ -1,0 +1,62 @@
+/* Детальная карточка Expert Video для страницы /expert-videos */
+
+.expert-video-detail {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  margin-bottom: 48px;
+  flex-wrap: nowrap;
+}
+
+/* Левая колонка — текст */
+.expert-video-text {
+  flex: 1 1 0;
+  min-width: 0; // чтобы текст нормально переносился
+}
+
+/* Правая колонка — картинка + подпись */
+.expert-video-media {
+  flex: 0 0 340px;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Картинка справа */
+.expert-video-image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Текст под картинкой */
+.expert-video-external-note {
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Чуть аккуратнее переносы текста */
+.expert-video-text p {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+/* Мобильная/узкая ширина: всё в колонку, картинка сверху */
+@media (max-width: 768px) {
+  .expert-video-detail {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .expert-video-media {
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+}

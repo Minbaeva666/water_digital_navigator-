@@ -100,9 +100,16 @@ const AppHeader: React.FC = () => {
                                             Digital Atlas
                                         </NavLink>
                                     </Menu.Item>
+                                    
                                     <Menu.Item key="submit">
                                         <NavLink to="/create-digital-solution" onClick={() => setMenuOpen(false)}>
                                             Digitale Lösung einreichen
+                                        </NavLink>
+                                    </Menu.Item>
+
+                                    <Menu.Item key="expert-videos">
+                                        <NavLink to="/expert-videos" onClick={() => setMenuOpen(false)}>
+                                            Interviews/Videos
                                         </NavLink>
                                     </Menu.Item>
                                 </Menu.ItemGroup>
@@ -134,6 +141,13 @@ const AppHeader: React.FC = () => {
                             className={`nav-link ${isInCreateDigitalSolutionSection ? "active" : ""}`}
                         >
                             <Title level={4}>Digitale Lösung einreichen</Title>
+                        </NavLink>
+
+                        <NavLink
+                            to="/expert-videos"
+                            className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                        >
+                           <Title level={4}>Interviews/Videos</Title>
                         </NavLink>
 
                         {isAuthenticated ? (

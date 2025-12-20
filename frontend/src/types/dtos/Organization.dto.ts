@@ -74,3 +74,16 @@ export interface OrganizationFormValues {
     population?: number | null;
     manualCoords?: boolean
 }
+export interface OrganizationForRegistrationDto {
+  id: string;
+  name: string;
+  email: string;
+  website: string;
+  street: string;
+  zip: string;
+  city: string;
+  countryId: string;         
+  regionId: string | null;
+  organizationType: OrganizationType;
+}
+

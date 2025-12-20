@@ -9,11 +9,12 @@ import GuestRoute from './components/GuestRoute/GuestRoute';
 import DigitalAtlasDetailPage from "./pages/digitalAtlasDetailPage/DigitalAtlasDetailPage.tsx";
 import AppFooter from "./components/footer/footer.tsx";
 import "./utils/utilities.css.less";
+import ContactFloatingButton from "./components/contact/ContactFloatingButton";
+
 
 
 const { Content } = Layout;
 
-// Lazy-loaded pages
 const HomePage = lazy(() => import('./pages/homePage/HomePage'));
 const FaqPage = lazy(() => import('./pages/faq/FaqPage'));
 const AccessibilityStatementPage = lazy(() => import('./pages/accessibilityStatement/AccessibilityStatementPage'));
@@ -41,13 +42,21 @@ const OrganizationManagementAdminPage = lazy(() => import('./pages/admin/organiz
 const OrganizationCreateAdminPage = lazy(() => import('./pages/admin/organizationManagementAdmin/organizationCreateAdmin/OrganizationCreateAdminPage.tsx'));
 const OrganizationEditAdminPage = lazy(() => import('./pages/admin/organizationManagementAdmin/organizationEditAdmin/OrganizationEditAdminPage.tsx'));
 const DigitalAtlasPage = lazy(() => import('./pages/digitalAtlasPage/DigitalAtlasPage.tsx'));
+const ExpertVideosPage = lazy(() => import('./pages/expertVideos/ExpertVideosPage.tsx')); 
+const ExpertVideoManagementPage = lazy(() => import('./pages/admin/expertVideoManagement/ExpertVideoManagementPage.tsx'));
+const MyDigitalSolutionsPage  = lazy(() => import('./pages/user/digitalSolutions/MyDigitalSolutionsPage.tsx'));
+const DigitalSolutionCreateUserPage = lazy(() => import('./pages/user/digitalSolutionManagementUser/DigitalSolutionCreateUserPage.tsx'));
+const DigitalSolutionEditUserPage  = lazy(() => import('./pages/user/digitalSolutionManagementUser/DigitalSolutionEditUserPage.tsx'));
 const AppManagementAdminPage = lazy(() => import('./pages/admin/appManagementAdmin/AppManagementAdminPage.tsx'));
+const KontaktPage = lazy(() => import('./pages/kontakt/KontaktPage.tsx'));
+// const DigitalSolutionsOverviewPage = lazy(() => import('./pages/digitalSolutionsOverviewPage/DigitalSolutionsOverviewPage.tsx'));
+const DigitalSolutionsOverviewPage = lazy(() => import('./pages/digitalSolutionsOverviewPage/DigitalSolutionsOverviewPage.tsx'));
 
 const AppWrapper: React.FC = () => (
     <ConfigProvider locale={customLocale} theme={customTheme}>
         <AntdApp>
-        <Router>
-        {/* <Router basename="/dilowa"> */}
+        {/* <Router> */}
+        <Router basename="/dilowa">
             <Layout className="app-layout">
                 <div className="app-container">
                     <AppHeader />
@@ -56,6 +65,8 @@ const AppWrapper: React.FC = () => (
                         <Suspense fallback={<div>Lade Seite...</div>}>
                             <Routes>
                                 <Route path="/" element={<HomePage />} />
+                                <Route path="/digital-solutions" element={<DigitalSolutionsOverviewPage />} />
+                                <Route path="/expert-videos" element={<ExpertVideosPage />} />
                                 <Route path="/digital-atlas" element={<DigitalAtlasPage />} />
                                 <Route path="/digital-atlas/digitale-solution/:id" element={<DigitalAtlasDetailPage />} />
                                 <Route path="/create-digital-solution" element={<DigitalSolutionSelection />} />
@@ -84,17 +95,27 @@ const AppWrapper: React.FC = () => (
                                 <Route path="/admin/digital-solution-management/digital-solution/new" element={<ProtectedRoute requiredRole="ADMIN" element={<DigitalSolutionCreateAdminPage />} />} />
                                 <Route path="/admin/digital-solution-management/digital-solution/:id/edit" element={<ProtectedRoute requiredRole="ADMIN" element={<DigitalSolutionEditAdminPage />} />} />
 
+
+                                <Route path="/my-digital-solutions" element={<MyDigitalSolutionsPage />} />
+                                <Route path="/my-digital-solutions/new" element={<DigitalSolutionCreateUserPage />} />
+                                <Route path="/my-digital-solutions/:id/edit" element={<DigitalSolutionEditUserPage />} />
+                                <Route path="/admin/expert-video-management" element={<ExpertVideoManagementPage />} />
+
                                 <Route path="/admin/app-management" element={<ProtectedRoute requiredRole="ADMIN" element={<AppManagementAdminPage />} />} />
                                 <Route path="/faq" element={<FaqPage />} />
                                 <Route path="/nutzungsbedingungen" element={<TermsOfUsePage />} />
                                 <Route path="/barrierefreiheit" element={<AccessibilityStatementPage />} />
                                 <Route path="/datenschutz" element={<PrivacyPolicyPage />} />
                                 <Route path="/impressum" element={<ImprintStatementPage />} />
+                                <Route path="/kontakt" element={<KontaktPage />} />
+
                             </Routes>
                         </Suspense>
                     </Content>
 
                     <AppFooter />
+                        <ContactFloatingButton />
+                    
                 </div>
             </Layout>
         </Router>

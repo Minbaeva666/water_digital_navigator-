@@ -30,6 +30,11 @@ export const ROLE_NAVIGATION: Record<Role, NavigationItem[]> = {
             path: '/admin/taxonomie-management',
         },
         {
+            key: 'expert-video-management',
+            label: 'Expert/Video Management',
+            path: '/admin/expert-video-management',
+        },
+        {
             key: 'app-management',
             label: 'App Management',
             path: '/admin/app-management',
@@ -60,11 +65,11 @@ export const ROLE_NAVIGATION: Record<Role, NavigationItem[]> = {
             label: 'Meine digitalen Lösungen',
             path: '/my-digital-solutions',
         },
-        {
-            key: 'digital-solutions',
-            label: 'Digitalen Lösung',
-            path: '/digital-solutions',
-        },
+        // {
+        //     key: 'digital-solutions',
+        //     label: 'Digitalen Lösung',
+        //     path: '/digital-solutions',
+        // },
         {
             key: "logout",
             label: "Abmelden",

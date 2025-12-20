@@ -5,10 +5,17 @@
     border-radius: 6px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: center;      /* всё по центру по вертикали */
     cursor: pointer;
     transition: background-color 0.3s ease;
     margin-top: 1rem;
+
+    /* одинаковая ширина */
+    width: 100%;
+    box-sizing: border-box;
+
+    /* одинаковая высота для обеих кнопок */
+    height: 120px;            /* при необходимости подстрой: 110 / 130 / 140 */
 }
 
 .custom-button:hover {
@@ -24,14 +31,3 @@
     padding: 0 1rem;
 }
 
-@media (max-width: 768px) {
-    .custom-button {
-        min-height: 100px;
-    }
-}
-
-@media (min-width: 769px) {
-    .custom-button {
-        min-height: 100px;
-    }
-}

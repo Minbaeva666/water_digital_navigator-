@@ -21,8 +21,8 @@ type OrgCreatePayload = {
 
 export async function prepareOrganizationData(
     payload: OrgCreatePayload,
-    logoBuffer: Buffer,
-    mimeType: string
+    logoBuffer?: Buffer,
+    mimeType?: string
 ): Promise<Prisma.OrganizationCreateInput> {
     // 1) Duplicate per E-Mail (Optional – DB hat unique, hier bekommst du die schönere Fehlermeldung)
     const existingOrg = await prisma.organization.findUnique({
@@ -57,7 +57,7 @@ export async function prepareOrganizationData(
     }
 
     // 4) Logo anfügen
-    const base64 = logoBuffer.toString("base64");
+    const base64 = logoBuffer ? logoBuffer.toString("base64") : undefined;
 
     // 5) OrganizationCreateInput zusammenbauen
     const data: Prisma.OrganizationCreateInput = {

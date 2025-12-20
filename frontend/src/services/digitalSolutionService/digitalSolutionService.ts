@@ -23,7 +23,6 @@ const fetchDigitalSolutionById = async (digitalSolutionId: string | undefined): 
     }
 };
 
-
 const fetchActiveDigitalSolutionsWithTitleImage = async (
     page: number,
     pageSize: number,
@@ -32,13 +31,42 @@ const fetchActiveDigitalSolutionsWithTitleImage = async (
     sort?: "newest" | "oldest" | "az" | "za",
     taxonomyPath?: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    organizationId?: string       
 ) => {
-    const {data} = await axiosInstance.get(`${baseUrl}/active-with-title-image`, {
-        params: {page, pageSize, taxonomyNodeId, taxonomyPath, q, sort, dateFrom, dateTo},
+    const { data } = await axiosInstance.get(`${baseUrl}/active-with-title-image`, {
+        params: {
+            page,
+            pageSize,
+            taxonomyNodeId,
+            taxonomyPath,
+            q,
+            sort,
+            dateFrom,
+            dateTo,
+            organizationId,       
+        },
     });
+
     return data as { items: DigitalSolutionDto[]; total: number };
 };
+
+
+// const fetchActiveDigitalSolutionsWithTitleImage = async (
+//     page: number,
+//     pageSize: number,
+//     taxonomyNodeId?: string,
+//     q?: string,
+//     sort?: "newest" | "oldest" | "az" | "za",
+//     taxonomyPath?: string,
+//     dateFrom?: string,
+//     dateTo?: string
+// ) => {
+//     const {data} = await axiosInstance.get(`${baseUrl}/active-with-title-image`, {
+//         params: {page, pageSize, taxonomyNodeId, taxonomyPath, q, sort, dateFrom, dateTo},
+//     });
+//     return data as { items: DigitalSolutionDto[]; total: number };
+// };
 
 export const createDigitalSolution = async (
     values: DigitalSolutionFormValues
@@ -137,6 +165,17 @@ const fetchDigitalSolutionsWithState = async (state: DigitalSolutionState
         {params}
     );
     return data;
+};
+
+const fetchMyDigitalSolutionsWithState = async (
+  state: DigitalSolutionState
+): Promise<DigitalSolutionWithRelationsDto[]> => {
+  const params = state ? { state } : undefined;
+  const { data } = await axiosInstance.get<DigitalSolutionWithRelationsDto[]>(
+    "/digital-solutions/my",
+    { params }
+  );
+  return data;
 };
 
 
@@ -329,5 +368,6 @@ export const digitalSolutionService = {
     deleteDigitalSolution,
     fetchActiveDigitalSolutionsWithTitleImage,
     fetchActiveDigitalSolutions,
-    fetchAllCoordinates
+    fetchAllCoordinates,
+    fetchMyDigitalSolutionsWithState,
 };

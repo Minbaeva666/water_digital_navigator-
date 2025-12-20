@@ -13,6 +13,6 @@ export function generateRevokeToken(): string {
     return crypto.randomBytes(32).toString('hex');
 }
 
-export function getTokenExpiration(hours = 168): Date {
+export function getTokenExpiration(hours = 48): Date {
     return new Date(Date.now() + hours * 60 * 60 * 1000);
 }

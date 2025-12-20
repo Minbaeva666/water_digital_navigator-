@@ -34,26 +34,30 @@ async function findSinglePdf(): Promise<{ filename: string; stat: Stats } | null
 
 /** GET /api/public-pdf (Admin-Meta) */
 export async function getPublicPdf(req: Request, res: Response) {
-    try {
-        const info = await findSinglePdf();
-        if (!info) {
-            res.json({ exists: false });
-            return;
-        }
-
-        const publicUrl = `${getPublicOrigin(req)}/pdf/${encodeURIComponent(info.filename)}?t=${Date.now()}`;
-        res.json({
-            exists: true,
-            filename: info.filename,
-            publicUrl,
-            size: info.stat.size,
-            updatedAt: info.stat.mtime.toISOString(),
-        });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: "Fehler beim Lesen der PDF." });
+  try {
+    const info = await findSinglePdf();
+    if (!info) {
+      res.json({ exists: false });
+      return;
     }
+
+    const publicUrl = `${getPublicOrigin(req)}/api/pdf/${encodeURIComponent(
+      info.filename
+    )}?t=${Date.now()}`;
+
+    res.json({
+      exists: true,
+      filename: info.filename,
+      publicUrl,
+      size: info.stat.size,
+      updatedAt: info.stat.mtime.toISOString(),
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Fehler beim Lesen der PDF." });
+  }
 }
+
 
 /** POST /api/public-pdf (Admin-Upload, exakt 1 PDF zulassen) */
 export async function upsertPublicPdf(req: Request, res: Response) {

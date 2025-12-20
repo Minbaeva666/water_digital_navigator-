@@ -38,23 +38,29 @@ export const resetPasswordRequest = async (
   }
 
   try {
-    // findFirst, т.к. findUnique принимает только уникальные поля
-    const user = await prisma.user.findFirst({
-      where: {
-        email,
-        accountState: AccountState.REGISTERED,
-      },
+    // 1) Сначала ищем пользователя по email (без фильтра по accountState)
+    const user = await prisma.user.findUnique({
+      where: { email },
       include: { organization: true },
     });
 
-    // одинаковый ответ, чтобы не палить наличие аккаунта
+    // 2) Если вообще нет пользователя с таким email → явная ошибка
     if (!user) {
-      res
-        .status(200)
-        .json({ message: "If a matching account exists, a reset link has been sent." });
+      res.status(404).json({ error: "Account with this email does not exist." });
       return;
     }
 
+    // 3) Есть пользователь, но аккаунт не завершён (не REGISTERED)
+    if (user.accountState !== AccountState.REGISTERED) {
+      res.status(400).json({
+        error:
+          "Password reset is only possible for fully registered accounts. Please verify your email or contact support.",
+        accountState: user.accountState,
+      });
+      return;
+    }
+
+    // 4) Всё ок → создаём токен для сброса пароля
     const resetToken = crypto.randomBytes(32).toString("hex"); // сырой токен для письма
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 Stunde gültig
 
@@ -62,7 +68,7 @@ export const resetPasswordRequest = async (
       data: {
         userId: user.id,
         tokenType: TokenType.PASSWORD_RESET_TOKEN,
-        tokenHash: hashToken(resetToken), // записываем ХЭШ
+        tokenHash: hashToken(resetToken),
         expiresAt,
       },
     });
@@ -76,9 +82,9 @@ export const resetPasswordRequest = async (
       return;
     } catch (emailError) {
       console.error("Mailversand fehlgeschlagen:", emailError);
-      res
-        .status(500)
-        .json({ error: "Fehler beim Versenden der Reset Passwort E-Mail." });
+      res.status(500).json({
+        error: "Fehler beim Versenden der Reset Passwort E-Mail.",
+      });
       return;
     }
   } catch (error) {
@@ -87,6 +93,7 @@ export const resetPasswordRequest = async (
     return;
   }
 };
+
 
 export const resetPassword = async (
   req: Request,

@@ -1,3 +1,4 @@
+import e from "express";
 import {ResourceAction} from "./permissonTypes";
 
 export type Role = "ADMIN" | "MODERATOR" | "USER";
@@ -23,6 +24,12 @@ export const ROLE_PERMISSIONS: Record<'ADMIN' | 'MODERATOR' | 'USER', RolePermis
             delete: { own: true, others: true },
         },
         digital_solution: {
+            create: true,
+            read: true,
+            edit: { own: true, others: true },
+            delete: { own: true, others: true },
+        },
+        expert_video: {
             create: true,
             read: true,
             edit: { own: true, others: true },
@@ -85,6 +92,12 @@ export const ROLE_PERMISSIONS: Record<'ADMIN' | 'MODERATOR' | 'USER', RolePermis
             edit: { own: false, others: false },
             delete: { own: false, others: false },
         },
+        expert_video: {
+            create: true,
+            read: true,
+            edit: { own: true, others: true },
+            delete: { own: true, others: true },
+        },
         faq: {
             create: true,
             read: true,
@@ -141,6 +154,12 @@ export const ROLE_PERMISSIONS: Record<'ADMIN' | 'MODERATOR' | 'USER', RolePermis
             read: true,
             edit: { own: true, others: false },
             delete: { own: true, others: false },
+        },
+        expert_video: {
+            create: false,
+            read: true,
+            edit: { own: false, others: false },
+            delete: { own: false, others: false },
         },
         solution_category: {
             create: false,

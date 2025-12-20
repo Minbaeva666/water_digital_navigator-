@@ -2,7 +2,7 @@
 export type CRUDAction = "create" | "read" | "edit" | "delete";
 
 // 2) Definiere, welche Ressourcen es gibt
-export type Resource = "users" | "organizations" | "digital_solution" | "solution_category";
+export type Resource = "users" | "organizations" | "digital_solution" | "solution_category" | "expert_video" | "faq" | "termsOfUse" | "privacyPolicy" | "accessibilityStatement" | "imprintStatement" | "publicPdf";
 
 // 3) Action ist dasselbe wie CRUDAction (für die Combos)
 export type Action = CRUDAction;

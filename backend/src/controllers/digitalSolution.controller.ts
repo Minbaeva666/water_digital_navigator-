@@ -28,10 +28,12 @@ interface MulterErrorRequest extends Request {
     multerError?: Error;
 }
 
-
+// ---------------------------------------------------------------------
+// CREATE
+// ---------------------------------------------------------------------
 export const createDigitalSolution: RequestHandler = async (req, res, next) => {
     try {
-        const { user } = req as Request;
+        const { user } = req as Request & { user?: { id: string; role: string } };
         if (!user) {
             res.status(401).json({ error: "Nicht authentifiziert" });
             return;
@@ -85,6 +87,14 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
             taxonomyNodeIds?: string[] | string;
         };
 
+        // ВАЖНО: если это обычный пользователь, игнорируем presentedByUserId из тела
+        const isUser = user.role === "USER";
+        const effectivePresenterId = isUser ? user.id : presentedByUserId ?? null;
+
+        // Пользователю не даём управлять state вручную → принудительно REQUESTED
+        const normalizedState: DigitalSolutionState =
+            isUser ? DigitalSolutionState.REQUESTED : (state as DigitalSolutionState);
+
         // Datum parsen
         let readyDate: Date | null = null;
         if (typeof readyForOperation === "string" && !readyForOperation.startsWith("Invalid Date")) {
@@ -125,25 +135,27 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
             }
         }
 
+        // Presenter-Relationen vorbereiten
         // Presenter-Relationen vorbereiten (optional)
-        let presenterConnect: Record<string, any> = {};
-        if (presentedByUserId) {
-            const dbUser = await prisma.user.findUnique({
-                where: { id: presentedByUserId },
-                select: { organizationId: true },
-            });
-            if (!dbUser) {
-                res.status(404).json({ error: "Presenter-User nicht gefunden." });
-                return;
-            }
-            presenterConnect = dbUser.organizationId
-                ? { organization: { connect: { id: dbUser.organizationId } } }
-                : { user: { connect: { id: presentedByUserId } } };
-            presenterConnect = {
-                ...presenterConnect,
-                presentedByUser: { connect: { id: presentedByUserId } },
-            };
-        }
+let presenterConnect: Record<string, any> = {};
+if (effectivePresenterId) {                        // ← используем его
+    const dbUser = await prisma.user.findUnique({
+        where: { id: effectivePresenterId },
+        select: { organizationId: true },
+    });
+    if (!dbUser) {
+        res.status(404).json({ error: "Presenter-User nicht gefunden." });
+        return;
+    }
+    presenterConnect = dbUser.organizationId
+        ? { organization: { connect: { id: dbUser.organizationId } } }
+        : { user: { connect: { id: effectivePresenterId } } };
+    presenterConnect = {
+        ...presenterConnect,
+        presentedByUser: { connect: { id: effectivePresenterId } },
+    };
+}
+
 
         // Alles in einer Transaktion
         const result = await prisma.$transaction(async (tx) => {
@@ -165,7 +177,7 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
                         typeof hasAcceptedTerms === "string" ? hasAcceptedTerms === "true" : !!hasAcceptedTerms,
                     hasAcceptedPrivacyPolicy:
                         typeof hasAcceptedPrivacyPolicy === "string" ? hasAcceptedPrivacyPolicy === "true" : !!hasAcceptedPrivacyPolicy,
-                    state: state as DigitalSolutionState,
+                    state: normalizedState, // <-- здесь уже нормализованное состояние
                     ...(efficiencyDescription ? { efficiencyDescription } : {}),
                     ...(socialRelevanceDescription ? { socialRelevanceDescription } : {}),
                     ...(processDescription ? { processDescription } : {}),
@@ -190,7 +202,6 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
             return solution;
         });
 
-        // Antwort ans Frontend – passend zu deinem Create-Flow:
         res.status(201).json({ digitalSolutionId: result.id });
     } catch (error) {
         console.error("Error creating digital solution:", error);
@@ -198,9 +209,12 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
     }
 };
 
+// ---------------------------------------------------------------------
+// UPDATE
+// ---------------------------------------------------------------------
 export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
     try {
-        const { user } = req as Request;
+        const { user } = req as Request & { user?: { id: string; role: string } };
         if (!user) {
             res.status(401).json({ error: "Nicht authentifiziert" });
             return;
@@ -238,6 +252,9 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
             publishedSource
         } = req.body as any;
 
+        const isUser = user.role === "USER";
+        const presenterIdToUse = isUser ? user.id : presentedByUserId;
+
         // Datum parsen
         let readyDate: Date | null = null;
         if (typeof readyForOperation === "string" && !readyForOperation.startsWith("Invalid Date")) {
@@ -250,7 +267,6 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
             const d = new Date(createdAtOverride);
             if (!isNaN(d.getTime())) createdAtOverrideDate = d;
         }
-
 
         // taxonomyNodeIds normalisieren + deduplizieren
         const flatTaxIds = Array.isArray(taxonomyNodeIds)
@@ -280,7 +296,6 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
             }
         }
 
-        // Update in einer Transaktion: Stammdaten + Taxonomie-Mapping
         await prisma.$transaction(async (tx) => {
             await tx.digitalSolution.update({
                 where: { id },
@@ -306,37 +321,49 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
                     hasAcceptedPrivacyPolicy: typeof hasAcceptedPrivacyPolicy === "string"
                         ? hasAcceptedPrivacyPolicy === "true"
                         : hasAcceptedPrivacyPolicy,
-                    state: state as DigitalSolutionState,
+
+                    // Пользователь не может менять state — оставляем как есть в БД
+                    ...(isUser ? {} : { state: state as DigitalSolutionState }),
+
                     ...(efficiencyDescription ? { efficiencyDescription } : {}),
                     ...(socialRelevanceDescription ? { socialRelevanceDescription } : {}),
                     ...(processDescription ? { processDescription } : {}),
 
                     // Presenter-Relationen
-                    ...(presentedByUserId
-                        ? await (async () => {
+                    ...(await (async () => {
+                        if (presenterIdToUse) {
                             const dbUser = await prisma.user.findUnique({
-                                where: { id: presentedByUserId },
+                                where: { id: presenterIdToUse },
                                 select: { organizationId: true },
                             });
                             if (!dbUser) throw new Error("Presenter-User nicht gefunden.");
 
-                            return dbUser.organizationId
-                                ? {
+                            if (dbUser.organizationId) {
+                                return {
                                     organization: { connect: { id: dbUser.organizationId } },
                                     user: { disconnect: true },
-                                    presentedByUser: { connect: { id: presentedByUserId } },
-                                }
-                                : {
-                                    user: { connect: { id: presentedByUserId } },
-                                    organization: { disconnect: true },
-                                    presentedByUser: { connect: { id: presentedByUserId } },
+                                    presentedByUser: { connect: { id: presenterIdToUse } },
                                 };
-                        })()
-                        : {
+                            }
+                            return {
+                                user: { connect: { id: presenterIdToUse } },
+                                organization: { disconnect: true },
+                                presentedByUser: { connect: { id: presenterIdToUse } },
+                            };
+                        }
+
+                        // Если пользователь — USER, он не может "отвязать" презентера
+                        if (isUser) {
+                            return {};
+                        }
+
+                        // Админ может обнулить связи
+                        return {
                             presentedByUser: { disconnect: true },
                             organization: { disconnect: true },
                             user: { disconnect: true },
-                        }),
+                        };
+                    })()),
                 },
             });
 
@@ -363,6 +390,10 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
     }
 };
 
+// ---------------------------------------------------------------------
+// Остальные методы (images, delete, активные, координаты) — без изменений
+// ---------------------------------------------------------------------
+// Ниже оставляю твой существующий код, он не зависит от presentedByUserId.
 
 export const updateDigitalSolutionTitleImage: RequestHandler = async (req, res, next) => {
     try {
@@ -374,7 +405,6 @@ export const updateDigitalSolutionTitleImage: RequestHandler = async (req, res, 
         const digitalSolutionId = id;
         const file = req.file;
 
-        // Alte TITLE-Bilder der Lösung löschen (immer zuerst)
         const old = await prisma.image.findMany({
             where: { digitalSolutionId, type: ImageType.TITLE },
         });
@@ -389,13 +419,11 @@ export const updateDigitalSolutionTitleImage: RequestHandler = async (req, res, 
             });
         }
 
-        // Wenn KEIN neues Bild hochgeladen → nur löschen
         if (!file) {
             res.status(200).json({ message: "Titelbild entfernt" });
             return;
         }
 
-        // Neues Titelbild speichern
         const publicDir = path.join(process.cwd(), "public");
         const webPath = "/" + path.relative(publicDir, file.path).split(path.sep).join("/");
 
@@ -417,7 +445,6 @@ export const updateDigitalSolutionTitleImage: RequestHandler = async (req, res, 
     }
 };
 
-
 export const updateDigitalSolutionDetailImages: RequestHandler = async (req, res, next) => {
     try {
         const { id: digitalSolutionId } = req.params as { id?: string };
@@ -425,14 +452,12 @@ export const updateDigitalSolutionDetailImages: RequestHandler = async (req, res
 
         const files = (req.files as Express.Multer.File[]) ?? [];
 
-        // 1) keepImageIds lesen
         let keepImageIds: string[] = [];
         const raw = (req.body as any)?.keepImageIds;
         if (Array.isArray(raw)) keepImageIds = raw.map(String);
         else if (typeof raw === "string" && raw.trim()) { try { keepImageIds = JSON.parse(raw); } catch {} }
         const keep = new Set(keepImageIds);
 
-        // 2) nicht mehr gewünschte Bilder löschen (DB + Datei)
         const existing = await prisma.image.findMany({ where: { digitalSolutionId, type: ImageType.DETAIL } });
         const toDelete = existing.filter(img => !keep.has(img.id));
         if (toDelete.length) {
@@ -440,27 +465,24 @@ export const updateDigitalSolutionDetailImages: RequestHandler = async (req, res
             await prisma.image.deleteMany({ where: { id: { in: toDelete.map(x => x.id) }, digitalSolutionId, type: ImageType.DETAIL } });
         }
 
-        // 3) neue Dateien verarbeiten (diskStorage: immer file.path nutzen)
         if (files.length) {
             const targetDir = DS_DIR(digitalSolutionId, "images");
             await ensureDir(targetDir);
 
-            const seenInRequest = new Set<string>(); // gegen doppelte Files im selben Request
+            const seenInRequest = new Set<string>();
 
             await Promise.all(files.map(async (file) => {
-                if (!file.path) return; // defensive
+                if (!file.path) return;
                 const tmpPath = file.path;
                 const buf = await readFile(tmpPath);
                 const hash = sha256(buf);
 
-                // a) bereits in DB?
                 const exists = await prisma.image.findFirst({
                     where: { digitalSolutionId, type: ImageType.DETAIL, contentHash: hash },
                     select: { id: true },
                 });
                 if (exists) { await unlinkIfExists(tmpPath); return; }
 
-                // b) doppelt im selben Request?
                 if (seenInRequest.has(hash)) { await unlinkIfExists(tmpPath); return; }
                 seenInRequest.add(hash);
 
@@ -468,7 +490,6 @@ export const updateDigitalSolutionDetailImages: RequestHandler = async (req, res
                 const filename = `${randomUUID()}${ext}`;
                 const finalPath = path.join(targetDir, filename);
 
-                // statt kopieren: verschieben
                 await rename(tmpPath, finalPath);
 
                 const webPath = "/" + path.relative(PUBLIC_DIR, finalPath).split(path.sep).join("/");
@@ -493,7 +514,6 @@ export const updateDigitalSolutionDetailImages: RequestHandler = async (req, res
     } catch (e) { next(e); }
 };
 
-
 export const deleteDigitalSolution: RequestHandler = async (
     req: Request,
     res: Response,
@@ -507,7 +527,6 @@ export const deleteDigitalSolution: RequestHandler = async (
     }
 
     try {
-        // 1) Existenz prüfen
         const existing = await prisma.digitalSolution.findUnique({
             where: {id: id},
             select: {id: true},
@@ -517,7 +536,6 @@ export const deleteDigitalSolution: RequestHandler = async (
             return;
         }
 
-        // 2) Upload-Ordner komplett löschen
         const uploadDir = path.join(
             process.cwd(),
             "public",
@@ -536,17 +554,14 @@ export const deleteDigitalSolution: RequestHandler = async (
             }
         }
 
-        // 3) DB-Einträge zu Bildern entfernen
         await prisma.image.deleteMany({
             where: {id},
         });
 
-        // 4) DigitalSolution selbst löschen
         await prisma.digitalSolution.delete({
             where: {id: id},
         });
 
-        // 5) No Content
         res.status(200).json({
             success: true,
             message: `DigitalSolution ${id} erfolgreich gelöscht.`
@@ -560,88 +575,178 @@ export const deleteDigitalSolution: RequestHandler = async (
     }
 };
 
+export const getActiveDigitalSolutionsWithTitleImage = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const page = Math.max(
+      parseInt(String(req.query.page ?? "1"), 10) || 1,
+      1
+    );
+    const pageSize = Math.min(
+      Math.max(parseInt(String(req.query.pageSize ?? "12"), 10) || 12, 1),
+      50
+    );
+    const skip = (page - 1) * pageSize;
 
+    const dateFrom = req.query.dateFrom as string | undefined;
+    const dateTo   = req.query.dateTo   as string | undefined;
 
-export const getActiveDigitalSolutionsWithTitleImage = async (req: Request, res: Response) => {
-    try {
-        const page = Math.max(parseInt(String(req.query.page ?? "1"), 10) || 1, 1);
-        const pageSize = Math.min(Math.max(parseInt(String(req.query.pageSize ?? "12"), 10) || 12, 1), 50);
-        const skip = (page - 1) * pageSize;
-        const dateFrom = req.query.dateFrom as string | undefined;
-        const dateTo   = req.query.dateTo as string | undefined;
+    const q = (req.query.q as string | undefined)?.trim() || "";
+    const taxonomyNodeId = req.query.taxonomyNodeId as string | undefined;
+    const taxonomyPath   = req.query.taxonomyPath   as string | undefined;
+    const sortParam =
+      (req.query.sort as "newest" | "oldest" | "az" | "za") || "newest";
 
-        const q = (req.query.q as string | undefined)?.trim() || "";
-        const taxonomyNodeId = req.query.taxonomyNodeId as string | undefined;
-        const taxonomyPath   = req.query.taxonomyPath as string | undefined;
-        const sortParam = (req.query.sort as "newest" | "oldest" | "az" | "za") || "newest";
+    const organizationId = req.query.organizationId as string | undefined;
 
-        const where: Prisma.DigitalSolutionWhereInput = {
-            state: "ACTIVATED",
-            ...(dateFrom || dateTo
-                ? {
-                    createdAt: {
-                        ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
-                        ...(dateTo   ? { lte: new Date(dateTo) }   : {}),
-                    },
-                }
-                : {}),
-            ...(q ? {
-                OR: [
-                    { name: { contains: q } },
-                    { shortDescription: { contains: q } },
-                    { longDescription: { contains: q } },
-                    { goalDescription: { contains: q } },
-                    { technicalDescription: { contains: q } },
-                    { efficiencyDescription: { contains: q } },
-                    { processDescription: { contains: q } },
-                    { socialRelevanceDescription: { contains: q } },
-                    { organization: { is: { name: { contains: q } } } },
-                ],
-            } : {}),
-            ...(taxonomyPath
-                ? { taxonomyNodes: { some: { taxonomyNode: { is: { path: { startsWith: taxonomyPath } } } } } }
-                : taxonomyNodeId
-                    ? { taxonomyNodes: { some: { taxonomyNodeId } } }
-                    : {}),
-        };
+    const where: Prisma.DigitalSolutionWhereInput = {
+      state: "ACTIVATED",
 
-        const orderBy: Prisma.DigitalSolutionOrderByWithRelationInput =
-            sortParam === "oldest" ? { createdAt: "asc" } :
-                sortParam === "az"     ? { name: "asc" } :
-                    sortParam === "za"     ? { name: "desc" } :
-                        { createdAt: "desc" };
+      ...(dateFrom || dateTo
+        ? {
+            createdAt: {
+              ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+              ...(dateTo   ? { lte: new Date(dateTo) }   : {}),
+            },
+          }
+        : {}),
 
-        const [total, solutions] = await Promise.all([
-            prisma.digitalSolution.count({ where }),
-            prisma.digitalSolution.findMany({
-                where, orderBy, skip, take: pageSize,
-                include: {
-                    images: { where: { type: "TITLE" }, take: 1, select: { id:true, filename:true, path:true, mimeType:true, type:true } },
-                    taxonomyNodes: { select: { taxonomyNode: { select: { id:true, nameDe:true, color:true, parent:{ select:{ id:true, nameDe:true, color:true } } } } } },
-                    organization: { select: { id:true, name:true, email:true, website:true } },
-                    presentedByUser: { select: { id:true, firstName:true, lastName:true, email:true } },
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q } },
+              { shortDescription: { contains: q } },
+              { longDescription: { contains: q } },
+              { goalDescription: { contains: q } },
+              { technicalDescription: { contains: q } },
+              { efficiencyDescription: { contains: q } },
+              { processDescription: { contains: q } },
+              { socialRelevanceDescription: { contains: q } },
+              { organization: { is: { name: { contains: q } } } },
+            ],
+          }
+        : {}),
+
+      ...(taxonomyPath
+        ? {
+            taxonomyNodes: {
+              some: {
+                taxonomyNode: {
+                  is: {
+                    path: { startsWith: taxonomyPath },
+                  },
                 },
-            }),
-        ]);
+              },
+            },
+          }
+        : taxonomyNodeId
+        ? {
+            taxonomyNodes: {
+              some: { taxonomyNodeId },
+            },
+          }
+        : {}),
 
-        const enriched = await Promise.all(solutions.map(async s => {
-            const image = s.images[0];
-            if (!image) return { ...s, titleImage: null };
-            const imagePath = path.join(process.cwd(), "public", image.path);
-            if (!fs.existsSync(imagePath)) return { ...s, titleImage: null };
-            const buf = fs.readFileSync(imagePath);
-            const dataUri = `data:${image.mimeType};base64,${buf.toString("base64")}`;
-            return { ...s, titleImage: { ...image, dataUri } };
-        }));
+      ...(organizationId
+        ? {
+            organizationId,
+          }
+        : {}),
+    };
 
-        res.json({ items: enriched, total, page, pageSize });
-    } catch (err) {
-        console.error("Fehler beim Laden der DigitalSolutions:", err);
-        res.status(500).json({ error: "Serverfehler." });
-    }
+    const orderBy: Prisma.DigitalSolutionOrderByWithRelationInput =
+      sortParam === "oldest"
+        ? { createdAt: "asc" }
+        : sortParam === "az"
+        ? { name: "asc" }
+        : sortParam === "za"
+        ? { name: "desc" }
+        : { createdAt: "desc" };
+
+    const [total, solutions] = await Promise.all([
+      prisma.digitalSolution.count({ where }),
+      prisma.digitalSolution.findMany({
+        where,
+        orderBy,
+        skip,
+        take: pageSize,
+        include: {
+          images: {
+            where: { type: "TITLE" },
+            take: 1,
+            select: {
+              id: true,
+              filename: true,
+              path: true,
+              mimeType: true,
+              type: true,
+            },
+          },
+          taxonomyNodes: {
+            select: {
+              taxonomyNode: {
+                select: {
+                  id: true,
+                  nameDe: true,
+                  color: true,
+                  parent: {
+                    select: { id: true, nameDe: true, color: true },
+                  },
+                },
+              },
+            },
+          },
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              website: true,
+            },
+          },
+          presentedByUser: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const enriched = await Promise.all(
+      solutions.map(async (s) => {
+        const image = s.images[0];
+        if (!image) return { ...s, titleImage: null };
+
+        const imagePath = path.join(process.cwd(), "public", image.path);
+        if (!fs.existsSync(imagePath)) {
+          return { ...s, titleImage: null };
+        }
+
+        const buf = fs.readFileSync(imagePath);
+        const dataUri = `data:${image.mimeType};base64,${buf.toString(
+          "base64"
+        )}`;
+
+        return { ...s, titleImage: { ...image, dataUri } };
+      })
+    );
+
+    res.json({ items: enriched, total, page, pageSize });
+  } catch (err) {
+    console.error("Fehler beim Laden der DigitalSolutions:", err);
+    res.status(500).json({ error: "Serverfehler." });
+  }
 };
 
-
+// ---------------------------------------------------------------------
+// UPLOAD IMAGES WITH ROLLBACK ON ERROR
+// ---------------------------------------------------------------------
 
 export const uploadDigitalSolutionTitleImage: RequestHandler = async (
     req: MulterErrorRequest,
@@ -657,12 +762,8 @@ export const uploadDigitalSolutionTitleImage: RequestHandler = async (
             return;
         }
 
-        // Multer-Fehler zuerst abfangen
         if (req.multerError) {
-            // Rollback DB
-            await prisma.digitalSolution.delete({where: {id}}).catch(() => {
-            });
-            // Cleanup Ordner
+            await prisma.digitalSolution.delete({where: {id}}).catch(() => {});
             await cleanupUploadFolder(id);
             res
                 .status(400)
@@ -670,13 +771,11 @@ export const uploadDigitalSolutionTitleImage: RequestHandler = async (
             return;
         }
 
-
         if (!file) {
             res.status(400).json({error: "Kein Titelbild hochgeladen."});
             return;
         }
 
-        // Zielordner
         const folder = path.join(
             process.cwd(),
             "public",
@@ -688,21 +787,17 @@ export const uploadDigitalSolutionTitleImage: RequestHandler = async (
 
         await mkdir(folder, {recursive: true});
 
-        // Dateiname mit Zufalls-UUID
         const ext = path.extname(file.originalname).toLowerCase();
         const filename = `${randomUUID()}${ext}`;
         const absolutePath = path.join(folder, filename);
 
         try {
-            // ins Dateisystem schreiben
             await writeFile(absolutePath, file.buffer!);
 
-            // Web-Pfad ermitteln
             const publicDir = path.join(process.cwd(), "public");
             const webPath =
                 "/" + path.relative(publicDir, absolutePath).split(path.sep).join("/");
 
-            // DB-Record anlegen
             const image = await prisma.image.create({
                 data: {
                     filename: file.originalname,
@@ -717,9 +812,7 @@ export const uploadDigitalSolutionTitleImage: RequestHandler = async (
             res.status(201).json(image);
             return;
         } catch (err) {
-            // Fehler beim Schreiben oder DB → Rollback + Cleanup
-            await prisma.digitalSolution.delete({where: {id}}).catch(() => {
-            });
+            await prisma.digitalSolution.delete({where: {id}}).catch(() => {});
             await cleanupUploadFolder(id);
             res
                 .status(500)
@@ -731,7 +824,6 @@ export const uploadDigitalSolutionTitleImage: RequestHandler = async (
         next(error);
     }
 };
-
 
 export const uploadDigitalSolutionDetailImages: RequestHandler = async (
     req: MulterErrorRequest,
@@ -747,12 +839,8 @@ export const uploadDigitalSolutionDetailImages: RequestHandler = async (
             return;
         }
 
-        // Multer-Fehler zuerst abfangen
         if (req.multerError) {
-            // Rollback DB
-            await prisma.digitalSolution.delete({where: {id}}).catch(() => {
-            });
-            // Cleanup Ordner
+            await prisma.digitalSolution.delete({where: {id}}).catch(() => {});
             await cleanupUploadFolder(id);
             res
                 .status(400)
@@ -765,7 +853,6 @@ export const uploadDigitalSolutionDetailImages: RequestHandler = async (
             return;
         }
 
-        // Basis-Ordner für die Bilder
         const folder = path.join(
             process.cwd(),
             "public",
@@ -775,14 +862,11 @@ export const uploadDigitalSolutionDetailImages: RequestHandler = async (
             "images"
         );
 
-        // erst Ordner anlegen
         await mkdir(folder, {recursive: true});
 
-        // Hier sammeln wir die absoluten Pfade der geschriebenen Dateien
         const savedPaths: string[] = [];
 
         try {
-            // 1) Alle Dateien validiert – jetzt auf Platte schreiben
             for (const file of files) {
                 const ext = path.extname(file.originalname).toLowerCase();
                 const name = `${randomUUID()}${ext}`;
@@ -791,7 +875,6 @@ export const uploadDigitalSolutionDetailImages: RequestHandler = async (
                 savedPaths.push(absolutePath);
             }
 
-            // 2) Nach erfolgreichem Write alle DB-Einträge erstellen
             const publicDir = path.join(process.cwd(), "public");
             const created = await Promise.all(
                 savedPaths.map((absPath, idx) => {
@@ -819,11 +902,9 @@ export const uploadDigitalSolutionDetailImages: RequestHandler = async (
             res.status(201).json(created);
             return;
         } catch (err) {
-            // Fehler beim Schreiben oder DB-Erzeugen → Rollback + Cleanup
             await prisma.digitalSolution
                 .delete({where: {id}})
-                .catch(() => {
-                });
+                .catch(() => {});
             await cleanupUploadFolder(id);
             res
                 .status(500)
@@ -868,7 +949,6 @@ export const getDigitalSolutionById = async (
                         emailVerifiedAt: true,
                         hasAcceptedTerms: true,
                         hasAcceptedPrivacyPolicy: true,
-                        // Organisation des Users
                         organization: {
                             select: {
                                 id: true,
@@ -983,14 +1063,20 @@ export const getDigitalSolutionById = async (
     }
 };
 
-
 export const getDigitalSolutions = async (
     req: Request,
     res: Response
 ): Promise<void> => {
     try {
         const state = req.query.state as DigitalSolutionState | undefined;
-        const where = state ? {state} : {};
+        const currentUser = (req as any).user as { id: string; role: string } | undefined;
+
+        const where: Prisma.DigitalSolutionWhereInput = {
+            ...(state ? { state } : {}),
+            ...(currentUser?.role === "USER"
+                ? { presentedByUserId: currentUser.id }
+                : {}),
+        };
 
         const list = await prisma.digitalSolution.findMany({
             where,
@@ -1004,7 +1090,6 @@ export const getDigitalSolutions = async (
                         lastName: true,
                         email: true,
                         phonenumber: true,
-
                     },
                 },
                 organization: {
@@ -1024,7 +1109,6 @@ export const getDigitalSolutions = async (
         res.status(500).json({error: "Fehler beim Laden der digitalen Lösungen"});
     }
 };
-
 
 export const getTitleImageByDigitalSolution = async (
     req: Request,
@@ -1060,6 +1144,54 @@ export const getTitleImageByDigitalSolution = async (
     }
 };
 
+export const getMyDigitalSolutions: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !user.id) {
+      res.status(401).json({ error: "Nicht authentifiziert" });
+      return;
+    }
+
+    const state = req.query.state as DigitalSolutionState | undefined;
+
+    const where: Prisma.DigitalSolutionWhereInput = {
+      presentedByUserId: user.id,
+      ...(state ? { state } : {}),
+    };
+
+    const list = await prisma.digitalSolution.findMany({
+      where,
+      include: {
+        user: {
+          include: { organization: true },
+        },
+        presentedByUser: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phonenumber: true,
+          },
+        },
+        organization: {
+          select: {
+            name: true,
+            email: true,
+            website: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json(list);
+  } catch (error) {
+    console.error("Fehler beim Abrufen meiner digitalen Lösungen:", error);
+    res
+      .status(500)
+      .json({ error: "Fehler beim Laden der digitalen Lösungen des Users." });
+  }
+};
 
 export const getDetailImagesByDigitalSolution = async (req: Request, res: Response): Promise<void> => {
     const {digitalSolutionId} = req.query as { digitalSolutionId?: string };
@@ -1076,12 +1208,6 @@ export const getDetailImagesByDigitalSolution = async (req: Request, res: Respon
             },
         });
 
-        // if (!images.length) {
-        //     res.status(404).json({ error: "Keine Detailbilder gefunden." });
-        //     return;
-        // }
-
-        // Wir bauen zunächst ein Array von (DigitalSolutionImageDto | null)
         const mapped = images.map(img => {
             const imagePath = path.join(process.cwd(), "public", img.path);
             if (!fs.existsSync(imagePath)) {
@@ -1205,4 +1331,3 @@ export const getAllCoordinates = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Fehler beim Abrufen aller Koordinaten" });
     }
 };
-

@@ -2,11 +2,12 @@ import axiosInstance from "../auth/axiosInstance.ts";
 import {
     OrganizationBaseDto,
     OrganizationFormValues, OrganizationFullDto,
-    OrganizationMinimalDto
+    OrganizationMinimalDto, OrganizationForRegistrationDto
 } from "../../types/dtos/Organization.dto.ts";
 import {appendIfPresent, appendNullable} from "../../utils/apiHelpers.ts";
 import {findMissing, requiredPathsFor} from "./organizationAdminRequired.ts";
 import {OrganizationState, OrganizationType} from "../../types/constants/enums.ts";
+
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const baseUrl = `${backendUrl}/organizations`;
@@ -20,6 +21,13 @@ const fetchOrganizationsBase = async (): Promise<OrganizationBaseDto[]> => {
         console.error('Fehler beim Laden der Basisinformationen der Organisationen:', error);
         return [];
     }
+};
+
+export const fetchOrganizationsForRegistration = async (): Promise<OrganizationForRegistrationDto[]> => {
+  const { data } = await axiosInstance.get<OrganizationForRegistrationDto[]>(
+    "/organizations/for-registration"
+  );
+  return data;
 };
 
 // const fetchOrganizationsMinimal = async (): Promise<OrganizationMinimalDto[]> => {

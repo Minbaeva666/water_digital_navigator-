@@ -664,10 +664,6 @@ export const updateOrganization = async (
     }
 };
 
-
-
-
-
 export const getOrganization = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -817,4 +813,30 @@ export const getOrganizationsBase = async (req: Request, res: Response) => {
     } catch (error) {
         res.status(500).json({ error: "Fehler beim Abrufen der Organisationen" });
     }
+}
+
+export const getOrganizationsForRegistration = async (req: Request, res: Response) => {
+  try {
+    const organizations = await prisma.organization.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        website: true,
+        street: true,
+        zip: true,
+        city: true,
+        country: true,         
+        regionId: true,      
+        organizationType: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    res.status(200).json(organizations);
+  } catch (error) {
+    console.error("Fehler beim Abrufen der Organisationen (for registration):", error);
+    res.status(500).json({ error: "Fehler beim Abrufen der Organisationen" });
+  }
 };
+;

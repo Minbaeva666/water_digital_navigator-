@@ -52,7 +52,6 @@ export async function seedDigitalSolutions() {
       readyForOperation: new Date(),
     },
 
-    // 2) новая запись из PDF: hetida 4 water (h4w)
     {
       name: "hetida 4 water (h4w)",
       link: "https://neusta-sd-west.de/wasserwirtschaft/hetida4water/",
@@ -75,7 +74,6 @@ export async function seedDigitalSolutions() {
       hasAcceptedPrivacyPolicy: true,
       solutionPresentedByUser: false,
       state: DigitalSolutionState.ACTIVATED,
-      // В форме стоит дата/место подписи: Essen, 06.07.23 → используем как дату готовности
       readyForOperation: new Date("2023-07-06"),
     },
   ];

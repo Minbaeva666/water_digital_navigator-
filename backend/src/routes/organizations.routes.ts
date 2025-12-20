@@ -6,13 +6,16 @@ import {
     deleteOrganization,
     getOrganizations,
     getOrganizationsBase,
-    getOrganizationsMinimalWithoutPresenter
+    getOrganizationsMinimalWithoutPresenter,
+    getOrganizationsForRegistration
+
 } from "../controllers/organization.controller";
 import {uploadLogo} from "../middlewares/uploadLogo/uploadLogo";
 import {authenticate} from "../middlewares/login/authMiddelware";
 
 const router = express.Router();
 
+router.get("/for-registration", getOrganizationsForRegistration);
 router.get("/minimal-organizations-without-presenter", authenticate, getOrganizationsMinimalWithoutPresenter);
 router.get("/base", getOrganizationsBase);
 router.get("/:id", getOrganization);

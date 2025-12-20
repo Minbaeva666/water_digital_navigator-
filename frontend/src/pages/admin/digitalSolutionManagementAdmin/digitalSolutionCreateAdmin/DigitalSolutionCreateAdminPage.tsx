@@ -20,7 +20,6 @@ import isEqual from "lodash.isequal";
 import { EMPTY_DIGITAL_SOLUTION_FORM } from "../../../../services/digitalSolutionService/digitalSolution.mapper.ts";
 import { DigitalSolutionState } from "../../../../types/constants/enums.ts";
 
-// +++ добавлено: хук автосейва и индикатор
 import { useLocalDraftAutosave } from "../../../../hooks/useLocalDraftAutosave";
 import { DraftIndicator } from "../../../../components/admin/DraftIndicator";
 
@@ -381,7 +380,7 @@ export default function DigitalSolutionCreateAdminPage() {
             saveButtonIcon={isDraft ? <FileAddOutlined /> : <SaveOutlined />}
           />
 
-          {/* маленький индикатор автосейва */}
+          {}
           <DraftIndicator saving={saving} lastSavedAt={lastSavedAt} />
         </Form>
       </div>

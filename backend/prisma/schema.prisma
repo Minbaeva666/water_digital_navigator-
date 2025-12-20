@@ -15,11 +15,10 @@ datasource db {
 
 generator erd {
   provider = "prisma-erd-generator"
-  output   = "./ERD.svg"   // or "./ERD.png"
+  output   = "./ERD.svg" // or "./ERD.png"
   // layout = "elk"         // optional: nicer auto-layout for bigger schemas
   // theme  = "light"       // optional
 }
-
 
 model PublicPdf {
   id String @id @default(cuid())
@@ -317,6 +316,22 @@ model DigitalSolution {
   @@index([userId])
   @@index([publishedAt])
 }
+
+model ExpertVideo {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?  @db.Text
+  publishedAt  DateTime?
+  authorName   String?
+  authorUrl    String?
+  videoUrl     String
+  thumbnailUrl String?   
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+
 
 model TaxonomyNode {
   id       String         @id @default(cuid())

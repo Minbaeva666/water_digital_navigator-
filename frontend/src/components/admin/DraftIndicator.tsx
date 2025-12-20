@@ -2,10 +2,10 @@ export function DraftIndicator({ saving, lastSavedAt }: { saving: boolean; lastS
   return (
     <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
       {saving
-        ? "Автосохранение…"
+        ? "Autosave…"
         : lastSavedAt
-        ? `Черновик сохранён: ${new Date(lastSavedAt).toLocaleTimeString()}`
-        : "Изменения сохраняются автоматически (локально)."}
+        ? `Draft saved: ${new Date(lastSavedAt).toLocaleTimeString()}`
+        : "Changes saved locally."}
     </div>
   );
 }

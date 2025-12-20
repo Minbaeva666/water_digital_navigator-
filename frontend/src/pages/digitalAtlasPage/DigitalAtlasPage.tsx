@@ -86,8 +86,8 @@ const DigitalAtlasPage = () => {
                         loadParams.q,
                         loadParams.sort,
                         loadParams.taxonomyPath,
-                        loadParams.dateFrom,
-                        loadParams.dateTo
+                        loadParams.dateFrom, 
+                        loadParams. dateTo
                     ),
                     taxonomyNodeService.fetchTaxonomyStructure(),
                     digitalSolutionService.fetchAllCoordinates(),
