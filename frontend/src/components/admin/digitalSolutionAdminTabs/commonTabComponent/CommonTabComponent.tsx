@@ -20,11 +20,13 @@ const {Option} = Select;
 interface CommonTabComponentProps {
     form: FormInstance<DigitalSolutionFormValues>;
     onFormChange?: () => void;
+    allowedStates?: DigitalSolutionState[];
 }
 
 const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
                                                                    form,
-                                                                   onFormChange
+                                                                   onFormChange,
+                                                                   allowedStates,
                                                                }) => {
     const presentedByUserId = Form.useWatch('presentedByUserId', form);
     const solutionState = Form.useWatch("state", form);
@@ -202,19 +204,26 @@ const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
         <Row gutter={64}>
             <Col xs={24} md={12} xl={10}>
                 <Form.Item
-                    name="state"
-                    label="Status der Digitalen Lösung"
-                    rules={[{required: true}]}
-                >
-                    <Select placeholder="Status der Digitalen Lösung"
-                            loading={digitalSolutionStateTypesLoading}>
-                        {digitalSolutionStateTypes.map((type) => (
-                            <Option key={type.value} value={type.value}>
-                                {type.label}
-                            </Option>
-                        ))}
-                    </Select>
-                </Form.Item>
+  name="state"
+  label="Status der Digitalen Lösung"
+  rules={[{ required: true }]}
+>
+  <Select
+    placeholder="Status der Digitalen Lösung"
+    loading={digitalSolutionStateTypesLoading}
+  >
+    {(allowedStates && allowedStates.length
+      ? digitalSolutionStateTypes.filter((type) =>
+          allowedStates.includes(type.value as DigitalSolutionState)
+        )
+      : digitalSolutionStateTypes
+    ).map((type) => (
+      <Option key={type.value} value={type.value}>
+        {type.label}
+      </Option>
+    ))}
+  </Select>
+</Form.Item>
 
                 <Form.Item
                     name="name"

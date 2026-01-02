@@ -92,20 +92,20 @@ export default function DigitalSolutionCreateAdminPage() {
     taxonomyNodeService.fetchTaxonomyNodes().then(setTaxonomyNodes);
   }, []);
 
-  // +++ добавлено: локальный автосейв (drafts)
+  // +++ added: local autosave (drafts)
   const DRAFT_KEY = "digital_solution_create_draft_v1";
   const { saving, lastSavedAt, saveDebounced, read, clear, bindFlushOnHide } =
     useLocalDraftAutosave<DigitalSolutionFormValues>(DRAFT_KEY, INITIAL_FORM);
 
-  // восстановление черновика при монтировании + дожим при закрытии вкладки
+  // restore draft on mount + flush on tab close
   useEffect(() => {
     const draft = read();
     if (draft?.data) {
       const merged = { ...INITIAL_FORM, ...draft.data };
       form.setFieldsValue(merged);
-      // пересчёт валидности и флага изменений
+      // recompute validity and changed flag
       handleValuesChange(undefined, merged);
-    //   messageApi.info("Черновик формы восстановлен.");
+    //   messageApi.info("Draft restored.");
     }
     return bindFlushOnHide(() => form.getFieldsValue(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,7 +190,7 @@ export default function DigitalSolutionCreateAdminPage() {
 
     setIsChanged(valuesChanged || titleImageChanged || detailImagesChanged);
 
-    // +++ добавлено: автосейв (локальный) с дебаунсом
+    // +++ added: autosave (local) with debounce
     saveDebounced(merged);
   };
 
@@ -247,7 +247,7 @@ export default function DigitalSolutionCreateAdminPage() {
         }
 
         messageApi.success("Digitale Lösung erfolgreich erstellt.");
-        clear(); // +++ очистить локальный черновик
+        clear(); // +++ clear local draft
         navigate(`/admin/digital-solution-management/digital-solution/${newId}/edit`);
       }
     } catch (err: unknown) {
@@ -318,7 +318,7 @@ export default function DigitalSolutionCreateAdminPage() {
         }
 
         messageApi.success("Template erfolgreich erstellt.");
-        clear(); // +++ очистить локальный черновик
+        clear(); // +++ clear local draft
         navigate(`/admin/digital-solution-management/digital-solution/${newId}/edit`);
       }
     } catch (err: unknown) {

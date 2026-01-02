@@ -26,7 +26,7 @@ type SeedItem = {
 
 export async function seedDigitalSolutions() {
   const items: SeedItem[] = [
-    // 1) твоя текущая запись InSchuKa4.0 (оставил без изменений)
+    // 1) your current record InSchuKa4.0 (left unchanged)
     {
       name: "InSchuKa4.0",
       link: "https://www.bmbf-wax.de/verbundvorhaben/inschuka4-0/",
@@ -67,7 +67,7 @@ export async function seedDigitalSolutions() {
         "hetida 4 Water (h4w) basiert auf moderner IT-Infrastruktur und nutzt Cloud-Technologien für eine skalierbare und flexible Implementierung. Es verwendet spezialisierte Zeitreihendatenbanken zur Speicherung erfasster Daten und analysiert mithilfe von KI- und maschinellen Lernalgorithmen. Die Software integriert sich nahtlos in bestehende Systeme und unterstützt verschiedene Schnittstellen zur Datenübertragung. Die Implementierung erfolgt unter Berücksichtigung aktueller Datenschutz- und Sicherheitsregularien, um die Vertraulichkeit und Integrität der Daten jederzeit zu gewährleisten.",
       efficiencyDescription:
         "hetida 4 Water ermöglicht die automatisierte Erfassung, Analyse und Überwachung von Wasserverbrauchsdaten. Dadurch können Wasserressourcen besser verwaltet, Leckagen frühzeitig erkannt und der Wasserverbrauch optimiert werden. Die präzise Analyse und Vorhersage von Verbrauchsmustern unterstützt effizientes Ressourcenmanagement und ermöglicht Kosteneinsparungen.",
-      processDescription: null, // в PDF поле процесса пустое
+      processDescription: null, // in the PDF the process field is empty
       socialRelevanceDescription:
         "h4w kann in industriellen Anlagen, gewerblichen Gebäuden, öffentlichen Einrichtungen und auch in privaten Haushalten eingesetzt werden. h4w unterstützt Wasserversorger und Unternehmen dabei, ihren Wasserverbrauch zu überwachen, zu analysieren und zu optimieren, um Ressourceneffizienz zu verbessern, Kosten zu senken und nachhaltiges Wassermanagement zu fördern.",
       hasAcceptedTerms: true,
@@ -94,7 +94,7 @@ export async function seedDigitalSolutions() {
   }
 }
 
-// ESM-safe run (если запускаешь файл напрямую)
+// ESM-safe run (if you run the file directly)
 (async () => {
   await seedDigitalSolutions();
 })()

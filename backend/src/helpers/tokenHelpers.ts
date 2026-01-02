@@ -10,8 +10,8 @@ function sha256(input: string): string {
 }
 
 /**
- * Ищет токен по СЫРОМУ значению из ссылки (?token=...) и типу токена.
- * Внутри сам считает sha256 и ищет по полю tokenHash.
+ * Finds a token by the RAW value from the link (?token=...) and the token type.
+ * Internally computes the sha256 and looks up the token by the `tokenHash` field.
  */
 export async function getTokenWithUser(
   rawToken: string,

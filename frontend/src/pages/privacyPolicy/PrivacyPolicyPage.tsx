@@ -16,7 +16,7 @@ const PrivacyPolicyPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [policy, setPolicy] = useState<PrivacyPolicyDto | null>(null);
 
-    useEffect(() => {
+    useEffect(() => { 
         let alive = true;
         (async () => {
             try {

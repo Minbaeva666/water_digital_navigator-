@@ -96,7 +96,7 @@ const LoginPage = () => {
             </Button>
           </Form.Item>
 
-          {/* Блок приглашения к регистрации */}
+          {/* Registration invite block */}
           <Row justify="center">
             <Col>
               <Text type="secondary">

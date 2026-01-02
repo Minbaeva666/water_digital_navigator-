@@ -50,7 +50,7 @@ const handleManualClick = () => {
               size="large"
               style={{ width: "100%", alignItems: "center" }}
             >
-              {/* Кнопка PDF */}
+              {/* PDF Button */}
               <div className="custom-button" onClick={handlePDFClick}>
                 <i className="bi bi-file-earmark-pdf-fill icon" />
                 <div className="text">

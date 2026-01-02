@@ -26,8 +26,8 @@ import isEqual from "lodash.isequal";
 import { EMPTY_DIGITAL_SOLUTION_FORM } from "../../../services/digitalSolutionService/digitalSolution.mapper";
 import { DigitalSolutionState } from "../../../types/constants/enums";
 
-import { useLocalDraftAutosave } from "../../../hooks/useLocalDraftAutosave";
-import { DraftIndicator } from "../../../components/admin/DraftIndicator";
+// import { useLocalDraftAutosave } from "../../../hooks/useLocalDraftAutosave";
+// import { DraftIndicator } from "../../../components/admin/DraftIndicator";
 
 dayjs.extend(utc);
 
@@ -46,7 +46,7 @@ export default function DigitalSolutionCreateUserPage() {
   const INITIAL_FORM = useMemo<DigitalSolutionFormValues>(
     () => ({
       ...EMPTY_DIGITAL_SOLUTION_FORM,
-      state: DigitalSolutionState.DRAFT as const, // юзер всегда сначала создаёт черновик
+      state: DigitalSolutionState.REQUESTED as const, 
     }),
     []
   );
@@ -64,7 +64,6 @@ export default function DigitalSolutionCreateUserPage() {
     setTabValid((prev) => ({ ...prev, [tab]: valid }));
   };
 
-  // нормализация значений (убрала publishedBy/publishedSource/presentedByUserId — бэкенд сам)
   const normalizeString = (val?: string | null) =>
     val && val.trim() ? val.trim() : null;
   const normalizeValues = (values: DigitalSolutionFormValues) => ({
@@ -98,21 +97,21 @@ export default function DigitalSolutionCreateUserPage() {
     taxonomyNodeService.fetchTaxonomyNodes().then(setTaxonomyNodes);
   }, []);
 
-  // локальный авто-драфт (можно отключить, если не нужен)
-  const DRAFT_KEY = "digital_solution_create_user_draft_v1";
-  const { saving, lastSavedAt, saveDebounced, read, clear, bindFlushOnHide } =
-    useLocalDraftAutosave<DigitalSolutionFormValues>(DRAFT_KEY, INITIAL_FORM);
+  // local auto-draft (can be disabled if not needed)
+  // const DRAFT_KEY = "digital_solution_create_user_draft_v1";
+  // const { saving, lastSavedAt, saveDebounced, read, clear, bindFlushOnHide } =
+    // useLocalDraftAutosave<DigitalSolutionFormValues>(DRAFT_KEY, INITIAL_FORM);
 
-  useEffect(() => {
-    const draft = read();
-    if (draft?.data) {
-      const merged = { ...INITIAL_FORM, ...draft.data };
-      form.setFieldsValue(merged);
-      handleValuesChange(undefined, merged);
-    }
-    return bindFlushOnHide(() => form.getFieldsValue(true));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // useEffect(() => {
+  //   const draft = read();
+  //   if (draft?.data) {
+  //     const merged = { ...INITIAL_FORM, ...draft.data };
+  //     form.setFieldsValue(merged);
+  //     handleValuesChange(undefined, merged);
+  //   }
+  //   return bindFlushOnHide(() => form.getFieldsValue(true));
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   const handleValuesChange = (
     _changed?: Partial<DigitalSolutionFormValues>,
@@ -193,7 +192,7 @@ export default function DigitalSolutionCreateUserPage() {
     );
 
     setIsChanged(valuesChanged || titleImageChanged || detailImagesChanged);
-    saveDebounced(merged);
+    // saveDebounced(merged);
   };
 
   const handleSave = async () => {
@@ -222,7 +221,6 @@ export default function DigitalSolutionCreateUserPage() {
         projectPartners: pp,
         solutionUsers: su,
         taxonomyNodeIds,
-        // состояние можно на бекенде перевести из DRAFT в REQUESTED
       };
 
       const created = await digitalSolutionService.createDigitalSolution(
@@ -262,7 +260,7 @@ export default function DigitalSolutionCreateUserPage() {
         }
 
         messageApi.success("Digitale Lösung erfolgreich erstellt.");
-        clear();
+        // clear();
         navigate(`/my-digital-solutions/${newId}/edit`);
       }
     } catch (err: unknown) {
@@ -311,7 +309,7 @@ export default function DigitalSolutionCreateUserPage() {
       );
       const newId = created.digitalSolutionId;
 
-      // загрузка картинок — точно так же, как выше
+      // image upload — same as above
       if (newId) {
         if (payload.titleImage?.length) {
           const [titleFile] = extractFilesFromUploadFiles(payload.titleImage);
@@ -334,7 +332,7 @@ export default function DigitalSolutionCreateUserPage() {
         }
 
         messageApi.success("Entwurf erfolgreich erstellt.");
-        clear();
+        // clear();
         navigate(`/my-digital-solutions/${newId}/edit`);
       }
     } catch (err: unknown) {
@@ -350,7 +348,20 @@ export default function DigitalSolutionCreateUserPage() {
   };
 
   const tabItems: TabsProps["items"] = [
-    { key: "COMMON", label: "Allgemein", children: <CommonTabComponent form={form} /> },
+    {
+    key: "COMMON",
+    label: "Allgemein",
+    children: (
+      <CommonTabComponent
+        form={form}
+        //User darf nur Entwurf / ggf. Template wählen – keine Aktiviert/Deaktiviert
+        allowedStates={[
+          DigitalSolutionState.DRAFT,
+          DigitalSolutionState.REQUESTED, // falls du Template erlauben willst
+        ]}
+      />
+    ),
+  },
     { key: "IMAGES", label: "Bilder", children: <ImagesTabComponent form={form} /> },
     {
       key: "PARTNERS",
@@ -403,7 +414,7 @@ export default function DigitalSolutionCreateUserPage() {
             saveButtonIcon={isDraft ? <FileAddOutlined /> : <SaveOutlined />}
           />
 
-          <DraftIndicator saving={saving} lastSavedAt={lastSavedAt} />
+          {/* <DraftIndicator saving={saving} lastSavedAt={lastSavedAt} /> */}
         </Form>
       </div>
     </>

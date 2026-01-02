@@ -23,6 +23,7 @@ import {
 } from "../helpers/imagesHelper";
 import {readFile, rename, writeFile} from "node:fs/promises";
 import { parseOrToday } from "../utils/date";
+import { sendDigitalSolutionCreatedNotification } from "../services/email/sendMail";
 
 interface MulterErrorRequest extends Request {
     multerError?: Error;
@@ -87,11 +88,9 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
             taxonomyNodeIds?: string[] | string;
         };
 
-        // ВАЖНО: если это обычный пользователь, игнорируем presentedByUserId из тела
         const isUser = user.role === "USER";
         const effectivePresenterId = isUser ? user.id : presentedByUserId ?? null;
 
-        // Пользователю не даём управлять state вручную → принудительно REQUESTED
         const normalizedState: DigitalSolutionState =
             isUser ? DigitalSolutionState.REQUESTED : (state as DigitalSolutionState);
 
@@ -138,7 +137,7 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
         // Presenter-Relationen vorbereiten
         // Presenter-Relationen vorbereiten (optional)
 let presenterConnect: Record<string, any> = {};
-if (effectivePresenterId) {                        // ← используем его
+if (effectivePresenterId) {                        // ← use it
     const dbUser = await prisma.user.findUnique({
         where: { id: effectivePresenterId },
         select: { organizationId: true },
@@ -177,7 +176,7 @@ if (effectivePresenterId) {                        // ← используем �
                         typeof hasAcceptedTerms === "string" ? hasAcceptedTerms === "true" : !!hasAcceptedTerms,
                     hasAcceptedPrivacyPolicy:
                         typeof hasAcceptedPrivacyPolicy === "string" ? hasAcceptedPrivacyPolicy === "true" : !!hasAcceptedPrivacyPolicy,
-                    state: normalizedState, // <-- здесь уже нормализованное состояние
+                    state: normalizedState,
                     ...(efficiencyDescription ? { efficiencyDescription } : {}),
                     ...(socialRelevanceDescription ? { socialRelevanceDescription } : {}),
                     ...(processDescription ? { processDescription } : {}),
@@ -202,11 +201,33 @@ if (effectivePresenterId) {                        // ← используем �
             return solution;
         });
 
-        res.status(201).json({ digitalSolutionId: result.id });
-    } catch (error) {
-        console.error("Error creating digital solution:", error);
-        next(error);
+        if (isUser) {
+      const creator = await prisma.user.findUnique({
+        where: { id: user.id },
+      });
+      if (creator) {
+        try {
+          await sendDigitalSolutionCreatedNotification({
+            digitalSolutionId: result.id,
+            digitalSolutionName: name,
+            creatorEmail: creator.email,
+            creatorName: creator.firstName && creator.lastName ? `${creator.firstName} ${creator.lastName}` : undefined,
+            state: normalizedState,
+          });
+        } catch (e) {
+          console.error("EMAIL SEND FAILED (digitalSolutionCreated)", {
+            ctx: "sendDigitalSolutionCreatedNotification",
+            error: e,
+          });
+        }
+      }
     }
+    res.status(201).json({
+      digitalSolutionId: result.id,
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 // ---------------------------------------------------------------------
@@ -322,7 +343,7 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
                         ? hasAcceptedPrivacyPolicy === "true"
                         : hasAcceptedPrivacyPolicy,
 
-                    // Пользователь не может менять state — оставляем как есть в БД
+                    // User cannot change the state — leave as stored in DB
                     ...(isUser ? {} : { state: state as DigitalSolutionState }),
 
                     ...(efficiencyDescription ? { efficiencyDescription } : {}),
@@ -352,12 +373,12 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
                             };
                         }
 
-                        // Если пользователь — USER, он не может "отвязать" презентера
+                        // If user is USER, they cannot "unlink" the presenter
                         if (isUser) {
                             return {};
                         }
 
-                        // Админ может обнулить связи
+                        // Admin can nullify links
                         return {
                             presentedByUser: { disconnect: true },
                             organization: { disconnect: true },
@@ -391,9 +412,9 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
 };
 
 // ---------------------------------------------------------------------
-// Остальные методы (images, delete, активные, координаты) — без изменений
+// Other methods (images, delete, active ones, coordinates) — unchanged
 // ---------------------------------------------------------------------
-// Ниже оставляю твой существующий код, он не зависит от presentedByUserId.
+// Below I keep your existing code, it does not depend on presentedByUserId.
 
 export const updateDigitalSolutionTitleImage: RequestHandler = async (req, res, next) => {
     try {

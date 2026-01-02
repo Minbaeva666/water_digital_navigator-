@@ -11,7 +11,7 @@ const RAW_BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string | undefined;
 let FILE_BASE_URL = "";
 if (RAW_BACKEND_URL) {
   const u = new URL(RAW_BACKEND_URL);
-  const basePath = u.pathname.replace(/\/api\/?$/, ""); // "" или "/dilowa"
+  const basePath = u.pathname.replace(/\/api\/?$/, ""); 
   FILE_BASE_URL = u.origin + basePath;
 }
 

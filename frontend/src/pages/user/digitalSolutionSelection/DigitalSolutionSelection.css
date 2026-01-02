@@ -5,17 +5,17 @@
     border-radius: 6px;
     display: flex;
     justify-content: space-between;
-    align-items: center;      /* всё по центру по вертикали */
+    align-items: center;      /* vertically center everything */
     cursor: pointer;
     transition: background-color 0.3s ease;
     margin-top: 1rem;
 
-    /* одинаковая ширина */
+    /* same width */
     width: 100%;
     box-sizing: border-box;
 
-    /* одинаковая высота для обеих кнопок */
-    height: 120px;            /* при необходимости подстрой: 110 / 130 / 140 */
+    /* same height for both buttons */
+    height: 120px;            /* adjust if necessary: 110 / 130 / 140 */
 }
 
 .custom-button:hover {

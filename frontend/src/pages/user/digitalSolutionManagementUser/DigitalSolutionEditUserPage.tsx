@@ -432,11 +432,20 @@ export default function DigitalSolutionEditAdminPage() {
     };
 
     const tabItems: TabsProps["items"] = [
-        {
-            key: "COMMON",
-            label: "Allgemein",
-            children: <CommonTabComponent form={form} onFormChange={handleValuesChange}/>,
-        },
+    {
+    key: "COMMON",
+    label: "Allgemein",
+    children: (
+      <CommonTabComponent
+        form={form}
+        //User darf nur Entwurf / ggf. Template wählen – keine Aktiviert/Deaktiviert
+        allowedStates={[
+          DigitalSolutionState.DRAFT,
+          DigitalSolutionState.REQUESTED, // falls du Template erlauben willst
+        ]}
+      />
+    ),
+  },
         {
             key: "IMAGES",
             label: "Bilder",

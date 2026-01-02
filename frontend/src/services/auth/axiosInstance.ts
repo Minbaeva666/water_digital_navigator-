@@ -16,7 +16,12 @@ const redirectToLoginOnce = () => {
     hasRedirectedToLogin = true;
     try { localStorage.removeItem("accessToken"); } catch {}
     delete axiosInstance.defaults.headers.common["Authorization"];
-    window.location.assign("/login");
+    // Compute a base path (first path segment) so redirects from apps served
+    // under a sub-path (e.g. /dilowa) go to the correct login URL.
+    const pathSegments = window.location.pathname.split("/").filter(Boolean);
+    const baseSegment = pathSegments.length > 0 ? `/${pathSegments[0]}` : "";
+    const target = `${window.location.origin}${baseSegment}/login`;
+    window.location.assign(target);
 };
 
 const doRefresh = async (): Promise<string> => {

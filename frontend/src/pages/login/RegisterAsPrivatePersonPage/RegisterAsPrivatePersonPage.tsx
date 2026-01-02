@@ -47,7 +47,7 @@ const RegisterAsPrivatePersonPage: React.FC = () => {
         const values = form.getFieldsValue();
         const requiredFields = [
             'salutationType', 'firstName', 'lastName', 'password', 'confirmPassword', 'confirmPassword',
-            'email', 'phonenumber', 'street', 'zip', 'city', 'country'
+            'email', 'street', 'zip', 'city', 'country'
             ];
 
         const allRequiredFieldsFilled = requiredFields.every(field =>
@@ -124,7 +124,6 @@ const RegisterAsPrivatePersonPage: React.FC = () => {
                                 <ValidatedInput
                                     name="title"
                                     label="Titel"
-                                    required={false}
                                 />
                                 <Form.Item name="firstName" label="Vorname" rules={[{
                                     required: true,
@@ -173,7 +172,6 @@ const RegisterAsPrivatePersonPage: React.FC = () => {
 
                             <Col xs={20} sm={32} md={14} lg={12}>
                                 <Form.Item name="phonenumber" label="Telefonnummer" rules={[{
-                                    required: false,
                                     type: "string",
                                 }]}>
                                     <Input/>

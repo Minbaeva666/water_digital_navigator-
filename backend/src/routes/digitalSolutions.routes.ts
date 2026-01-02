@@ -108,9 +108,9 @@ router.get("/active", getActiveDigitalSolutions);
  * --------- CRUD / Listen (mit Auth & Rechten) ----------
  */
 
-// ⚠ ВАЖНО: /my ДОЛЖЕН БЫТЬ ВЫШЕ /:id
+// ⚠ IMPORTANT: /my MUST BE ABOVE /:id
 
-// Мои цифровые решения (User sieht nur eigene)
+// My digital solutions (User sieht nur eigene)
 router.get(
   "/my",
   authenticate,
@@ -123,7 +123,7 @@ router.get(
   "/", getDigitalSolutions
 );
 
-// Anlegen (Admin/Mod/User – зависит von ROLE_PERMISSIONS)
+// Anlegen (Admin/Mod/User – depends on ROLE_PERMISSIONS)
 router.post(
   "/",
   authenticate,
@@ -131,7 +131,7 @@ router.post(
   createDigitalSolution
 );
 
-// Aktualisieren (Admin/Mod/User nur eigene, согласно requirePermission + checkScopedPermission)
+// Aktualisieren (Admin/Mod/User – user: only own, per requirePermission + checkScopedPermission)
 router.put(
   "/:id",
   authenticate,
@@ -139,13 +139,13 @@ router.put(
   updateDigitalSolution
 );
 
-// Details einer Lösung (Admin/Mod; ggf. auch User, если так задумано)
+// Details einer Lösung (Admin/Mod; ggf. auch User, if intended)
 router.get(
   "/:id",
   getDigitalSolutionById
 );
 
-// Löschen (Admin/Mod – путь такой же, как у тебя был)
+// Löschen (Admin/Mod – path same as before)
 router.delete(
   "/digital-solution/:id",
   authenticate,

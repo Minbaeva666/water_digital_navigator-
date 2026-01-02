@@ -51,7 +51,7 @@ const { Option } = Select;
 
 type FileType = Parameters<GetProp<UploadProps, "beforeUpload">>[0];
 
-// Организация для дропдауна
+// Organization for dropdown
 type OrganizationSuggestion = {
   id: string;
   name: string;
@@ -99,14 +99,14 @@ const RegisterAsRepresentativePage: React.FC = () => {
   const [salutationTypLoading, setSalutationTypLoading] = useState(false);
   const hasFetchedSalutationTypes = useRef(false);
 
-  // 👉 список организаций для автокомплита
+
   const [organizations, setOrganizations] = useState<OrganizationSuggestion[]>(
     []
   );
   const [orgListLoading, setOrgListLoading] = useState(false);
   const hasFetchedOrganizations = useRef(false);
 
-  // 👉 флаг "выбрана существующая организация"
+
   const [isExistingOrgSelected, setIsExistingOrgSelected] = useState(false);
 
   const loadOrganizationTypes = async () => {
@@ -129,7 +129,7 @@ const RegisterAsRepresentativePage: React.FC = () => {
     try {
       hasFetchedOrganizations.current = true;
       setOrgListLoading(true);
-      // ⚠️ предположительное API — подстрой под свой сервис
+ 
       const orgs = await organizationService.fetchOrganizationsBase();
       const mapped: OrganizationSuggestion[] = orgs.map((o: any) => ({
         id: o.id,
@@ -182,38 +182,34 @@ const RegisterAsRepresentativePage: React.FC = () => {
 
     let orgPartValid = true;
 
-    // Если НЕ выбрана существующая организация — проверяем поля организации и логотип
     if (!isExistingOrgSelected) {
-      type OrgFieldKey = keyof Pick<
-        RegisterFormValues,
-        | "orgName"
-        | "orgEmail"
-        | "orgWebsite"
-        | "orgType"
-        | "orgStreet"
-        | "orgZip"
-        | "orgCity"
-        | "orgCountry"
-      >;
+  type OrgFieldKey = keyof Pick<
+    RegisterFormValues,
+    | "orgName"
+    | "orgEmail"
+    | "orgWebsite"
+    | "orgType"
+    | "orgStreet"
+    | "orgZip"
+    | "orgCity"
+    | "orgCountry"
+  >;
 
-      const orgRequired: OrgFieldKey[] = [
-        "orgName",
-        "orgEmail",
-        "orgWebsite",
-        "orgType",
-        "orgStreet",
-        "orgZip",
-        "orgCity",
-        "orgCountry",
-      ];
+  const orgRequired: OrgFieldKey[] = [
+    "orgName",
+    "orgEmail",
+    "orgType",
+    "orgStreet",
+    "orgZip",
+    "orgCity",
+    "orgCountry",
+  ];
 
-      const allOrgFilled = orgRequired.every((field) => {
-        return values[field] !== undefined && values[field] !== "";
-      });
+  const allOrgFilled = orgRequired.every((field) => {
+    return values[field] !== undefined && values[field] !== "";
+  });
 
-      const logoUploaded = fileList.length > 0;
-
-      orgPartValid = allOrgFilled && logoUploaded;
+      orgPartValid = allOrgFilled;
     }
 
     return (
@@ -245,16 +241,15 @@ const RegisterAsRepresentativePage: React.FC = () => {
 const onFinish = async (values: RegisterFormValues) => {
   setLoading(true);
   try {
-    const file = fileList[0]?.originFileObj as File | undefined;
-
     const usingExistingOrg = !!values.existingOrganizationId;
 
-    if (!usingExistingOrg && !file) {
-      message.error("Bitte laden Sie ein Logo hoch.");
-      return;
-    }
+    // Nur wenn KEINE existierende Org gewählt wurde, darf ein Logo mitgeschickt werden.
+    const file = !usingExistingOrg
+      ? (fileList[0]?.originFileObj as File | undefined)
+      : undefined;
 
-    await registerAsRepresentative(values, usingExistingOrg ? undefined : file);
+    // Logo ist optional – wir schicken es nur, falls vorhanden
+    await registerAsRepresentative(values, file);
 
     setIsModalOpen(true);
   } catch (error) {
@@ -268,6 +263,7 @@ const onFinish = async (values: RegisterFormValues) => {
     setLoading(false);
   }
 };
+
 
 
   // Konfiguration des Upload-Bereichs
@@ -321,7 +317,7 @@ const onFinish = async (values: RegisterFormValues) => {
     setPreviewOpen(true);
   };
 
-  // опции для автокомплита
+  // options for autocomplete
   const orgOptions = organizations.map((o) => ({
     value: o.name,
     label: o.name,
@@ -436,7 +432,6 @@ const onFinish = async (values: RegisterFormValues) => {
                   label="Kontakt-Telefonnummer"
                   rules={[
                     {
-                      required: false,
                       type: "string",
                     },
                   ]}
@@ -488,7 +483,7 @@ const onFinish = async (values: RegisterFormValues) => {
               <Col xs={20} sm={32} md={14} lg={12}>
                 <Title level={4}>Angaben zu Ihrer Organisation</Title>
 
-                {/* скрытое поле для existingOrganizationId */}
+                {/* hidden field for existingOrganizationId */}
                 <Form.Item name="existingOrganizationId" hidden>
                   <Input type="hidden" />
                 </Form.Item>
@@ -571,8 +566,7 @@ const onFinish = async (values: RegisterFormValues) => {
                   label={"Webseite Ihrer Organisation"}
                   rules={[
                     {
-                      required: false,
-                    },
+                      },
                   ]}
                 >
                   <Input disabled={isExistingOrgSelected} />

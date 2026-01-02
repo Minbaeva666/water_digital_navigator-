@@ -18,7 +18,7 @@ export const ContactController = {
 
       await sendContactMessageFromGuest({ name, email, message });
 
-      return res.status(204).send(); // успешно, без тела
+      return res.status(204).send(); 
     } catch (err) {
       next(err);
     }

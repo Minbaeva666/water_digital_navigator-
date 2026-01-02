@@ -6,6 +6,8 @@ import { EmailError } from "../../errors/EmailError";
 import { loadEmailTemplate } from "../../utils/email";
 import { SalutationType } from "@prisma/client";
 import { salutationLabels } from "../../shared/constants/enums";
+import { DigitalSolution } from "@prisma/client";
+
 
 const EMAIL_FROM =
   process.env.EMAIL_FROM ??
@@ -15,7 +17,7 @@ const EMAIL_FROM =
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? process.env.EMAIL_USER ?? "no-reply@localhost";
 
-// В DEV можно включить детальный лог SMTP, установив EMAIL_DEBUG=true
+
 const EMAIL_DEBUG = process.env.EMAIL_DEBUG === "true";
 
 function createTransporter() {
@@ -36,18 +38,18 @@ function createTransporter() {
     auth: { user, pass },
     logger: EMAIL_DEBUG,
     debug: EMAIL_DEBUG,
-    // при специфических прокси/антивирусах иногда помогает:
+    // may help with specific proxies/antivirus:
     // tls: { servername: host },
   });
 }
 
-// Унифицируем путь к шаблонам: они лежат рядом с этим файлом в ./templates/
-// => всегда берём абсолютный путь от __dirname
+// Unify path to templates: they are located next to this file in ./templates/
+// => always take absolute path from __dirname
 function tpl(file: string) {
   return path.resolve(__dirname, "templates", file);
 }
 
-// Вспомогалка: детальная ошибка вместо «пустого» EmailError
+// Helper: detailed error instead of an empty EmailError
 function rethrowEmail(error: unknown, ctx: string) {
   const msg = (error as any)?.message || String(error);
   const code = (error as any)?.code;
@@ -56,7 +58,7 @@ function rethrowEmail(error: unknown, ctx: string) {
   throw new EmailError(`Email send failed (${ctx}): ${code ?? ""} ${msg}`);
 }
 
-// Опционально: в режиме диагностики проверим SMTP-соединение
+// Optionally: in debug mode verify the SMTP connection
 async function maybeVerifyTransporter(transporter: nodemailer.Transporter) {
   if (!EMAIL_DEBUG) return;
   try {
@@ -172,7 +174,7 @@ export async function sendAdminHintNewRegistrationEmail(
 
     await transporter.sendMail({
       from: EMAIL_FROM,
-      to: ADMIN_EMAIL, // важное изменение: письмо админу, а не пользователю
+      to: ADMIN_EMAIL, 
       subject: EMAIL_SUBJECT,
       html,
     });
@@ -205,7 +207,7 @@ export async function sendRegistrationRevokedHintEmail(
 
     await transporter.sendMail({
       from: EMAIL_FROM,
-      to: ADMIN_EMAIL, // письмо админу
+      to: ADMIN_EMAIL, 
       subject: EMAIL_SUBJECT,
       html,
     });
@@ -320,208 +322,60 @@ export async function sendRegistrationSuccessEmail(user: User): Promise<void> {
   
 }
 
-// import nodemailer from 'nodemailer';
-// import {UserWithOrganization, User} from "../../types/user.types";
-// import {EmailError} from "../../errors/EmailError";
-// import {loadEmailTemplate} from "../../utils/email";
-// import {SalutationType} from "@prisma/client";
-// import {salutationLabels} from "../../shared/constants/enums";
+export async function sendDigitalSolutionCreatedNotification(params: {
+  digitalSolutionName: string;
+  digitalSolutionId: string;
+  creatorName?: string;
+  creatorEmail: string;
+  state: string;              // z.B. "REQUESTED"
+}): Promise<void> {
+  const {
+    digitalSolutionName,
+    digitalSolutionId,
+    creatorName,
+    creatorEmail,
+    state,
+  } = params;
 
+  try {
+    const EMAIL_SUBJECT =
+      "Neue digitale Lösung auf digital-lotse-wasser.org angelegt";
 
-// function createTransporter() {
-//     return nodemailer.createTransport({
-//         host: 'smtp.gmail.com',
-//         port: 587,
-//         secure: false,
-//         service: 'gmail',
-//         auth: {
-//             user: process.env.EMAIL_USER,
-//             pass: process.env.EMAIL_PASS,
-//         },
-//     });
-// }
+    const plainText = `
+Eine neue digitale Lösung wurde angelegt:
 
+Titel:  ${digitalSolutionName}
+ID:     ${digitalSolutionId}
+Status: ${state}
 
-// export async function sendVerifyEmailToRepresentative(user: UserWithOrganization, confirmLink: string, revokeLink: string): Promise<void> {
-//     try {
-//         const EMAIL_SUBJECT = 'Bitte bestätigen Sie Ihre Registrierung auf digital-lotse-wasser.org';
-//         const EMAIL_FROM = '"Digital Lotse Wasser" <deine.email@gmail.com>';
+Erstellt von:
+Name:   ${creatorName || "-"}
+E-Mail: ${creatorEmail}
+`.trim();
 
-//         const html = await loadEmailTemplate('../email/templates/verifyTemplate.hbs', {
-//             salutation: salutationLabels[user.salutationType as SalutationType] ?? user.salutationType,
-//             title: user.title ?? '–',
-//             name: `${user.firstName} ${user.lastName}`,
-//             firstName: user.firstName,
-//             lastName: user.lastName,
-//             organization: user.organization?.name,
-//             email: user.email,
-//             phonenumber: user.phonenumber ?? '–',
-//             date: new Date().toISOString().split('T')[0],
-//             confirmLink,
-//             revokeLink,
-//         });
+    const html = `
+      <p>Eine neue digitale Lösung wurde auf <strong>digital-lotse-wasser.org</strong> angelegt:</p>
+      <p>
+        <strong>Titel:</strong> ${digitalSolutionName}<br/>
+      </p>
+      <p><strong>Erstellt von:</strong><br/>
+        Name: ${creatorName || "-"}<br/>
+        E-Mail: ${creatorEmail}
+      </p>
+    `;
 
+    const transporter = createTransporter();
+    await maybeVerifyTransporter(transporter);
 
-//         const transporter = createTransporter();
-//         const mailOptions = {
-//             from: EMAIL_FROM,
-//             to: user.email,
-//             subject: EMAIL_SUBJECT,
-//             html: html,
-//         };
-
-//         await transporter.sendMail(mailOptions);
-//     } catch (error) {
-//         throw new EmailError();
-//     }
-// }
-
-// export async function sendVerifyEmailToPrivate(user: User, confirmLink: string, revokeLink: string): Promise<void> {
-//     try {
-//         const EMAIL_SUBJECT = 'Bitte bestätigen Sie Ihre Registrierung auf digital-lotse-wasser.org';
-//         const EMAIL_FROM = '"Digital Lotse Wasser" <deine.email@gmail.com>';
-
-//         const html = await loadEmailTemplate('../services/email/templates/verifyTemplate.hbs', {
-//             salutation: salutationLabels[user.salutationType as SalutationType] ?? user.salutationType,
-//             title: user.title ?? '–',
-//             name: `${user.firstName} ${user.lastName}`,
-//             firstName: user.firstName,
-//             lastName: user.lastName,
-//             email: user.email,
-//             phonenumber: user.phonenumber ?? '–',
-//             date: new Date().toISOString().split('T')[0],
-//             confirmLink,
-//             revokeLink
-//         });
-
-
-//         const transporter = createTransporter();
-
-//         const mailOptions = {
-//             from: EMAIL_FROM,
-//             to: user.email,
-//             subject: EMAIL_SUBJECT,
-//             html,
-//         };
-
-//         await transporter.sendMail(mailOptions);
-//     } catch (error) {
-//         throw new EmailError();
-//     }
-// }
-
-// export async function sendAdminHintNewRegistrationEmail(user: UserWithOrganization): Promise<void> {
-//     try {
-//         const EMAIL_SUBJECT = 'Eine neue Registrierung auf digital-lotse-wasser.org';
-//         const EMAIL_FROM = '"Digital Lotse Wasser" <deine.email@gmail.com>';
-
-//         const html = await loadEmailTemplate('../services/email/templates/admin-hint-registration-success.hbs', {
-//             salutation: salutationLabels[user.salutationType as SalutationType] ?? user.salutationType,
-//             title: user.title ?? '–',
-//             firstName: user.firstName,
-//             lastName: user.lastName,
-//             organization: user.organization?.name,
-//             email: user.email,
-//             phonenumber: user.phonenumber ?? '–',
-//             date: new Date().toISOString().split('T')[0],
-//         });
-
-//         const transporter = createTransporter();
-
-//         const mailOptions = {
-//             from: EMAIL_FROM,
-//             to: user.email,
-//             subject: EMAIL_SUBJECT,
-//             html,
-//         };
-
-//         await transporter.sendMail(mailOptions);
-//     } catch (error) {
-//         throw new EmailError();
-//     }
-// }
-
-// export async function sendRegistrationRevokedHintEmail(user: User): Promise<void> {
-//     try {
-//         const EMAIL_SUBJECT = 'Neue Registrierung auf digital-lotse-wasser.org zurückgezogen';
-//         const EMAIL_FROM = '"Digital Lotse Wasser" <deine.email@gmail.com>';
-
-//         const html = await loadEmailTemplate('../services/email/templates/admin-hint-registration-revoked.hbs', {
-//             salutation: salutationLabels[user.salutationType as SalutationType] ?? user.salutationType,
-//             title: user.title ?? '–',
-//             name: `${user.firstName} ${user.lastName}`,
-//             email: user.email,
-//         });
-
-//         const transporter = createTransporter();
-
-//         const mailOptions = {
-//             from: EMAIL_FROM,
-//             to: user.email,
-//             subject: EMAIL_SUBJECT,
-//             html,
-//         };
-
-//         await transporter.sendMail(mailOptions);
-//     } catch (error) {
-//         throw new EmailError();
-//     }
-// }
-
-// export async function sendResetPasswordEmail(user: UserWithOrganization, resetLink: string): Promise<void> {
-//     try {
-//         const EMAIL_SUBJECT = 'Passwort zurücksetzen';
-//         const EMAIL_FROM = '"Digital Lotse Wasser" <deine.email@gmail.com>';
-
-//         const html = await loadEmailTemplate('../services/email/templates/reset-password.hbs', {
-//             firstName: user.firstName,
-//             resetLink,
-//             date: new Date().toISOString().split('T')[0],
-//         });
-
-//         const transporter = createTransporter();
-
-//         const mailOptions = {
-//             from: EMAIL_FROM,
-//             to: user.email,
-//             subject: EMAIL_SUBJECT,
-//             html,
-//         };
-
-//         await transporter.sendMail(mailOptions);
-//     } catch (error) {
-//         throw new EmailError();
-//     }
-// }
-
-// export async function sendRegistrationSuccessEmail(user: User): Promise<void> {
-//     try {
-//         const EMAIL_SUBJECT = 'Ihre Registrierung auf digital-lotse-wasser.org';
-//         const EMAIL_FROM = '"Digital Lotse Wasser" <deine.email@gmail.com>';
-
-//         const html = await loadEmailTemplate('../services/email/templates/registration-success.hbs', {
-//             salutation: salutationLabels[user.salutationType as SalutationType] ?? user.salutationType,
-//             title: user.title ?? '–',
-//             name: `${user.firstName} ${user.lastName}`,
-//             firstName: user.firstName,
-//             lastName: user.lastName,
-//             phonenumber: user.phonenumber,
-//             date: new Date().toISOString().split('T')[0],
-//             email: user.email,
-//         });
-
-//         const transporter = createTransporter();
-
-//         const mailOptions = {
-//             from: EMAIL_FROM,
-//             to: user.email,
-//             subject: EMAIL_SUBJECT,
-//             html,
-//         };
-
-//         await transporter.sendMail(mailOptions);
-//     } catch (error) {
-//         throw new EmailError();
-//     }
-// }
-
+    await transporter.sendMail({
+      from: EMAIL_FROM,
+      to: ADMIN_EMAIL,           // Admin bekommt Info
+      replyTo: creatorEmail,     // direkt an den Ersteller antworten
+      subject: EMAIL_SUBJECT,
+      text: plainText,
+      html,
+    });
+  } catch (error) {
+    rethrowEmail(error, "sendDigitalSolutionCreatedNotification");
+  }
+}

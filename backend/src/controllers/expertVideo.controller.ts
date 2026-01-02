@@ -15,8 +15,7 @@ interface MulterErrorRequest extends Request {
   multerError?: Error;
 }
 
-// ---------- ПУБЛИЧНОЕ: для главной / списка ----------
-
+// ---------- READ ----------
 export async function getLatestExpertVideos(
   req: Request,
   res: Response,
@@ -31,7 +30,6 @@ export async function getLatestExpertVideos(
   }
 }
 
-// список для админки
 export async function getExpertVideos(
   req: Request,
   res: Response,
@@ -48,7 +46,6 @@ export async function getExpertVideos(
   }
 }
 
-// одно видео
 export async function getExpertVideoById(
   req: Request,
   res: Response,
@@ -120,17 +117,12 @@ export async function deleteExpertVideo(
     }
     await ExpertVideoService.delete(id);
 
-    // если хочешь, можно сразу удалить и файл превью
-    // (пример, если thumbnailUrl хранит относительный путь /uploads/...):
-    // const video = await ExpertVideoService.getById(id); // тогда нужно сохранить его ДО delete
-
     res.status(204).send();
   } catch (err) {
     next(err);
   }
 }
 
-// ---------- ЗАГРУЗКА ПРЕВЬЮ-ФОТО ----------
 
 export const uploadExpertVideoThumbnail = async (
   req: MulterErrorRequest,
@@ -146,7 +138,6 @@ export const uploadExpertVideoThumbnail = async (
       return;
     }
 
-    // Multer-ошибка
     if (req.multerError) {
       res
         .status(400)
@@ -159,8 +150,6 @@ export const uploadExpertVideoThumbnail = async (
       return;
     }
 
-    // 👉 Папка, где физически лежит файл:
-    // backend/public/uploads/expertVideos/:id
     const folder = path.join(
       process.cwd(),
       "public",
@@ -175,15 +164,12 @@ export const uploadExpertVideoThumbnail = async (
     const filename = `${randomUUID()}${ext}`;
     const absolutePath = path.join(folder, filename);
 
-    // Пишем файл из памяти (multerMemory)
     await writeFile(absolutePath, file.buffer!);
 
-    // 👉 Формируем web-путь ОТНОСИТЕЛЬНО папки public
     const publicDir = path.join(process.cwd(), "public");
     const webPath =
       "/" + path.relative(publicDir, absolutePath).split(path.sep).join("/");
 
-    // Сохраняем webPath в БД
     const updated = await ExpertVideoService.updateThumbnailUrl(id, webPath);
 
     res.status(201).json(updated);

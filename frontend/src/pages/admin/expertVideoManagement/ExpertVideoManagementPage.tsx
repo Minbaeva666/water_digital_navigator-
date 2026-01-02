@@ -13,10 +13,11 @@ import {
   Upload,
 } from "antd";
 import type { UploadProps } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined, PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
 import { ExpertVideoDto, ExpertVideoCreateUpdateDto } from "../../../types/dtos/ExpertVideoDto";
 import { expertVideoService } from "../../../services/expertVideoService/expertVideoService";
 import dayjs from "dayjs";
+
 
 const ExpertVideoManagementPage: React.FC = () => {
   const [data, setData] = useState<ExpertVideoDto[]>([]);
@@ -51,28 +52,43 @@ const ExpertVideoManagementPage: React.FC = () => {
     load();
   }, []);
 
-  const openCreate = () => {
-    setEditing(null);
-    setThumbnailFile(null);
-    form.resetFields();
-    form.setFieldsValue({ isActive: true });
-    setModalOpen(true);
-  };
+const openCreate = () => {
+  setEditing(null);
+  setThumbnailFile(null);
+  form.resetFields();
+  form.setFieldsValue({
+    isActive: true,
+    authors: [{ name: "", url: "" }],
+  } as any);
+  setModalOpen(true);
+};
 
-  const openEdit = (record: ExpertVideoDto) => {
-    setEditing(record);
-    setThumbnailFile(null);
-    form.setFieldsValue({
-      title: record.title,
-      description: record.description,
-      authorName: record.authorName,
-      authorUrl: record.authorUrl,
-      videoUrl: record.videoUrl,
-      isActive: record.isActive,
-      publishedAt: record.publishedAt ? (dayjs(record.publishedAt) as any) : undefined,
-    } as any);
-    setModalOpen(true);
-  };
+
+const openEdit = (record: ExpertVideoDto) => {
+  setEditing(record);
+  setThumbnailFile(null);
+
+  const authorsFromRecord =
+    record.authors && record.authors.length > 0
+      ? record.authors
+      : record.authorName
+      ? [{ name: record.authorName, url: record.authorUrl }]
+      : [];
+
+  form.setFieldsValue({
+    title: record.title,
+    description: record.description,
+    authorName: record.authorName,
+    authorUrl: record.authorUrl,
+    videoUrl: record.videoUrl,
+    isActive: record.isActive,
+    publishedAt: record.publishedAt ? (dayjs(record.publishedAt) as any) : undefined,
+    authors: authorsFromRecord,
+  } as any);
+
+  setModalOpen(true);
+};
+
 
   const handleDelete = async (id: string) => {
     try {
@@ -85,42 +101,61 @@ const ExpertVideoManagementPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      const payload: ExpertVideoCreateUpdateDto = {
-        ...values,
-        publishedAt: values.publishedAt
-          ? (values.publishedAt as any).toISOString()
-          : undefined,
-      };
+const handleSubmit = async () => {
+  try {
+    const values = await form.validateFields();
 
-      let video: ExpertVideoDto;
+    const authors =
+      values.authors?.filter(
+        (a: any) => a && a.name && a.name.trim().length > 0
+      ) ?? [];
 
-      if (editing) {
-        video = await expertVideoService.update(editing.id, payload);
-      } else {
-        video = await expertVideoService.create(payload);
-      }
+    const primaryAuthor = authors[0];
 
-      // если админ выбрал файл превью — загружаем
-      if (thumbnailFile) {
-        await expertVideoService.uploadThumbnail(video.id, thumbnailFile);
-      }
+    const payload: ExpertVideoCreateUpdateDto = {
+      title: values.title,
+      description: values.description,
+      publishedAt: values.publishedAt
+        ? (values.publishedAt as any).toISOString()
+        : undefined,
+      videoUrl: values.videoUrl,
+      isActive: values.isActive ?? true,
 
-      message.success(editing ? "Expert Video aktualisiert" : "Expert Video erstellt");
-      setModalOpen(false);
-      load();
-    } catch (e) {
-      console.error(e);
-      // ошибки валидации форма сама покажет
+      // NEW multi-author API
+      authors,
+
+      // legacy fields – filled by the first author,
+      // so old code/backend parts, if any, don't break
+      authorName: primaryAuthor?.name,
+      authorUrl: primaryAuthor?.url,
+    };
+
+    let video: ExpertVideoDto;
+
+    if (editing) {
+      video = await expertVideoService.update(editing.id, payload);
+    } else {
+      video = await expertVideoService.create(payload);
     }
-  };
+
+    if (thumbnailFile) {
+      await expertVideoService.uploadThumbnail(video.id, thumbnailFile);
+    }
+
+    message.success(editing ? "Expert Video aktualisiert" : "Expert Video erstellt");
+    setModalOpen(false);
+    load();
+  } catch (e) {
+    console.error(e);
+    // form validation errors are already displayed by antd
+  }
+};
+
 
   const uploadProps: UploadProps = {
     beforeUpload: (file) => {
       setThumbnailFile(file);
-      return false; // отменяем автозагрузку
+      return false; // cancel auto-upload
     },
     maxCount: 1,
   };
@@ -202,13 +237,57 @@ const ExpertVideoManagementPage: React.FC = () => {
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item label="Autor" name="authorName">
-            <Input />
+          <Form.List name="authors">
+  {(fields, { add, remove }) => (
+    <>
+      {fields.map((field, index) => (
+        <Space
+          key={field.key}
+          align="baseline"
+          style={{ display: "flex", marginBottom: 8 }}
+        >
+          <Form.Item
+            {...field}
+            label={index === 0 ? "Autor" : "Weiterer Autor"}
+            name={[field.name, "name"]}
+            fieldKey={[field.name, "name"]}
+            rules={[
+              { required: true, message: "Name des Autors ist erforderlich" },
+            ]}
+          >
+            <Input placeholder="Name" />
           </Form.Item>
 
-          <Form.Item label="Autor Link" name="authorUrl">
-            <Input />
+          <Form.Item
+            {...field}
+            label="Link"
+            name={[field.name, "url"]}
+            fieldKey={[field.name, "url"]}
+          >
+            <Input placeholder="https://..." />
           </Form.Item>
+
+          <MinusCircleOutlined
+            onClick={() => remove(field.name)}
+            style={{ marginTop: 30 }}
+          />
+        </Space>
+      ))}
+
+      <Form.Item>
+        <Button
+          type="dashed"
+          onClick={() => add()}
+          block
+          icon={<PlusOutlined />}
+        >
+          Autor hinzufügen
+        </Button>
+      </Form.Item>
+    </>
+  )}
+</Form.List>
+
 
           <Form.Item label="Beschreibung" name="description">
             <Input.TextArea rows={4} />

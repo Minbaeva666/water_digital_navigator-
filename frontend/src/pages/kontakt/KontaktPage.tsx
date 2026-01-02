@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { NavLink } from "react-router-dom";
 import {
   Row,
   Col,
@@ -100,9 +101,19 @@ const KontaktPage: React.FC = () => {
                 },
               ]}
             >
-              <Checkbox>
-                Ich akzeptiere die Hinweise zum Datenschutz der INWA
-              </Checkbox>
+<Checkbox>
+  Ich habe die{" "}
+  <NavLink to="/datenschutz" onClick={(e) => e.stopPropagation()}>
+    Datenschutzerklärung
+  </NavLink>{" "}
+  und die{" "}
+  <NavLink to="/nutzungsbedingungen" onClick={(e) => e.stopPropagation()}>
+    Nutzungsbedingungen
+  </NavLink>{" "}
+  gelesen und bin damit einverstanden.
+</Checkbox>
+
+
             </Form.Item>
 
             <Form.Item style={{ textAlign: "right" }}>

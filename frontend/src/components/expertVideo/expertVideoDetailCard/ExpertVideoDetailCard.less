@@ -1,4 +1,4 @@
-/* Детальная карточка Expert Video для страницы /expert-videos */
+/* Detailed Expert Video card for the /expert-videos page */
 
 .expert-video-detail {
   display: flex;
@@ -8,13 +8,13 @@
   flex-wrap: nowrap;
 }
 
-/* Левая колонка — текст */
+/* Left column — text */
 .expert-video-text {
   flex: 1 1 0;
-  min-width: 0; // чтобы текст нормально переносился
+  min-width: 0; // so text wraps properly
 }
 
-/* Правая колонка — картинка + подпись */
+/* Right column — image + caption */
 .expert-video-media {
   flex: 0 0 340px;
   max-width: 380px;
@@ -23,7 +23,7 @@
   gap: 12px;
 }
 
-/* Картинка справа */
+/* Image on the right */
 .expert-video-image {
   width: 100%;
   height: auto;
@@ -33,14 +33,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Текст под картинкой */
+/* Text below the image */
 .expert-video-external-note {
   font-size: 13px;
   line-height: 1.4;
   margin: 0;
 }
 
-/* Чуть аккуратнее переносы текста */
+/* Improve text hyphenation/wrapping */
 .expert-video-text p {
   hyphens: auto;
   -webkit-hyphens: auto;
@@ -48,7 +48,7 @@
   overflow-wrap: break-word;
 }
 
-/* Мобильная/узкая ширина: всё в колонку, картинка сверху */
+/* Mobile/narrow width: stack columns, image on top */
 @media (max-width: 768px) {
   .expert-video-detail {
     flex-direction: column;

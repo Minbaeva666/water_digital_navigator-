@@ -11,6 +11,7 @@ import {
 } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { sendResetPasswordEmail } from "../services/email/sendMail";
+import { buildFrontendUrl } from "../utils/linkBuilder";
 import { handleError } from "../utils/handleError";
 import { resizeImageBuffer } from "../utils/image";
 import { prepareOrganizationData } from "../helpers/organizationHelpers";
@@ -22,7 +23,7 @@ interface MulterRequest extends Request {
 
 const prisma = new PrismaClient();
 
-// Хэш токена для записи/сравнения с полем tokenHash в БД
+// Hash token for storing/comparing with the tokenHash field in DB
 const hashToken = (t: string) =>
   crypto.createHash("sha256").update(t).digest("hex");
 
@@ -38,19 +39,19 @@ export const resetPasswordRequest = async (
   }
 
   try {
-    // 1) Сначала ищем пользователя по email (без фильтра по accountState)
+    // 1) First find the user by email (without filtering by accountState)
     const user = await prisma.user.findUnique({
       where: { email },
       include: { organization: true },
     });
 
-    // 2) Если вообще нет пользователя с таким email → явная ошибка
+    // 2) If there is no user with that email → explicit error
     if (!user) {
       res.status(404).json({ error: "Account with this email does not exist." });
       return;
     }
 
-    // 3) Есть пользователь, но аккаунт не завершён (не REGISTERED)
+    // 3) User exists but account is not complete (not REGISTERED)
     if (user.accountState !== AccountState.REGISTERED) {
       res.status(400).json({
         error:
@@ -60,8 +61,8 @@ export const resetPasswordRequest = async (
       return;
     }
 
-    // 4) Всё ок → создаём токен для сброса пароля
-    const resetToken = crypto.randomBytes(32).toString("hex"); // сырой токен для письма
+    // 4) All good → create a reset password token
+    const resetToken = crypto.randomBytes(32).toString("hex"); // raw token for email
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 Stunde gültig
 
     await prisma.token.create({
@@ -73,7 +74,7 @@ export const resetPasswordRequest = async (
       },
     });
 
-    const resetLink = `${process.env.FRONTEND_URL}/login/reset-password?token=${resetToken}`;
+    const resetLink = buildFrontendUrl(`/login/reset-password?token=${resetToken}`);
 
     try {
       await sendResetPasswordEmail(user, resetLink);
@@ -110,7 +111,7 @@ export const resetPassword = async (
     const tokenHash = hashToken(token);
 
     const resetPasswordToken = await prisma.token.findUnique({
-      where: { tokenHash }, // tokenHash помечен @unique в схеме
+      where: { tokenHash }, // tokenHash is marked @unique in the schema
       include: { user: true },
     });
 
@@ -131,7 +132,7 @@ export const resetPassword = async (
         where: { id: resetPasswordToken.userId },
         data: { password: hashedPassword },
       }),
-      // удаляем запись по id токена (или можно deleteMany по tokenHash & tokenType)
+      // delete record by token id (or use deleteMany by tokenHash & tokenType)
       prisma.token.delete({
         where: { id: resetPasswordToken.id },
       }),

@@ -48,7 +48,7 @@ export function useLocalDraftAutosave<T extends object>(key: string, initial: T)
 
   const clear = () => localStorage.removeItem(key);
 
-  // helper для «дожать» автосейв при уходе со страницы
+  // helper to flush autosave when leaving the page
   const bindFlushOnHide = (getLatest: () => T) => {
     const flush = () => saveNow(getLatest());
     document.addEventListener("visibilitychange", flush);

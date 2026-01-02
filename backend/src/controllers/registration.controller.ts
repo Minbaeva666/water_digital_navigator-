@@ -284,12 +284,12 @@ export const registerAsPrivate = async (
       hasAcceptedTerms,
     } = req.body;
 
-    // --- 1) Проверка существующего пользователя по email ---
+    // --- 1) Check existing user by email ---
     const existing = await prisma.user.findUnique({
       where: { email },
     });
 
-    // 1а) Уже полностью зарегистрирован → ошибка
+    // 1a) Already fully registered → error
     if (existing && existing.accountState === AccountState.REGISTERED) {
       throw new BadRequestError(
         "Ein Benutzer mit dieser E-Mail ist bereits registriert."
@@ -297,11 +297,11 @@ export const registerAsPrivate = async (
     }
 
     const hashedPassword = await hashPassword(password);
-    const verificationToken = generateVerificationToken(); // сырой
-    const revokeToken = generateRevokeToken(); // сырой
+    const verificationToken = generateVerificationToken(); // raw
+    const revokeToken = generateRevokeToken(); // raw
     const expiresAt = getTokenExpiration(); // 48h
 
-    // 1б) Существующий с REGISTRATION_REVOKED или VERIFY_EMAIL → перезапись + новый мейл
+    // 1b) Existing with REGISTRATION_REVOKED or VERIFY_EMAIL → overwrite + new email
     if (
       existing &&
       (existing.accountState === AccountState.REGISTRATION_REVOKED ||
@@ -381,7 +381,7 @@ export const registerAsPrivate = async (
       return;
     }
 
-    // 1в) Пользователь не найден → обычная новая регистрация
+    // 1c) User not found → normal new registration
     const result = await prisma.$transaction(async (tx) => {
       const user = await UserModel.createUserWithTransaction(tx, {
         salutationType,
@@ -443,7 +443,7 @@ export const verifyEmail = async (
     const { token } = req.query;
 
     assertValidToken(token);
-    // getTokenWithUser должен искать по hashToken(token) в tokenHash
+    // getTokenWithUser should search by hashToken(token) in tokenHash
     const verificationToken = await getTokenWithUser(
       token as string,
       "EMAIL_VERIFICATION_TOKEN"

@@ -1,8 +1,8 @@
-/* Общий контейнер для плавающих кнопок */
+/* Common container for floating buttons */
 .fab-wrapper {
   position: fixed;
   right: 24px;
-  bottom: 140px;          /* подняли панель чуть выше */
+  bottom: 140px;          /* raised the panel slightly */
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -11,12 +11,12 @@
   transition: right 0.3s ease;
 }
 
-/* Состояние "свернуто": уезжаем немного вправо за край экрана */
+/* Collapsed state: slide a bit to the right outside the viewport */
 .fab-wrapper-collapsed {
-  right: -32px;           /* видно только часть кнопки-тогглера */
+  right: -32px;           /* only part of the toggle button is visible */
 }
 
-/* Кнопка-тогглер (свернуть/развернуть) */
+/* Toggle button (collapse/expand) */
 .fab-toggle {
   width: 40px;
   height: 40px;
@@ -27,7 +27,7 @@
   justify-content: center;
 }
 
-/* Основные круглые кнопки */
+/* Primary round buttons */
 .contact-fab,
 .share-fab {
   width: 64px;
@@ -40,11 +40,11 @@
   font-size: 24px;
 }
 
-/* Мобильная адаптация */
+/* Mobile adjustments */
 @media (max-width: 575px) {
   .fab-wrapper {
     right: 16px;
-    bottom: 120px;        /* тоже чуть выше, чем было */
+    bottom: 120px;        /* slightly higher than before */
   }
 
   .fab-wrapper-collapsed {

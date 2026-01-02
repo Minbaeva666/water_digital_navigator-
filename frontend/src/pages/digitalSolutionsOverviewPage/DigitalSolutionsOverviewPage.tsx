@@ -23,15 +23,15 @@ const DigitalSolutionsOverviewPage: React.FC = () => {
   const [taxonomyIndex] =
     useState<Record<string, TaxonomyIndexRecord> | null>(null);
 
-  // Клик по категории / taxonomy-node из карточки
+  // Click on category / taxonomy-node from card
   const handlePickedNodeClick = useCallback(
     (node: PickedNode) => {
-      // здесь ничего не знаем о структуре PickedNode, поэтому используем "any"
+      // we don't know the structure of PickedNode here, so use "any"
       const n: any = node;
       setSearchParams((prev) => {
         const p = new URLSearchParams(prev);
 
-        // если хотим сбросить фильтр – можно проверять какое-то условие
+        // if we want to reset the filter – we can check some condition
         if (!n) {
           p.delete("taxonomyNodeId");
           p.delete("taxonomyPath");
@@ -39,17 +39,17 @@ const DigitalSolutionsOverviewPage: React.FC = () => {
           return p;
         }
 
-        // если у узла есть path – фильтруем по path
+        // if node has a path – filter by path
         if (n.path) {
           p.set("taxonomyPath", String(n.path));
           p.delete("taxonomyNodeId");
         } else if (n.id) {
-          // fallback: фильтруем по id узла
+          // fallback: filter by node id
           p.set("taxonomyNodeId", String(n.id));
           p.delete("taxonomyPath");
         }
 
-        // при смене фильтра всегда на первую страницу
+        // when changing filter always go to first page
         p.set("page", "1");
 
         return p;
@@ -81,7 +81,7 @@ const DigitalSolutionsOverviewPage: React.FC = () => {
     (searchParams.get("sort") as "newest" | "oldest" | "az" | "za" | null) ||
     "newest";
 
-  // --- загрузка данных ---
+  // --- data loading ---
   const loadSolutions = useCallback(async () => {
     setLoading(true);
     try {
@@ -101,7 +101,7 @@ const DigitalSolutionsOverviewPage: React.FC = () => {
       setItems(result.items);
       setTotal(result.total);
 
-      // если хочешь индекс таксономии – можно положить сюда result.taxonomyIndex, если бэк его отдаёт
+      // if you want the taxonomy index – you can put result.taxonomyIndex here if the backend provides it
       // setTaxonomyIndex(result.taxonomyIndex ?? null);
     } catch (e) {
       console.error("Fehler beim Laden der Digitalen Lösungen:", e);

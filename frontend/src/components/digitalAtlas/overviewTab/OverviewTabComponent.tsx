@@ -141,10 +141,10 @@ export function OverviewTabComponent({
     return "Keine Quelle vorhanden";
   }
 
-  // ---- Навигация по клику на организацию ----
+  // ---- Navigation on organization click ----
   const handleOrgClick = (orgId?: string) => {
     if (!orgId) return;
-    // Переход на список цифровых решений с фильтром по организации
+    // Navigate to digital solutions list filtered by organization
     navigate(`/digital-solutions?organizationId=${orgId}`);
   };
 
@@ -246,7 +246,7 @@ export function OverviewTabComponent({
                     className="org-avatar"
                   />
                 )}
-                {/* здесь делаем организацию кликабельной */}
+                {/* make the organization clickable */}
                 <Text>
                   {hasPresenter ? (
                     presenterName
@@ -407,7 +407,7 @@ export function OverviewTabComponent({
             </>
           )}
 
-          {/* ------- Projektpartner mit кликабельными организациями ------- */}
+          {/* ------- Projektpartner mit clickable organizations ------- */}
           {partners.length > 0 && (
             <>
               <Title level={4} style={{ marginTop: 24 }}>

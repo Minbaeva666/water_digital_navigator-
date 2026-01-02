@@ -100,7 +100,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // ❗ Блокируем вход, если e-mail ещё не подтверждён / аккаунт не в состоянии REGISTERED
+    // ❗ Block login if email not yet verified / account not in REGISTERED state
     if (user.accountState !== AccountState.REGISTERED) {
       res.status(403).json({
         error: "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.",

@@ -16,7 +16,7 @@ export function requirePermission(descriptor: string) {
             return;
         }
 
-        // 🔥 НОВОЕ: ADMIN = суперюзер, пропускаем все проверки
+        //  NEW: ADMIN = superuser, skip all checks
         if (user.role === "ADMIN") {
             return next();
         }
