@@ -136,6 +136,12 @@ const DigitalSolutionPdf: React.FC = () => {
                             bitte per E-Mail oder Post an uns senden.
                         </Paragraph>
 
+                        <Title level={3}>4. Das Firmenlogo, Fotos und Bilder, die in der Beschreibung Ihrer digitalen Lösung enthalten sein sollen, sollten beigefügt werden</Title>
+                        <Paragraph>
+                            Wir bieten auch Beratung und Unterstützung beim Ausfüllen des Steckbriefs an.  Wir können auch eine erste Version vorbereiten und den Steckbrief ausfüllen und ihn Ihnen dann zur Prüfung und Unterzeichnung zusenden. Falls diese Option für Sie am besten geeignet ist, bitten wir Sie ebenfalls, sich mit uns in Verbindung zu setzen.
+                            Stehen Sie uns  bitte im Kontakt.
+                        </Paragraph>
+
                         <Paragraph>
                             E-Mail:{" "}
                             <a href="mailto:diginax.portal@hof-university.de" style={{ color: "#1677ff" }}>
