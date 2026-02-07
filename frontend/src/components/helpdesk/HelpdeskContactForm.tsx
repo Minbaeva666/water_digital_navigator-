@@ -19,11 +19,13 @@ const HelpdeskContactForm: React.FC = () => {
     setLoading(true);
     try {
       await helpdeskService.submitContactForm(values);
-      message.success("Thank you! We will get back to you soon.");
+      message.success("Vielen Dank! Wir werden uns bald bei dir melden.");
       form.resetFields();
     } catch (error) {
       console.error("Error submitting contact form:", error);
-      message.error("Failed to send message. Please try again.");
+      message.error(
+        "Nachricht konnte nicht gesendet werden. Bitte versuche es später erneut.",
+      );
     } finally {
       setLoading(false);
     }
@@ -40,36 +42,36 @@ const HelpdeskContactForm: React.FC = () => {
         <Form.Item
           name="name"
           label="Name"
-          rules={[{ required: true, message: "Please enter your name" }]}
+          rules={[{ required: true, message: "Bitte gib deinen Namen ein" }]}
         >
-          <Input placeholder="Your name" />
+          <Input placeholder="Dein Name" />
         </Form.Item>
 
         <Form.Item
           name="email"
-          label="Email"
+          label="E-Mail"
           rules={[
-            { required: true, message: "Please enter your email" },
-            { type: "email", message: "Invalid email format" },
+            { required: true, message: "Bitte gib deine E-Mail ein" },
+            { type: "email", message: "Ungültiges E-Mail-Format" },
           ]}
         >
-          <Input placeholder="your@email.com" />
+          <Input placeholder="deine@email.com" />
         </Form.Item>
 
         <Form.Item
           name="subject"
-          label="Subject"
-          rules={[{ required: true, message: "Please enter a subject" }]}
+          label="Betreff"
+          rules={[{ required: true, message: "Bitte gib einen Betreff ein" }]}
         >
-          <Input placeholder="Subject" />
+          <Input placeholder="Betreff" />
         </Form.Item>
 
         <Form.Item
           name="message"
-          label="Message"
-          rules={[{ required: true, message: "Please enter your message" }]}
+          label="Nachricht"
+          rules={[{ required: true, message: "Bitte gib deine Nachricht ein" }]}
         >
-          <Input.TextArea placeholder="Your message" rows={4} />
+          <Input.TextArea placeholder="Deine Nachricht" rows={4} />
         </Form.Item>
 
         <Form.Item>
@@ -80,7 +82,7 @@ const HelpdeskContactForm: React.FC = () => {
             className="contact-submit-btn"
             block
           >
-            send <SendOutlined />
+            Senden <SendOutlined />
           </Button>
         </Form.Item>
       </Form>
