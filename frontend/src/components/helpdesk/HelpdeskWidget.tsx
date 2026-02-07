@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Button, Input, Tabs, Spin } from "antd";
+import { Button, Input, Spin } from "antd";
 import {
   SendOutlined,
   CloseOutlined,
   MessageOutlined,
 } from "@ant-design/icons";
 import "./HelpdeskWidget.less";
-import HelpdeskContactForm from "./HelpdeskContactForm";
 import helpdeskService from "../../services/helpdeskService";
 
 interface Message {
@@ -18,11 +17,10 @@ interface Message {
 
 const HelpdeskWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("chatbot");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Willkommen bei Digital Lotse Wasser!\nWie kann ich dir helfen?",
+      text: "Welcome to Digital Lotse Wasser!\nHow can I help you?",
       sender: "bot",
       timestamp: new Date(),
     },
@@ -85,60 +83,6 @@ const HelpdeskWidget: React.FC = () => {
     }
   };
 
-  const items = [
-    {
-      key: "chatbot",
-      label: "Chatbot",
-      children: (
-        <div className="helpdesk-chat-container">
-          <div className="helpdesk-messages">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`helpdesk-message ${
-                  msg.sender === "user" ? "user-message" : "bot-message"
-                }`}
-              >
-                <div className="message-bubble">{msg.text}</div>
-              </div>
-            ))}
-            {loading && (
-              <div className="helpdesk-message bot-message">
-                <div className="message-bubble">
-                  <Spin size="small" spinning={true} />
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-          <div className="helpdesk-input-area">
-            <Input.TextArea
-              placeholder="Nachricht schreiben"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              rows={2}
-              className="helpdesk-input"
-            />
-            <Button
-              type="primary"
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || loading}
-              className="helpdesk-send-btn"
-            >
-              Senden <SendOutlined />
-            </Button>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "contact",
-      label: "Kontakt",
-      children: <HelpdeskContactForm />,
-    },
-  ];
-
   return (
     <>
       {/* Floating Button */}
@@ -168,12 +112,46 @@ const HelpdeskWidget: React.FC = () => {
             />
           </div>
 
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            items={items}
-            className="helpdesk-tabs"
-          />
+          <div className="helpdesk-chat-container">
+            <div className="helpdesk-messages">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`helpdesk-message ${
+                    msg.sender === "user" ? "user-message" : "bot-message"
+                  }`}
+                >
+                  <div className="message-bubble">{msg.text}</div>
+                </div>
+              ))}
+              {loading && (
+                <div className="helpdesk-message bot-message">
+                  <div className="message-bubble">
+                    <Spin size="small" spinning={true} />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+            <div className="helpdesk-input-area">
+              <Input.TextArea
+                placeholder="Write message"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                rows={2}
+                className="helpdesk-input"
+              />
+              <Button
+                type="primary"
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || loading}
+                className="helpdesk-send-btn"
+              >
+                send <SendOutlined />
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </>
