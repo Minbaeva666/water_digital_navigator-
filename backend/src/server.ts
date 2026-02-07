@@ -17,6 +17,7 @@ import { PDF_DIR } from './config/pdf-dir';
 import expertVideoRoutes from "./routes/expertVideo.routes";
 import path from "path";
 import contactRoutes from "./routes/contact.routes";
+import helpdeskRoutes from "./routes/helpdesk.routes";
 
 
 console.log(process.env.NODE_ENV);
@@ -26,7 +27,20 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-    origin: process.env.CLIENT_ORIGIN,
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            process.env.CLIENT_ORIGIN,
+            'http://localhost:5173',
+            'http://localhost:3000',
+            'http://192.168.84.86',
+        ].filter(Boolean);
+        
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS not allowed'));
+        }
+    },
     credentials: true,
 }));
 app.use(cookieParser());
@@ -57,6 +71,7 @@ app.use("/api/pdf",
 app.use("/api/expert-videos", expertVideoRoutes);
 app.use(express.static(path.join(process.cwd(), "public")));
 app.use("/api/contact", contactRoutes);
+app.use("/api/helpdesk", helpdeskRoutes);
 
 
 

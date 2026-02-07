@@ -1,0 +1,48 @@
+.helpdesk-contact-form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+
+  .contact-form {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+
+    :global(.ant-form) {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    :global(.ant-form-item) {
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+
+    :global(.ant-form-item-label) {
+      padding-bottom: 4px;
+    }
+
+    :global(.ant-input),
+    :global(.ant-input-textarea-wrapper) {
+      border-radius: 6px;
+    }
+  }
+
+  .contact-submit-btn {
+    background: linear-gradient(135deg, #001f3f 0%, #003d7a 100%);
+    border: none;
+    height: 40px;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+
+    &:hover {
+      background: linear-gradient(135deg, #003d7a 0%, #005fa3 100%) !important;
+    }
+  }
+}

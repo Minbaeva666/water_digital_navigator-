@@ -10,6 +10,7 @@ import DigitalAtlasDetailPage from "./pages/digitalAtlasDetailPage/DigitalAtlasD
 import AppFooter from "./components/footer/footer.tsx";
 import "./utils/utilities.css.less";
 import ContactFloatingButton from "./components/contact/ContactFloatingButton";
+import HelpdeskWidget from "./components/helpdesk/HelpdeskWidget";
 
 
 
@@ -115,6 +116,7 @@ const AppWrapper: React.FC = () => (
 
                     <AppFooter />
                         <ContactFloatingButton />
+                        <HelpdeskWidget />
                     
                 </div>
             </Layout>
