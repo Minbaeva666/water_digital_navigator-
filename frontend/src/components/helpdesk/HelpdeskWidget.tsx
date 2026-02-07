@@ -20,7 +20,7 @@ const HelpdeskWidget: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Welcome to Digital Lotse Wasser!\nHow can I help you?",
+      text: "Willkommen bei Digital Lotse Wasser!\nWie kann ich dir helfen?",
       sender: "bot",
       timestamp: new Date(),
     },
@@ -66,7 +66,7 @@ const HelpdeskWidget: React.FC = () => {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Sorry, there was an error processing your message. Please try again.",
+        text: "Entschuldigung, es gab einen Fehler bei der Verarbeitung deiner Nachricht. Bitte versuche es später erneut.",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -135,7 +135,7 @@ const HelpdeskWidget: React.FC = () => {
             </div>
             <div className="helpdesk-input-area">
               <Input.TextArea
-                placeholder="Write message"
+                placeholder="Nachricht schreiben"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -148,7 +148,7 @@ const HelpdeskWidget: React.FC = () => {
                 disabled={!inputValue.trim() || loading}
                 className="helpdesk-send-btn"
               >
-                send <SendOutlined />
+                Senden <SendOutlined />
               </Button>
             </div>
           </div>

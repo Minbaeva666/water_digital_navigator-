@@ -25,7 +25,7 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
     // Temporary response
     const botResponse = {
       id: Date.now().toString(),
-      text: 'Thank you for your message. Our team will get back to you soon!',
+      text: 'Vielen Dank für deine Nachricht. Unser Team wird sich bald bei dir melden!',
       sender: 'bot',
       timestamp: new Date(),
     };
