@@ -5,7 +5,9 @@ interface ChatMessage {
   sender: 'user' | 'bot';
   timestamp: Date;
 }
-
+interface BotResponse extends ChatMessage {
+  suggestions?: string[];
+}
 interface ContactFormData {
   name: string;
   email: string;
@@ -19,7 +21,7 @@ class HelpdeskService {
   /**
    * Send a chat message to the helpdesk chatbot
    */
-  async sendChatMessage(message: string, taxonomySelection?: string[]): Promise<any> {
+  async sendChatMessage(message: string, taxonomySelection?: string[]): Promise<BotResponse> {
     try {
       const payload: any = { message };
       if (taxonomySelection) payload.taxonomySelection = taxonomySelection;

@@ -61,7 +61,13 @@ const HelpdeskWidget: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
-      setSuggestions(botResponse.suggestions ?? []);
+      setSuggestions(
+        (botResponse.suggestions ?? []).map((s) => ({
+          id: s,
+          label: s,
+        }))
+      );
+
     } catch (error) {
       console.error("Error loading categories:", error);
     } finally {
@@ -98,7 +104,13 @@ const HelpdeskWidget: React.FC = () => {
       };
       setMessages((prev) => [...prev, botMessage]);
       // suggestions from backend
-      setSuggestions(botResponse.suggestions ?? []);
+      setSuggestions(
+        (botResponse.suggestions ?? []).map((s) => ({
+          id: s,
+          label: s,
+        }))
+      );
+
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
@@ -139,7 +151,13 @@ const HelpdeskWidget: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
-      setSuggestions(botResponse.suggestions ?? []);
+      setSuggestions(
+        (botResponse.suggestions ?? []).map((s) => ({
+          id: s,
+          label: s,
+        }))
+      );
+
     } catch (e) {
       console.error(e);
     } finally {
@@ -147,7 +165,7 @@ const HelpdeskWidget: React.FC = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -225,7 +243,7 @@ const HelpdeskWidget: React.FC = () => {
                 placeholder="Nachricht schreiben"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 rows={2}
                 className="helpdesk-input"
               />
