@@ -61,13 +61,7 @@ const HelpdeskWidget: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
-      setSuggestions(
-        (botResponse.suggestions ?? []).map((s) => ({
-          id: s,
-          label: s,
-        }))
-      );
-
+      setSuggestions(botResponse.suggestions ?? []);
     } catch (error) {
       console.error("Error loading categories:", error);
     } finally {
@@ -104,13 +98,7 @@ const HelpdeskWidget: React.FC = () => {
       };
       setMessages((prev) => [...prev, botMessage]);
       // suggestions from backend
-      setSuggestions(
-        (botResponse.suggestions ?? []).map((s) => ({
-          id: s,
-          label: s,
-        }))
-      );
-
+      setSuggestions(botResponse.suggestions ?? []);
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
@@ -151,13 +139,7 @@ const HelpdeskWidget: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
-      setSuggestions(
-        (botResponse.suggestions ?? []).map((s) => ({
-          id: s,
-          label: s,
-        }))
-      );
-
+      setSuggestions(botResponse.suggestions ?? []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -165,7 +147,9 @@ const HelpdeskWidget: React.FC = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleKeyPress = (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();

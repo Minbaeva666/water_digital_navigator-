@@ -6,7 +6,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 interface BotResponse extends ChatMessage {
-  suggestions?: string[];
+  suggestions?: Array<{ id: string; label: string }>;
 }
 interface ContactFormData {
   name: string;
