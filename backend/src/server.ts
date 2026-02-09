@@ -23,7 +23,7 @@ import helpdeskRoutes from "./routes/helpdesk.routes";
 console.log(process.env.NODE_ENV);
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3003;
 
 // Middleware
 app.use(cors({
@@ -31,7 +31,7 @@ app.use(cors({
         const allowedOrigins = [
             process.env.CLIENT_ORIGIN,
             'http://localhost:5173',
-            'http://localhost:3002',
+            'http://localhost:3003',
             'http://192.168.84.86',
         ].filter(Boolean);
         
