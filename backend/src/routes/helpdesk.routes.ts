@@ -1,28 +1,96 @@
 import { Router, Request, Response } from 'express';
 import { logService } from '../services/logger/loggerService';
+import { prisma } from '../prisma/prisma';
 
 const helpdeskRouter = Router();
 
 // Handle chatbot messages
 helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
   try {
-    const { message, userId } = req.body;
+    const { message = '', userId, taxonomySelection } = req.body;
 
-    if (!message || message.trim().length === 0) {
-      res.status(400).json({ error: 'Message cannot be empty' });
+    logService.info(`Helpdesk chat message received: ${message}, taxonomySelection: ${JSON.stringify(taxonomySelection)}`);
+
+    // STATE MACHINE LOGIC
+    // If taxonomySelection is provided, respond with next-level suggestions or acknowledgement
+    if (Array.isArray(taxonomySelection) && taxonomySelection.length > 0) {
+      // Limit selection to 3
+      const selection = taxonomySelection.slice(0, 3);
+      // Fetch selected node names
+      const nodes = await prisma.taxonomyNode.findMany({ 
+        where: { id: { in: selection } },
+        orderBy: { sort: 'asc' }
+      });
+      const names = nodes.map(n => n.nameDe || n.nameEn || n.slug);
+
+      // Find children of last selected node (if any)
+      const lastId = selection[selection.length - 1];
+      const children = await prisma.taxonomyNode.findMany({ 
+        where: { parentId: lastId }, 
+        orderBy: { sort: 'asc' } 
+      });
+
+      const suggestions = children.map(c => ({ id: c.id, label: c.nameDe || c.nameEn || c.slug }));
+
+      // Build response text
+      const selectionPath = names.join(' › ');
+      let responseText = '';
+      
+      if (suggestions.length > 0) {
+        responseText = `Du hast ausgewählt: ${selectionPath}.\n\nWähle bitte eine Unterkategorie:`;
+      } else if (selection.length < 3) {
+        responseText = `Du hast ausgewählt: ${selectionPath}.\n\nMöchtest du noch eine weitere Kategorie hinzufügen oder soll ich dir weiterhelfen?`;
+      } else {
+        responseText = `Du hast ausgewählt: ${selectionPath}.\n\nWie kann ich dir noch helfen?`;
+      }
+
+      const botResponse = {
+        id: Date.now().toString(),
+        text: responseText,
+        sender: 'bot',
+        timestamp: new Date(),
+        suggestions,
+        selectedPath: selection,
+      };
+
+      res.status(200).json(botResponse);
       return;
     }
 
-    logService.info(`Helpdesk chat message received: ${message}`);
+    // START: If no selection yet or message is greeting/empty, show root categories
+    const normalized = String(message).trim().toLowerCase();
+    const requestCategoriesTriggers = [
+      'kategorie', 'kategorien', 'category', 'categories', 
+      'hilfe', 'hilfe bitte', 'start', 'menu', 'kategorien anzeigen',
+      'wasser', 'klima', 'boden', ''
+    ];
 
-    // TODO: Implement your chatbot logic here
-    // This could be:
-    // 1. Send to an AI service (OpenAI, Hugging Face, etc.)
-    // 2. Match against FAQs
-    // 3. Route to support team
-    // 4. Store in database
+    const shouldShowCategories = 
+      normalized.length === 0 || 
+      normalized.length < 20 || 
+      requestCategoriesTriggers.some(t => t && normalized.includes(t));
 
-    // Temporary response
+    if (shouldShowCategories) {
+      // fetch root nodes (depth: 0 = top-level categories)
+      const nodes = await prisma.taxonomyNode.findMany({ 
+        where: { depth: 0 }, 
+        orderBy: [{ sort: 'asc' }, { nameDe: 'asc' }] 
+      });
+      const suggestions = nodes.map(n => ({ id: n.id, label: n.nameDe || n.nameEn || n.slug }));
+
+      const botResponse = {
+        id: Date.now().toString(),
+        text: 'Willkommen! Bitte wähle eine Kategorie, damit ich dir besser helfen kann:',
+        sender: 'bot',
+        timestamp: new Date(),
+        suggestions,
+      };
+
+      res.status(200).json(botResponse);
+      return;
+    }
+
+    // FALLBACK: generic acknowledgement (if user typed something that doesn't trigger categories)
     const botResponse = {
       id: Date.now().toString(),
       text: 'Vielen Dank für deine Nachricht. Unser Team wird sich bald bei dir melden!',

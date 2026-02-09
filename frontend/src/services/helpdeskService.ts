@@ -19,11 +19,11 @@ class HelpdeskService {
   /**
    * Send a chat message to the helpdesk chatbot
    */
-  async sendChatMessage(message: string): Promise<ChatMessage> {
+  async sendChatMessage(message: string, taxonomySelection?: string[]): Promise<any> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/helpdesk/chat`, {
-        message,
-      });
+      const payload: any = { message };
+      if (taxonomySelection) payload.taxonomySelection = taxonomySelection;
+      const response = await axios.post(`${API_BASE_URL}/helpdesk/chat`, payload);
       return response.data;
     } catch (error) {
       console.error('Error sending chat message:', error);
