@@ -7,6 +7,66 @@ import fs from "fs";
 
 const prisma = new PrismaClient();
 
+// ---- Module-level geocoding helper ----
+const geocodeWithRetry = async (zipStr: string, countryCode: string, maxRetries: number = 3): Promise<{lat: number, lon: number} | null> => {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("postalcode", zipStr);
+    url.searchParams.set("countrycodes", countryCode.toLowerCase());
+    url.searchParams.set("format", "json");
+    url.searchParams.set("limit", "1");
+    url.searchParams.set("addressdetails", "0");
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            // Add initial delay to avoid aggressive rate limiting
+            if (attempt > 0) {
+                const delayMs = Math.pow(2, attempt) * 2000; // 2s, 4s, 8s, 16s...
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+
+            const controller = new AbortController();
+            const timeoutMs = 20000; // 20s timeout
+            const timeout = setTimeout(() => {
+                controller.abort();
+            }, timeoutMs);
+            
+            const geoRes = await fetch(url.toString(), {
+                signal: controller.signal,
+                headers: { 
+                    "User-Agent": "Mozilla/5.0 (compatible; geocode-service/1.0)",
+                    "Accept": "application/json",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
+            });
+            
+            clearTimeout(timeout);
+            
+            if (geoRes.ok) {
+                const geoJson: Array<{ lat: string; lon: string }> = await geoRes.json();
+                if (geoJson && geoJson.length > 0) {
+                    const parsedLat = parseFloat(geoJson[0].lat);
+                    const parsedLon = parseFloat(geoJson[0].lon);
+                    if (Number.isFinite(parsedLat) && Number.isFinite(parsedLon)) {
+                        return { lat: parsedLat, lon: parsedLon };
+                    }
+                } else {
+                    return null;
+                }
+            } else if (geoRes.status === 403 || geoRes.status === 429) {
+                // Continue retrying - backoff already applied
+                continue;
+            } else {
+                return null;
+            }
+        } catch (fetchErr) {
+            if (attempt < maxRetries) {
+                continue;
+            }
+        }
+    }
+    return null;
+};
+
 export const createOrganization = async (
     req: Request,
     res: Response,
@@ -92,6 +152,13 @@ export const createOrganization = async (
             lon?: number | string;
         };
 
+        // DEBUG: Log coordinate inputs
+        console.log("🔍 Coordinate Debug - manualCoords:", manualCoords, "type:", typeof manualCoords);
+        console.log("🔍 Coordinate Debug - lat:", lat, "type:", typeof lat);
+        console.log("🔍 Coordinate Debug - lon:", lon, "type:", typeof lon);
+        console.log("🔍 Coordinate Debug - zip:", zip);
+        console.log("🔍 Coordinate Debug - countryCode:", countryCode);
+
         // ---- Enums validieren ----
         const orgTypeStr = String(organizationType ?? "").toUpperCase();
         const isValidOrgType = (Object.values(OrganizationType) as string[]).includes(orgTypeStr);
@@ -162,10 +229,15 @@ export const createOrganization = async (
             return;
         }
 
+        // ---- Helper function for geocoding with retry ----
+        // This is now defined at module level for use in both create and update endpoints
+
         // ---- Koordinaten-Strategie ----
         const manual = toBool(manualCoords);
         let latitude: number | undefined;
         let longitude: number | undefined;
+
+        console.log("🔍 Coordinates Strategy - manual:", manual);
 
         if (manual) {
             // Manuelle Koordinaten sind Pflicht & werden validiert
@@ -181,31 +253,21 @@ export const createOrganization = async (
             longitude = lonNum;
         } else {
             // Geokodierung (best effort)
+            console.log("🔍 Geocoding: Starting auto-geocoding...");
             try {
-                const url = new URL("https://nominatim.openstreetmap.org/search");
-                url.searchParams.set("postalcode", String(zip));
-                url.searchParams.set("countrycodes", country.code.toLowerCase());
-                url.searchParams.set("format", "json");
-                url.searchParams.set("limit", "1");
-                url.searchParams.set("addressdetails", "0");
-
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 3000);
-                const geoRes = await fetch(url.toString(), {
-                    signal: controller.signal,
-                    headers: { "User-Agent": "DigitalAtlas/1.0 (kontakt@example.com)" },
-                });
-                clearTimeout(timeout);
-
-                if (geoRes.ok) {
-                    const geoJson: Array<{ lat: string; lon: string }> = await geoRes.json();
-                    if (geoJson.length > 0) {
-                        latitude = parseFloat(geoJson[0].lat);
-                        longitude = parseFloat(geoJson[0].lon);
+                const zipStr = String(zip ?? "").trim();
+                console.log("🔍 Geocoding: zipStr=", zipStr, "country?.code=", country?.code);
+                if (zipStr && country?.code) {
+                    const result = await geocodeWithRetry(zipStr, country.code);
+                    if (result) {
+                        latitude = result.lat;
+                        longitude = result.lon;
                     }
+                } else {
+                    console.log("❌ Geocoding: SKIPPED - no zip or country code");
                 }
-            } catch {
-                // ignore – Koordinaten bleiben undefined
+            } catch (err) {
+                console.error("❌ Geocoding error:", err instanceof Error ? err.message : err);
             }
         }
 
@@ -267,7 +329,22 @@ export const createOrganization = async (
                 : {}),
         };
 
+        console.log("🔍 Creating organization with data:", {
+            name: data.name,
+            zip: data.zip,
+            city: data.city,
+            manualCoords: data.manualCoords,
+            lat: data.lat,
+            lon: data.lon,
+        });
+
         const organization = await prisma.organization.create({ data });
+        console.log("✅ Organization created:", {
+            id: organization.id,
+            lat: organization.lat,
+            lon: organization.lon,
+            manualCoords: organization.manualCoords,
+        });
         res.status(201).json(organization);
     } catch (error: any) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -551,34 +628,17 @@ export const updateOrganization = async (
             const zipForGeo = String(zip ?? "").trim();
             try {
                 if (zipForGeo && effectiveCountry) {
-                    const url = new URL("https://nominatim.openstreetmap.org/search");
-                    url.searchParams.set("postalcode", zipForGeo);
-                    url.searchParams.set("countrycodes", effectiveCountry.toLowerCase());
-                    url.searchParams.set("format", "json");
-                    url.searchParams.set("limit", "1");
-                    url.searchParams.set("addressdetails", "0");
-
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 3000);
-                    const geoRes = await fetch(url.toString(), {
-                        signal: controller.signal,
-                        headers: { "User-Agent": "DigitalAtlas/1.0 (kontakt@example.com)" },
-                    });
-                    clearTimeout(timeout);
-
-                    if (geoRes.ok) {
-                        const geoJson: Array<{ lat: string; lon: string }> = await geoRes.json();
-                        if (geoJson.length > 0) {
-                            latLonPatch = {
-                                ...latLonPatch,
-                                lat: parseFloat(geoJson[0].lat),
-                                lon: parseFloat(geoJson[0].lon),
-                            };
-                        }
+                    const result = await geocodeWithRetry(zipForGeo, effectiveCountry);
+                    if (result) {
+                        latLonPatch = {
+                            ...latLonPatch,
+                            lat: result.lat,
+                            lon: result.lon,
+                        };
                     }
                 }
-            } catch {
-                // ignore – Koordinaten bleiben unverändert, wenn kein Treffer / Timeout
+            } catch (err) {
+                console.error("❌ Geocoding error:", err instanceof Error ? err.message : err);
             }
             // Optional: Beim Umschalten auf "auto" lat/lon löschen, wenn kein Treffer:
             // latLonPatch = { ...latLonPatch, lat: null, lon: null };

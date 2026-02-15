@@ -27,6 +27,7 @@ export enum PublishedByType {
 export enum OrganizationState {
     FULL = "FULL",
     LITE = "LITE",
+    REQUESTED = "REQUESTED",
 }
 
 export enum AccountState {

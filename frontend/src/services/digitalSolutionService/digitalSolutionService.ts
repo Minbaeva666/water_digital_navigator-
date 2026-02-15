@@ -344,10 +344,12 @@ const fetchActiveDigitalSolutions = async (): Promise<DigitalSolutionWithRelatio
 
 export const fetchAllCoordinates = async (): Promise<DigitalSolutionWithRelationsDto[]> => {
     try {
+        console.log(`📍 Fetching all coordinates from: ${baseUrl}/all-coordinates`);
         const {data} = await axiosInstance.get(`${baseUrl}/all-coordinates`);
+        console.log(`✅ Fetched ${data?.length || 0} digital solutions from API`, data);
         return data;
     } catch (error) {
-        console.error("Fehler beim Laden aller Koordinaten:", error);
+        console.error("❌ Fehler beim Laden aller Koordinaten:", error);
         return [];
     }
 };

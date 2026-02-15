@@ -27,6 +27,7 @@ import {mapBackendToSolutionsWithCoords, SolutionWithCoords} from "../../utils/m
 import DigitalSolutionsMap from "../../components/digitalSolutionMap/DigitalSolutionsMap.tsx";
 import {Dayjs} from "dayjs";
 import {toApiDate} from "../../utils/apiHelpers.ts";
+import { NavLink } from "react-router-dom";
 
 const {Title, Text} = Typography;
 const {useBreakpoint} = Grid;
@@ -44,7 +45,7 @@ const DigitalAtlasPage = () => {
     const [taxonomyIndex, setTaxonomyIndex] = useState<Record<string, TaxonomyIndexRecord> | null>(null);
     const [total, setTotal] = useState<number>(0);
     const [current, setCurrent] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(3);
+    const [pageSize, setPageSize] = useState<number>(4);
     const [picked, setPicked] = useState<PickedNode | null>(null);
 
     // Toolbar-States
@@ -202,18 +203,22 @@ const DigitalAtlasPage = () => {
         <div style={{padding: 16}}>
             {/* Kopfbereich */}
             <div style={{paddingBottom: 8, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap"}}>
-                <Title level={3} style={{marginBottom: 0, flex: 1}}>Digitale Atlas - Projektübersicht</Title>
+                <Title level={3} style={{marginBottom: 0, flex: 1}}>Projektübersicht</Title>
                 {isMobile && (
                     <Button icon={<FilterOutlined/>} onClick={() => setFilterOpen(true)}>Filter</Button>
                 )}
             </div>
 
-            <div style={{marginTop: -8, marginBottom: 16}}>
+            <div style={{marginTop: 20, marginBottom: 20}}>
                 <Text>
-                    Entdecken Sie reale Anwendungsbeispiele aus verschiedenen Digital-Wasser-Kategorien. Erhalten Sie
-                    praxisnahe
-                    Einblicke und lokale Ansprechpartner für die erfolgreiche Umsetzung Ihrer Digitalisierungsprojekte.
+                    Finden Sie reale Anwendungsbeispiele aus verschiedenen Digital Wasser-Kategorien. Erhalten Sie
+                    praxisnahe Einblicke und Ansprechpartner vor Ort, um Ihre Projekte für mehr Erfolg durch
+                    Digitalisierung umzusetzen. Mehr Informationen zum Digital Atlas finden Sie in den {" "}
+                      <NavLink to="/faq" onClick={(e) => e.stopPropagation()}>
+                        FAQ
+                      </NavLink>{" "}.
                 </Text>
+                <br />
             </div>
 
             {/* Toolbar: Suche, Sortierung, Reset */}
@@ -308,7 +313,7 @@ const DigitalAtlasPage = () => {
                             total={total}
                             onChange={onPageChange}
                             showTotal={(tot, range) => `Digitale Lösung ${range[0]}–${range[1]} von ${tot}`}
-                            pageSizeOptions={["3", "6", "9"]}
+                            pageSizeOptions={["4", "8", "12"]}
                             onShowSizeChange={onPageSizeChange}
                             showSizeChanger={{
                                 getPopupContainer: () => document.body,

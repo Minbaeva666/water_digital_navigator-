@@ -1,5 +1,5 @@
-import {useCallback, useEffect, useState} from "react";
-import {message} from "antd";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {message, Input, Select, Space} from "antd";
 import {ColumnsType} from "antd/es/table";
 import {adminService} from "../../../services/admin/adminService.ts";
 import {useLocation, useNavigate} from "react-router-dom";
@@ -71,6 +71,9 @@ const UserManagementAdminPage = () => {
     const location = useLocation();
     const initialTab = location.state?.tab ?? TAB_KEYS.REGISTERED;
     const [users, setUsers] = useState<UserWithOrganizationDto[]>([]);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+    const [sortField, setSortField] = useState<string>("lastName");
+    const [sortDirection, setSortDirection] = useState<'asc'|'desc'>('asc');
     const [loading, setLoading] = useState<boolean>(false);
     const [activeTab, setActiveTab] = useState<keyof typeof TAB_KEYS>(initialTab);
 
@@ -102,6 +105,35 @@ const UserManagementAdminPage = () => {
         loadUsers(activeTab);
     }, [activeTab]);
 
+    const filteredAndSorted = useMemo(() => {
+        const term = searchTerm.trim().toLowerCase();
+        let list = users.slice();
+        if (term.length > 0) {
+            list = list.filter(u => {
+                const orgName = u.organization?.name ?? "";
+                return (
+                    (u.firstName ?? "").toLowerCase().includes(term) ||
+                    (u.lastName ?? "").toLowerCase().includes(term) ||
+                    (u.email ?? "").toLowerCase().includes(term) ||
+                    orgName.toLowerCase().includes(term)
+                );
+            });
+        }
+
+        const compare = (a: any, b: any) => {
+            const aVal = sortField === 'organization' ? a.organization?.name ?? '' : (a[sortField] ?? '');
+            const bVal = sortField === 'organization' ? b.organization?.name ?? '' : (b[sortField] ?? '');
+            const aStr = String(aVal).toLowerCase();
+            const bStr = String(bVal).toLowerCase();
+            if (aStr < bStr) return sortDirection === 'asc' ? -1 : 1;
+            if (aStr > bStr) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        };
+
+        list.sort(compare);
+        return list;
+    }, [users, searchTerm, sortField, sortDirection]);
+
     const handleTabChange = (key: string) => {
         setActiveTab(key as keyof typeof TAB_KEYS);
         const tabKey = key as keyof typeof TAB_KEYS;
@@ -122,6 +154,34 @@ const UserManagementAdminPage = () => {
         );
     };
 
+    const headerControls = (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Space>
+                <Input.Search
+                    placeholder="Nach Vorname, Nachname, E-Mail oder Organisation suchen"
+                    onSearch={(v) => setSearchTerm(v)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    allowClear
+                    style={{ width: 420 }}
+                />
+
+                <Select value={sortField} onChange={(v) => setSortField(String(v))} style={{ width: 160 }}>
+                    <Select.Option value="firstName">Vorname</Select.Option>
+                    <Select.Option value="lastName">Nachname</Select.Option>
+                    <Select.Option value="email">E-Mail</Select.Option>
+                    <Select.Option value="organization">Organisation</Select.Option>
+                    <Select.Option value="role">Rolle</Select.Option>
+                    <Select.Option value="accountState">Status</Select.Option>
+                </Select>
+
+                <Select value={sortDirection} onChange={(v) => setSortDirection(v)} style={{ width: 120 }}>
+                    <Select.Option value="asc">Aufsteigend</Select.Option>
+                    <Select.Option value="desc">Absteigend</Select.Option>
+                </Select>
+            </Space>
+        </div>
+    );
+
     return (
         <TableView<UserWithOrganizationDto>
             title="Benutzer Management"
@@ -130,11 +190,12 @@ const UserManagementAdminPage = () => {
             tabs={TABS}
             activeTabKey={activeTab}
             onTabChange={handleTabChange}
-            data={users}
+            data={filteredAndSorted}
             columns={columns}
             rowKey="id"
             loading={loading}
             onRowClick={handleRowClick}
+            headerExtra={headerControls}
         />
     );
 };

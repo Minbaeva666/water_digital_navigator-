@@ -54,7 +54,7 @@ const ContactFloatingButton: React.FC = () => {
       >
         {/* Toggle-Leiste */}
         <Tooltip
-          title={collapsed ? "Ausklappen" : "Einklappen"}
+          title={collapsed ? "Einblenden" : "Ausblenden"}
           placement="left"
         >
           <Button

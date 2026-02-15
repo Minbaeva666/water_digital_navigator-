@@ -34,6 +34,8 @@ export interface OrganizationBaseDto {
 
 // Minimal-DTO liefert nur Zählwerte
 export interface OrganizationMinimalDto extends OrganizationBaseDto {
+    orgId: string;
+    organizationId: string;
     usersCount: number;
     digitalSolutionsOwnedCount: number;
     projectPartnerSolutionsCount: number;

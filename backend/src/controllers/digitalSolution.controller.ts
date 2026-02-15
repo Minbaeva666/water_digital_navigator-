@@ -1316,7 +1316,6 @@ export const getAllCoordinates = async (req: Request, res: Response) => {
                 id: true,
                 name: true,
                 link: true,
-                solutionPresentedByUser: true,
                 organization: {
                     select: {
                         id: true,

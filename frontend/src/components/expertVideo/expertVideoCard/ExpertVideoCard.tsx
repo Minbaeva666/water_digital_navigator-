@@ -1,6 +1,6 @@
 import React from "react";
 import { Typography } from "antd";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ExpertVideoDto } from "../../../types/dtos/ExpertVideoDto";
 import "./ExpertVideoCard.less";
 
@@ -32,27 +32,15 @@ interface Props {
 }
 
 const ExpertVideoCard: React.FC<Props> = ({ video }) => {
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate(`/expert-videos?focusId=${video.id}`);
-  };
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      handleClick();
-    }
-  };
+  const cardUrl = `/expert-videos?focusId=${video.id}`;
 
   return (
-    <div
-      className="expert-video-card"
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-    >
+    <Link to={cardUrl} style={{ textDecoration: "none" }}>
+      <div
+        className="expert-video-card"
+        role="button"
+        tabIndex={0}
+      >
       {video.thumbnailUrl && (
         <div className="expert-video-card-image-wrapper">
           <img
@@ -68,7 +56,8 @@ const ExpertVideoCard: React.FC<Props> = ({ video }) => {
           {video.title}
         </Title>
       </div>
-    </div>
+      </div>
+    </Link>
   );
 };
 

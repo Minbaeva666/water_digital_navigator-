@@ -50,7 +50,10 @@ export default function OrganizationCreateAdminPage() {
     /** Validität für den COMMON-Tab neu berechnen */
     const recalcCommonValidity = useCallback(
         (values: OrganizationFormValues) => {
-            const required = REQUIRED_COMMON[organizationState] ?? [];
+const stateKey =
+  organizationState === OrganizationState.FULL ? OrganizationState.FULL : OrganizationState.LITE;
+
+const required = REQUIRED_COMMON[stateKey] ?? [];
             const requiredFilled = required.every(key => hasValue((values as any)[key]));
             const noFieldErrors = form.getFieldsError(required).every(e => e.errors.length === 0);
             onTabValidityChange("COMMON", requiredFilled && noFieldErrors);
@@ -96,7 +99,7 @@ export default function OrganizationCreateAdminPage() {
     const handleSave = async () => {
         try {
             const payload = form.getFieldsValue(true) as OrganizationFormValues;
-                        console.log("Server получил:"); 
+                        console.log("Server response:"); 
 
             const created = await organizationService.createOrganization(payload);
             message.success("Organisation erfolgreich erstellt.");

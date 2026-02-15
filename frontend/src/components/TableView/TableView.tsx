@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Col, Row, Tabs, Typography, Table, Pagination } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import "./TableView.less";
@@ -19,6 +19,7 @@ interface TableViewProps<T> {
     loading?: boolean;
     pageSize?: number;
     onRowClick?: (row: T) => void;
+    headerExtra?: React.ReactNode;
 }
 
 function TableView<T>({
@@ -34,6 +35,7 @@ function TableView<T>({
                           loading = false,
                           pageSize = 10,
                           onRowClick,
+                          headerExtra,
                       }: TableViewProps<T>) {
     const [currentPage, setCurrentPage] = useState(1);
     const [bodyHeight, setBodyHeight] = useState(300);
@@ -87,6 +89,12 @@ function TableView<T>({
                         activeKey={activeTabKey}
                         onChange={onTabChange}
                     />
+                )}
+
+                {headerExtra && (
+                    <div style={{ marginTop: 12 }}>
+                        {headerExtra}
+                    </div>
                 )}
             </div>
 

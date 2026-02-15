@@ -1,12 +1,12 @@
 import {Button, Col, Image, Row, Space, Typography} from "antd";
-import {useParams} from "react-router-dom";
+import {useParams, useNavigate} from "react-router-dom";
 import {useEffect, useMemo, useState} from "react";
 import {digitalSolutionService} from "../../services/digitalSolutionService/digitalSolutionService.ts";
 import {
     DigitalSolutionFormValues
 } from "../../forms/digital-solution/DigitalSolutionFormValues.ts";
 import {formatDateToGerman, mapDigitalSolutionDtoToForm} from "../../utils/formDataHelper.ts";
-import {LeftOutlined} from "@ant-design/icons";
+import {LeftOutlined, EditOutlined} from "@ant-design/icons";
 import './DigitalAtlasDetailPage.less';
 import {OverviewTabComponent} from "../../components/digitalAtlas/overviewTab/OverviewTabComponent.tsx";
 import {FurtherImagesTabComponent} from "../../components/digitalAtlas/furtherImagesTab/FurtherImagesTabComponent.tsx";
@@ -17,12 +17,15 @@ import {TaxonomyIndexRecord} from "../../types/UiTreeNode.ts";
 import {taxonomyNodeService} from "../../services/taxonomyNodeService/taxonomyNodeService.ts";
 import {SolutionUsersTabComponent} from "../../components/digitalAtlas/solutionUsersTab/SolutionUsersTabComponent.tsx";
 import ExternalLink from "../../components/externalLink/ExternalLink.tsx";
+import {useAuth} from "../../context/AuthContext.tsx";
 
 const {Title, Text} = Typography; 
 
 
 const DigitalAtlasDetailPage = () => {
     const {id} = useParams();
+    const navigate = useNavigate();
+    const {user} = useAuth();
     const [digitalSolution, setdigitalSolution] = useState<DigitalSolutionFormValues>(EMPTY_DIGITAL_SOLUTION_FORM);
     const [activeTab, setActiveTab] = useState<"overview" | "details" | "solution-users" | "images">("overview");
     const [taxonomyIndex, setTaxonomyIndex] = useState<Record<string, TaxonomyIndexRecord> | null>(null);
@@ -95,6 +98,10 @@ const DigitalAtlasDetailPage = () => {
         window.history.back();
     };
 
+    const handleEditClick = () => {
+        navigate(`/admin/digital-solution-management/digital-solution/${id}/edit`);
+    };
+
 
     function getPresenterName(values: DigitalSolutionFormValues): string {
         // Fall 1: von User präsentiert
@@ -131,6 +138,18 @@ const DigitalAtlasDetailPage = () => {
                         Zurück zu Übersicht
                     </Button>
                 </Col>
+                {/* Rechter Bereich */}
+                {user?.role === "ADMIN" && (
+                    <Col>
+                        <Button
+                            icon={<EditOutlined/>}
+                            onClick={handleEditClick}
+                            type="primary"
+                        >
+                            Bearbeiten
+                        </Button>
+                    </Col>
+                )}
             </Row>
 
             <Row gutter={[24, 24]} align="top">
@@ -140,7 +159,7 @@ const DigitalAtlasDetailPage = () => {
 
                     {/* Mobil: Text + Buttons erst nach dem Bild */}
                     <div className="desktop-only">
-                        <Text>{digitalSolution?.longDescription}</Text>
+                        <Text>{digitalSolution?.shortDescription}</Text>
 
                         <div style={{marginTop: "1rem"}}>
                             <Title level={4}>Link zur Digitalen Lösung</Title>

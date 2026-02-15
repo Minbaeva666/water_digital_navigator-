@@ -494,58 +494,72 @@ const onFinish = async (values: RegisterFormValues) => {
   rules={[
     {
       required: true,
+      message: "Organisationsname ist erforderlich",
+    },
+    {
+      min: 2,
+      message: "Organisationsname muss mindestens 2 Zeichen lang sein",
+    },
+    {
+      max: 120,
+      message: "Organisationsname darf maximal 120 Zeichen lang sein",
     },
   ]}
 >
-  <AutoComplete
-    placeholder="Name der Organisation eingeben oder auswählen"
-    options={orgOptions}
-    onSelect={(value) => {
-      const org = organizations.find((o) => o.name === value);
-      if (!org) return;
+  <Row gutter={8} align="middle">
+    <Col flex="auto">
+      <AutoComplete
+        placeholder="Name der Organisation eingeben oder auswählen"
+        options={orgOptions}
+        onSelect={(value) => {
+          const org = organizations.find((o) => o.name === value);
+          if (!org) return;
 
-      form.setFieldsValue({
-        orgName: org.name,
-        orgEmail: org.email || "",
-        orgWebsite: org.website || "",
-        orgType: org.organizationType || undefined,
-        orgStreet: org.street || "",
-        orgZip: org.zip || "",
-        orgCity: org.city || "",
-        orgCountry: org.countryCode || undefined,
-        existingOrganizationId: org.id,
-      });
+          form.setFieldsValue({
+            orgName: org.name,
+            orgEmail: org.email || "",
+            orgWebsite: org.website || "",
+            orgType: org.organizationType || undefined,
+            orgStreet: org.street || "",
+            orgZip: org.zip || "",
+            orgCity: org.city || "",
+            orgCountry: org.countryCode || undefined,
+            existingOrganizationId: org.id,
+          });
 
-      setIsExistingOrgSelected(true);
-      setFileList([]);
-    }}
-    onChange={(val) => {
-      const wasExisting = isExistingOrgSelected;
+          setIsExistingOrgSelected(true);
+          setFileList([]);
+        }}
+        onChange={(val) => {
+          const wasExisting = isExistingOrgSelected;
 
-      const nextValues: any = {
-        orgName: val,
-        existingOrganizationId: undefined,
-      };
+          const nextValues: any = {
+            orgName: val,
+            existingOrganizationId: undefined,
+          };
 
-      if (wasExisting) {
-        nextValues.orgEmail = "";
-        nextValues.orgWebsite = "";
-        nextValues.orgType = undefined;
-        nextValues.orgStreet = "";
-        nextValues.orgZip = "";
-        nextValues.orgCity = "";
-        nextValues.orgCountry = undefined;
-      }
+          if (wasExisting) {
+            nextValues.orgEmail = "";
+            nextValues.orgWebsite = "";
+            nextValues.orgType = undefined;
+            nextValues.orgStreet = "";
+            nextValues.orgZip = "";
+            nextValues.orgCity = "";
+            nextValues.orgCountry = undefined;
+          }
 
-      form.setFieldsValue(nextValues);
+          form.setFieldsValue(nextValues);
 
-      if (wasExisting) {
-        setIsExistingOrgSelected(false);
-        setFileList([]);
-      }
-    }}
-    disabled={orgListLoading}
-  />
+          if (wasExisting) {
+            setIsExistingOrgSelected(false);
+            setFileList([]);
+          }
+        }}
+        disabled={orgListLoading}
+        style={{ width: "100%" }}
+      />
+    </Col>
+  </Row>
 </Form.Item>
 
 
@@ -598,6 +612,11 @@ const onFinish = async (values: RegisterFormValues) => {
                   rules={[
                     {
                       required: true,
+                      message: "Straße ist erforderlich",
+                    },
+                    {
+                      min: 2,
+                      message: "Straße muss mindestens 2 Zeichen lang sein",
                     },
                   ]}
                 >
@@ -609,6 +628,11 @@ const onFinish = async (values: RegisterFormValues) => {
                   rules={[
                     {
                       required: true,
+                      message: "Postleitzahl ist erforderlich",
+                    },
+                    {
+                      pattern: /^[0-9]{5}$/,
+                      message: "Postleitzahl muss 5 Ziffern haben",
                     },
                   ]}
                 >
@@ -621,6 +645,10 @@ const onFinish = async (values: RegisterFormValues) => {
                     {
                       required: true,
                       message: "Stadt ist erforderlich",
+                    },
+                    {
+                      min: 2,
+                      message: "Stadt muss mindestens 2 Zeichen lang sein",
                     },
                   ]}
                 >

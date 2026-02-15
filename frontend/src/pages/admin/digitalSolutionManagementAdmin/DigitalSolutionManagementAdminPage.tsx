@@ -1,5 +1,5 @@
-import {useCallback, useEffect, useState} from "react";
-import {message} from "antd";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {message, Input, Select, Space} from "antd";
 import {ColumnsType} from "antd/es/table";
 import {useLocation, useNavigate} from "react-router-dom";
 import {digitalSolutionService} from "../../../services/digitalSolutionService/digitalSolutionService.ts";
@@ -126,6 +126,9 @@ const DigitalSolutionManagementAdminPage = () => {
 
     const [digitalSolutions, setDigitalSolutions] = useState<DigitalSolutionWithRelationsDto[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+    const [sortField, setSortField] = useState<string>("name");
+    const [sortDirection, setSortDirection] = useState<'asc'|'desc'>('asc');
 
 
     const loadDigitalSolutions = useCallback(async (type: keyof typeof TAB_KEYS) => {
@@ -160,6 +163,45 @@ const DigitalSolutionManagementAdminPage = () => {
         loadDigitalSolutions(activeTab);
     }, [activeTab, loadDigitalSolutions]);
 
+    const filteredAndSorted = useMemo(() => {
+        const term = searchTerm.trim().toLowerCase();
+        let list = digitalSolutions.slice();
+        if (term.length > 0) {
+            list = list.filter(ds => {
+                const orgName = ds.organization?.name ?? "";
+                const presenterName = `${ds.presentedByUser?.firstName ?? ""} ${ds.presentedByUser?.lastName ?? ""}`.trim();
+                return (
+                    (ds.name ?? "").toLowerCase().includes(term) ||
+                    (ds.presentedByUser?.email ?? "").toLowerCase().includes(term) ||
+                    presenterName.toLowerCase().includes(term) ||
+                    orgName.toLowerCase().includes(term)
+                );
+            });
+        }
+
+        const compare = (a: any, b: any) => {
+            let aVal: any = a[sortField];
+            let bVal: any = b[sortField];
+
+            if (sortField === 'organization') {
+                aVal = a.organization?.name ?? '';
+                bVal = b.organization?.name ?? '';
+            } else if (sortField === 'presenter') {
+                aVal = `${a.presentedByUser?.firstName ?? ""} ${a.presentedByUser?.lastName ?? ""}`.trim();
+                bVal = `${b.presentedByUser?.firstName ?? ""} ${b.presentedByUser?.lastName ?? ""}`.trim();
+            }
+
+            const aStr = String(aVal).toLowerCase();
+            const bStr = String(bVal).toLowerCase();
+            if (aStr < bStr) return sortDirection === 'asc' ? -1 : 1;
+            if (aStr > bStr) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        };
+
+        list.sort(compare);
+        return list;
+    }, [digitalSolutions, searchTerm, sortField, sortDirection]);
+
     const handleTabChange = (key: string) => {
         setActiveTab(key as keyof typeof TAB_KEYS);
         const tabKey = key as keyof typeof TAB_KEYS;
@@ -180,6 +222,33 @@ const DigitalSolutionManagementAdminPage = () => {
         );
     };
 
+    const headerControls = (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Space>
+                <Input.Search
+                    placeholder="Nach Name, Email, Presenter oder Organisation suchen"
+                    onSearch={(v) => setSearchTerm(v)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    allowClear
+                    style={{ width: 420 }}
+                />
+
+                <Select value={sortField} onChange={(v) => setSortField(String(v))} style={{ width: 160 }}>
+                    <Select.Option value="name">Name</Select.Option>
+                    <Select.Option value="presenter">Presenter</Select.Option>
+                    <Select.Option value="organization">Organisation</Select.Option>
+                    <Select.Option value="createdAt">Eingereicht am</Select.Option>
+                    <Select.Option value="state">Status</Select.Option>
+                </Select>
+
+                <Select value={sortDirection} onChange={(v) => setSortDirection(v)} style={{ width: 120 }}>
+                    <Select.Option value="asc">Aufsteigend</Select.Option>
+                    <Select.Option value="desc">Absteigend</Select.Option>
+                </Select>
+            </Space>
+        </div>
+    );
+
     return (
 
             <TableView<DigitalSolutionWithRelationsDto>
@@ -189,11 +258,12 @@ const DigitalSolutionManagementAdminPage = () => {
                 tabs={TABS}
                 activeTabKey={activeTab}
                 onTabChange={handleTabChange}
-                data={digitalSolutions}
+                data={filteredAndSorted}
                 columns={columns}
                 rowKey="id"
                 loading={loading}
                 onRowClick={handleRowClick}
+                headerExtra={headerControls}
             />
 
     );

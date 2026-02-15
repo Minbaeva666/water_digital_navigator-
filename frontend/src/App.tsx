@@ -56,8 +56,8 @@ const DigitalSolutionsOverviewPage = lazy(() => import('./pages/digitalSolutions
 const AppWrapper: React.FC = () => (
     <ConfigProvider locale={customLocale} theme={customTheme}>
         <AntdApp>
-        {/* <Router> */}
-        <Router basename="/dilowa">
+        <Router>
+        {/* <Router basename="/dilowa"> */}
             <Layout className="app-layout">
                 <div className="app-container">
                     <AppHeader />

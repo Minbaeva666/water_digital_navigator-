@@ -325,17 +325,17 @@ const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
                 </Form.Item>
 
                 <Form.Item name="efficiencyDescription" label="Effizienz">
-                    <TextArea rows={5} maxLength={600} showCount placeholder="Beschreibung zur Effizienz"/>
+                    <TextArea rows={8} maxLength={1000} showCount allowClear placeholder="Beschreibung zur Effizienz (Zeilenumbrüche werden unterstützt)"/>
                 </Form.Item>
 
                 <Form.Item name="processDescription" label="Prozess/Vorgehensmodell">
-                    <TextArea rows={5} maxLength={600} showCount
-                              placeholder="Beschreibung zum Prozess/Vorgehensmodell"/>
+                    <TextArea rows={8} maxLength={1000} showCount allowClear
+                              placeholder="Beschreibung zum Prozess/Vorgehensmodell (Zeilenumbrüche werden unterstützt)"/>
                 </Form.Item>
 
                 <Form.Item name="socialRelevanceDescription" label="Gesellschaftliche Relevanz">
-                    <TextArea rows={5} maxLength={600} showCount
-                              placeholder="Beschreibung zur gesellschaftlichen Relevanz"/>
+                    <TextArea rows={8} maxLength={1000} showCount allowClear
+                              placeholder="Beschreibung zur gesellschaftlichen Relevanz (Zeilenumbrüche werden unterstützt)"/>
                 </Form.Item>
 
                 <Form.Item

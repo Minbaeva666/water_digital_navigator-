@@ -7,6 +7,19 @@ export interface DigitalSolutionCardProps {
     digitalSolution: DigitalSolutionFormValues;
 }
 
+// Helper component to render text with line breaks
+function TextWithLineBreaks({text}: {text?: string | null}) {
+    if (!text) return null;
+    
+    return (
+        <>
+            {text.split('\n').map((line, idx) => (
+                <div key={idx}>{line}</div>
+            ))}
+        </>
+    );
+}
+
 export function DetailsTabComponent({digitalSolution}: DigitalSolutionCardProps) {
     return (
         <div className="page-de" lang="de">
@@ -17,21 +30,21 @@ export function DetailsTabComponent({digitalSolution}: DigitalSolutionCardProps)
                 <Col className="col-shrink" xs={24} sm={24} md={12} lg={12} xl={8} xxl={6}>
                     <Title level={5}>Beschreibung</Title>
                     <Typography.Paragraph className="text-wrap">
-                        {digitalSolution?.longDescription}
+                        <TextWithLineBreaks text={digitalSolution?.longDescription} />
                     </Typography.Paragraph>
                 </Col>
 
                 <Col className="col-shrink" xs={24} sm={24} md={12} lg={12} xl={8} xxl={6}>
                     <Title level={5}>Ziel/Nutzen</Title>
                     <Typography.Paragraph className="text-wrap">
-                        {digitalSolution?.goalDescription}
+                        <TextWithLineBreaks text={digitalSolution?.goalDescription} />
                     </Typography.Paragraph>
                 </Col>
 
                 <Col className="col-shrink" xs={24} sm={24} md={12} lg={12} xl={8} xxl={6}>
                     <Title level={5}>Technische Daten</Title>
                     <Typography.Paragraph className="text-wrap">
-                        {digitalSolution?.technicalDescription}
+                        <TextWithLineBreaks text={digitalSolution?.technicalDescription} />
                     </Typography.Paragraph>
                 </Col>
 
@@ -39,7 +52,7 @@ export function DetailsTabComponent({digitalSolution}: DigitalSolutionCardProps)
                 <Col className="col-shrink" xs={24} sm={24} md={12} lg={12} xl={8} xxl={6}>
                     <Title level={5}>Effizienz</Title>
                     <Typography.Paragraph className="text-wrap">
-                        {digitalSolution.efficiencyDescription}
+                        <TextWithLineBreaks text={digitalSolution.efficiencyDescription} />
                     </Typography.Paragraph>
                     </Col>
                 )}
@@ -48,7 +61,7 @@ export function DetailsTabComponent({digitalSolution}: DigitalSolutionCardProps)
                 <Col className="col-shrink" xs={24} sm={24} md={12} lg={12} xl={8} xxl={6}>
                     <Title level={5}>Prozess/Vorgehensmodell</Title>
                     <Typography.Paragraph className="text-wrap">
-                        {digitalSolution.processDescription}
+                        <TextWithLineBreaks text={digitalSolution.processDescription} />
                     </Typography.Paragraph>
                     </Col>
                 )}
@@ -57,7 +70,7 @@ export function DetailsTabComponent({digitalSolution}: DigitalSolutionCardProps)
                 <Col className="col-shrink" xs={24} sm={24} md={12} lg={12} xl={8} xxl={6}>
                     <Title level={5}>Gesellschaftliche Relevanz</Title>
                     <Typography.Paragraph className="text-wrap">
-                        {digitalSolution.socialRelevanceDescription}
+                        <TextWithLineBreaks text={digitalSolution.socialRelevanceDescription} />
                     </Typography.Paragraph>
                     </Col>
                 )}
