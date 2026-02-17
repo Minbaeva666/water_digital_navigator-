@@ -9,7 +9,7 @@ import {PrivacyPolicyUpdatePayload} from "../../types/payloads/PrivacyPolicyPayl
 import {AccessibilityStatementUpdatePayload} from "../../types/payloads/AccessibilityStatementUpdatePayload.ts";
 import {ImprintStatementDto} from "../../types/dtos/ImprintStatementDto.ts";
 import {ImprintStatementUpdatePayload} from "../../types/payloads/ImprintStatementPayload.ts";
-const baseUrl = `/api/app-options`;
+const baseUrl = `/app-options`;
 const fetchFaq = async (id?: string): Promise<FaqDto | undefined> => {
     try {
         const url = id ? `${baseUrl}/faq?id=${encodeURIComponent(id)}` : `${baseUrl}/faq`;

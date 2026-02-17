@@ -2,7 +2,7 @@ import axiosInstance from "../auth/axiosInstance.ts";
 import type { PublicPdfDto } from "../../types/dtos/PublicPdfDto.ts";
 import type { PublicPdfUploadPayload } from "../../types/payloads/PublicPdfPayload.ts";
 
-const baseUrl = `/api/public-pdf`;
+const baseUrl = `/public-pdf`;
 
 type ApiWithMessage<T> = T & { message?: string };
 

@@ -2,7 +2,7 @@ import axiosInstance from "../auth/axiosInstance.ts";
 import {AccountState, Role} from "../../types/constants/enums.ts";
 import {UserWithOrganizationDto} from "../../types/dtos/User.dto.ts";
 
-const baseUrl = `/api/users`;
+const baseUrl = `/users`;
 
 const fetchUsersWithState = async (accountState: AccountState
 ): Promise<UserWithOrganizationDto[]> => {

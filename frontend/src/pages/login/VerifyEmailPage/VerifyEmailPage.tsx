@@ -41,7 +41,7 @@ const VerifyEmailPage: React.FC = () => {
   if (loading) {
     return (
       <Row justify="center" align="middle" style={{ minHeight: "100%" }}>
-        <Spin tip="Schließe Registerung ab..." size="large" fullscreen={false}>
+        <Spin tip="Schließe Registerung ab..." size="large">
           <div style={{ minHeight: 100, padding: "6rem" }}></div>
         </Spin>
       </Row>

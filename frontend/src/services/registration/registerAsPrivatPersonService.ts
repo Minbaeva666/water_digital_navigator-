@@ -20,7 +20,7 @@ export interface RegisterFormValues {
 
 export const registerAsPrivatePerson = async (values: RegisterFormValues, onSuccess: () => void) => {
     try {
-        await axiosInstance.post("/api/register/register-as-private", {
+        await axiosInstance.post("/register/register-as-private", {
             salutationType: values.salutationType,
             title: values.title,
             email: values.email,

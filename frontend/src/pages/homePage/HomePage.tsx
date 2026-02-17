@@ -140,7 +140,7 @@ const HomePage: React.FC = () => {
                 justifyContent: "center",
               }}
             >
-              <Spin tip="Lade Digitale Lösungen…" fullscreen={false} />
+              <Spin tip="Lade Digitale Lösungen…" />
             </div>
           ) : preview.length === 0 ? (
             <Paragraph type="secondary">
@@ -213,7 +213,7 @@ const HomePage: React.FC = () => {
                 justifyContent: "center",
               }}
             >
-              <Spin tip="Lade Interviews/Videos…" fullscreen={false} />
+              <Spin tip="Lade Interviews/Videos…" />
             </div>
           ) : videos.length === 0 ? (
             <Paragraph type="secondary">

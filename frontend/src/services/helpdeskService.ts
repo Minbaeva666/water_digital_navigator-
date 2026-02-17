@@ -30,7 +30,7 @@ class HelpdeskService {
     try {
       const payload: any = { message };
       if (taxonomySelection) payload.taxonomySelection = taxonomySelection;
-      const response = await axiosInstance.post(`/api/helpdesk/chat`, payload);
+      const response = await axiosInstance.post(`/helpdesk/chat`, payload);
       return response.data;
     } catch (error) {
       console.error('Error sending chat message:', error);
@@ -40,7 +40,7 @@ class HelpdeskService {
 
   async submitContactForm(data: ContactFormData): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await axiosInstance.post(`/api/helpdesk/contact`, data);
+      const response = await axiosInstance.post(`/helpdesk/contact`, data);
       return response.data;
     } catch (error) {
       console.error('Error submitting contact form:', error);

@@ -9,7 +9,7 @@ import axios from "axios";
 import {DigitalSolutionFormValues} from "../../forms/digital-solution/DigitalSolutionFormValues.ts";
 import {normalizeDigitalSolution} from "../../utils/digitalSolution.mapper.ts";
 
-const baseUrl = `/api/digital-solutions`;
+const baseUrl = `/digital-solutions`;
 
 
 const fetchDigitalSolutionById = async (digitalSolutionId: string | undefined): Promise<DigitalSolutionWithRelationsDto | undefined> => {

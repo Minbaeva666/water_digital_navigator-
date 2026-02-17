@@ -218,7 +218,7 @@ const DigitalAtlasPage = () => {
           padding: 16,
         }}
       >
-        <Spin size="large" tip="Lade Digitale Lösungen…" fullscreen={false} />
+        <Spin size="large" tip="Lade Digitale Lösungen…" />
       </div>
     );
   }

@@ -8,6 +8,6 @@ export interface ContactPayload {
 
 export const contactService = {
   async sendContact(payload: ContactPayload): Promise<void> {
-    await axiosInstance.post(`/api/contact`, payload);
+    await axiosInstance.post(`/contact`, payload);
   },
 };

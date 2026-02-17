@@ -352,7 +352,7 @@ const TaxonomyAdminPage = () => {
       <div className="create-edit-body-taxonomy">
         {loading ? (
           <div style={{ padding: 24, textAlign: "center" }}>
-            <Spin tip="Lade Kriterien..." size="large" fullscreen={false} />
+            <Spin tip="Lade Kriterien..." size="large" />
           </div>
         ) : taxonomyNodes.length === 0 ? (
           <div
