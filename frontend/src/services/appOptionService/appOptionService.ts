@@ -6,17 +6,10 @@ import { TermsOfUsePayload } from "../../types/payloads/TermsOfUsePayload.ts";
 import axiosInstance from "../auth/axiosInstance.ts";
 import {AccessibilityStatementDto} from "../../types/dtos/AccessibilityStatementDto.ts";
 import {PrivacyPolicyUpdatePayload} from "../../types/payloads/PrivacyPolicyPayload.ts";
-import {AccessibilityStatementUpdatePayload} from "../../types/payloads/AccessibilityStatementPayload.ts";
+import {AccessibilityStatementUpdatePayload} from "../../types/payloads/AccessibilityStatementUpdatePayload.ts";
 import {ImprintStatementDto} from "../../types/dtos/ImprintStatementDto.ts";
 import {ImprintStatementUpdatePayload} from "../../types/payloads/ImprintStatementPayload.ts";
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-const baseUrl = `${backendUrl}/app-options`;
-
-/* =========================
-   FAQ
-   ========================= */
-
-/** Neustes FAQ (oder per id) laden */
+const baseUrl = `/api/app-options`;
 const fetchFaq = async (id?: string): Promise<FaqDto | undefined> => {
     try {
         const url = id ? `${baseUrl}/faq?id=${encodeURIComponent(id)}` : `${baseUrl}/faq`;
@@ -28,15 +21,10 @@ const fetchFaq = async (id?: string): Promise<FaqDto | undefined> => {
     }
 };
 
-/** FAQ komplett aktualisieren (Items werden ersetzt) – Router: POST /faq */
 const updateFaq = async (payload: FaqPayload): Promise<FaqDto> => {
     const { data } = await axiosInstance.post<FaqDto>(`${baseUrl}/faq`, payload);
     return data;
 };
-
-/* =========================
-   Terms of Use (Nutzungsbedingungen)
-   ========================= */
 
 const fetchTermsOfUse = async (id?: string): Promise<TermsOfUseDto | undefined> => {
     try {
@@ -49,17 +37,12 @@ const fetchTermsOfUse = async (id?: string): Promise<TermsOfUseDto | undefined> 
     }
 };
 
-/** Neue Version anlegen – Router: POST /terms-of-use */
 const updateTermsOfUse = async (
     payload: TermsOfUsePayload
 ): Promise<TermsOfUseDto> => {
     const { data } = await axiosInstance.post<TermsOfUseDto>(`${baseUrl}/terms-of-use`, payload);
     return data;
 };
-
-/* =========================
-   Privacy Policy (Datenschutzerklärung)
-   ========================= */
 
 const fetchPrivacyPolicy = async (id?: string): Promise<PrivacyPolicyDto | undefined> => {
     try {
@@ -72,17 +55,12 @@ const fetchPrivacyPolicy = async (id?: string): Promise<PrivacyPolicyDto | undef
     }
 };
 
-/** Neue Version anlegen – Router: POST /privacy-policy */
 const updatePrivacyPolicy = async (
     payload: PrivacyPolicyUpdatePayload
 ): Promise<PrivacyPolicyDto> => {
     const { data } = await axiosInstance.post<PrivacyPolicyDto>(`${baseUrl}/privacy-policy`, payload);
     return data;
 };
-
-/* =========================
-   Accessibility Statement (Barrierefreiheit)
-   ========================= */
 
 const fetchAccessibilityStatement = async (id?: string): Promise<AccessibilityStatementDto | undefined> => {
     try {
@@ -95,17 +73,12 @@ const fetchAccessibilityStatement = async (id?: string): Promise<AccessibilitySt
     }
 };
 
-/** Neue Version anlegen – Router: POST /accessibility */
 const updateAccessibilityStatement = async (
     payload: AccessibilityStatementUpdatePayload
 ): Promise<AccessibilityStatementDto> => {
     const { data } = await axiosInstance.post<AccessibilityStatementDto>(`${baseUrl}/accessibility`, payload);
     return data;
 };
-
-/* =========================
-   Imprint (Impressum)
-   ========================= */
 
 const fetchImprintStatement = async (id?: string): Promise<ImprintStatementDto | undefined> => {
     try {
@@ -118,7 +91,6 @@ const fetchImprintStatement = async (id?: string): Promise<ImprintStatementDto |
     }
 };
 
-/** Neue Version anlegen – Router: POST /imprint */
 const updateImprintStatement = async (
     payload: ImprintStatementUpdatePayload
 ): Promise<ImprintStatementDto> => {

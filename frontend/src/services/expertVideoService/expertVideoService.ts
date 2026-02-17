@@ -3,7 +3,7 @@ import axiosInstance from "../auth/axiosInstance.ts";
 
 export const expertVideoService = {
   async fetchLatest(limit = 4): Promise<ExpertVideoDto[]> {
-    const res = await axiosInstance.get<ExpertVideoDto[]>("/expert-videos/latest", {
+    const res = await axiosInstance.get<ExpertVideoDto[]>("/api/expert-videos/latest", {
       params: { limit },
     });
     return res.data;
@@ -15,31 +15,31 @@ export const expertVideoService = {
       total: number;
       page: number;
       pageSize: number;
-    }>("/expert-videos", {
+    }>("/api/expert-videos", {
       params: { page, pageSize },
     });
     return res.data;
   },
 
   async create(payload: ExpertVideoCreateUpdateDto) {
-    const res = await axiosInstance.post<ExpertVideoDto>("/expert-videos", payload);
+    const res = await axiosInstance.post<ExpertVideoDto>("/api/expert-videos", payload);
     return res.data;
   },
 
   async update(id: string, payload: Partial<ExpertVideoCreateUpdateDto>) {
-    const res = await axiosInstance.put<ExpertVideoDto>(`/expert-videos/${id}`, payload);
+    const res = await axiosInstance.put<ExpertVideoDto>(`/api/expert-videos/${id}`, payload);
     return res.data;
   },
 
   async remove(id: string) {
-    await axiosInstance.delete(`/expert-videos/${id}`);
+    await axiosInstance.delete(`/api/expert-videos/${id}`);
   },
 
   async uploadThumbnail(id: string, file: File) {
     const formData = new FormData();
     formData.append("thumbnail", file);
     const res = await axiosInstance.post<ExpertVideoDto>(
-      `/expert-videos/${id}/thumbnail-upload`,
+      `/api/expert-videos/${id}/thumbnail-upload`,
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );

@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const BASE_URL = import.meta.env.VITE_BACKEND_URL; 
+import axiosInstance from "../auth/axiosInstance";
 
 export interface ContactPayload {
   name?: string;
@@ -10,6 +8,6 @@ export interface ContactPayload {
 
 export const contactService = {
   async sendContact(payload: ContactPayload): Promise<void> {
-    await axios.post(`${BASE_URL}/contact`, payload);
+    await axiosInstance.post(`/api/contact`, payload);
   },
 };

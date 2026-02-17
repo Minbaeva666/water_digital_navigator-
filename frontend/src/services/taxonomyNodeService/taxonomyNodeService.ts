@@ -2,8 +2,7 @@ import axiosInstance from "../auth/axiosInstance.ts";
 import {TaxonomyNodeDto} from "../../types/dtos/TaxonomyNodeDto.ts";
 import {TaxonomyStructureResponse} from "../../types/UiTreeNode.ts";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-const baseUrl = `${backendUrl}/taxonomyNodes`;
+const baseUrl = `/api/taxonomyNodes`;
 
 
 const fetchTaxonomyNodes = async (): Promise<TaxonomyNodeDto[] | []> => {

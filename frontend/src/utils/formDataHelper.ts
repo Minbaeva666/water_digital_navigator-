@@ -4,6 +4,7 @@ import {DigitalSolutionDto} from "../types/dtos/DigitalSolutionDto.ts";
 import {DigitalSolutionFormValues} from "../forms/digital-solution/DigitalSolutionFormValues.ts";
 import {EMPTY_DIGITAL_SOLUTION_FORM} from "../services/digitalSolutionService/digitalSolution.mapper.ts";
 import {OrganizationFormValues, OrganizationFullDto} from "../types/dtos/Organization.dto.ts";
+import { buildImageUrl } from "./imageUrlHelper.ts";
 
 export function normalizeEmptyToUndefined(value: string){ return value === "" ? undefined : value}
 
@@ -16,10 +17,10 @@ export function mapImageDtoToUploadFile(
         status: "done",
         size: dto.size,
         type: dto.mimeType,
-        // direkt den relativen Pfad verwenden:
-        url: dto.path ?? undefined,
-        // falls du zusätzlich den Base64-String nutzen willst:
-        thumbUrl: dto.dataUri,
+        // Build proper URL for the image path
+        url: buildImageUrl(dto.path) ?? undefined,
+        // Use dataUri as thumbnail if available
+        thumbUrl: dto.dataUri || buildImageUrl(dto.path),
     };
 }
 

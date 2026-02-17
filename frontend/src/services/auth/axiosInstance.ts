@@ -2,9 +2,11 @@ import axios, { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from "axi
 import axiosBase from "./axioBase";
 import { jwtDecode } from "jwt-decode";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_URL,
     withCredentials: true,
+    baseURL: backendUrl,
 });
 
 // Eine Refresh-Operation gleichzeitig teilen
