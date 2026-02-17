@@ -2,10 +2,6 @@ import { Badge, Card, Typography } from "antd";
 import { DigitalSolutionDto } from "../../../types/dtos/DigitalSolutionDto.ts";
 import { useTranslation } from "react-i18next";
 import { formatDateToGerman } from "../../../utils/formDataHelper.ts";
-import { Badge, Card, Typography } from "antd";
-import { DigitalSolutionDto } from "../../../types/dtos/DigitalSolutionDto.ts";
-import { useTranslation } from "react-i18next";
-import { formatDateToGerman } from "../../../utils/formDataHelper.ts";
 import i18n from "../../../i18n/i18n.ts";
 import { useNavigate } from "react-router-dom";
 import "./DigitalSolutionCard.less";
@@ -16,15 +12,10 @@ import { buildImageUrl } from "../../../utils/imageUrlHelper.ts";
 import dayjs from "dayjs";
 import React from "react";
 import { PickedNode } from "../../taxonomyFilterNav/TaxonomyFilterNav.tsx";
-import { PickedNode } from "../../taxonomyFilterNav/TaxonomyFilterNav.tsx";
 
-const { Title, Paragraph, Text } = Typography;
 const { Title, Paragraph, Text } = Typography;
 
 export interface DigitalSolutionCardProps {
-  digitalSolution: DigitalSolutionDto;
-  taxonomyIndex: Record<string, TaxonomyIndexRecord> | null;
-  setQuery: (node: PickedNode) => void;
   digitalSolution: DigitalSolutionDto;
   taxonomyIndex: Record<string, TaxonomyIndexRecord> | null;
   setQuery: (node: PickedNode) => void;
@@ -56,12 +47,7 @@ export function DigitalSolutionCard({
   const MAX_TAGS = 6;
 
   const [isMoreOpen, setIsMoreOpen] = React.useState(false);
-  const [isMoreOpen, setIsMoreOpen] = React.useState(false);
 
-  // Nodes aus Response ziehen (Duplikate vermeiden)
-  const rawNodes = (digitalSolution.taxonomyNodes ?? [])
-    .map((t: any) => t?.taxonomyNode)
-    .filter(Boolean);
   // Nodes aus Response ziehen (Duplikate vermeiden)
   const rawNodes = (digitalSolution.taxonomyNodes ?? [])
     .map((t: any) => t?.taxonomyNode)
@@ -78,17 +64,7 @@ export function DigitalSolutionCard({
       const idx = taxonomyIndex[n.id];
       const rootId = idx?.rootId ?? n.id;
       const rootMeta: any = taxonomyIndex[rootId];
-  const favNodes = React.useMemo(() => {
-    if (!taxonomyIndex) return [];
-    return nodes.filter((n: any) => {
-      const idx = taxonomyIndex[n.id];
-      const rootId = idx?.rootId ?? n.id;
-      const rootMeta: any = taxonomyIndex[rootId];
 
-      // Fallback: falls rootMeta fehlt, prüfe den Node selbst nur dann, wenn er root ist (depth === 0)
-      const isFav =
-        (rootMeta?.isFav !== undefined ? rootMeta.isFav : undefined) ??
-        (n?.depth === 0 ? n?.isFav : undefined);
       // Fallback: falls rootMeta fehlt, prüfe den Node selbst nur dann, wenn er root ist (depth === 0)
       const isFav =
         (rootMeta?.isFav !== undefined ? rootMeta.isFav : undefined) ??
@@ -143,15 +119,7 @@ export function DigitalSolutionCard({
   const groupsMap = React.useMemo(() => {
     const acc: Record<string, Group> = {};
     if (!taxonomyIndex) return acc;
-  // Gruppierung nach Root (Ebene 0) via taxonomyIndex (vom Parent)
-  const groupsMap = React.useMemo(() => {
-    const acc: Record<string, Group> = {};
-    if (!taxonomyIndex) return acc;
 
-    for (const node of nodes) {
-      const idx = taxonomyIndex[node.id];
-      const rootId = idx?.rootId ?? node.id;
-      const rootMeta = taxonomyIndex[rootId] ?? node;
     for (const node of nodes) {
       const idx = taxonomyIndex[node.id];
       const rootId = idx?.rootId ?? node.id;
@@ -164,21 +132,7 @@ export function DigitalSolutionCard({
         ? (nameDe ?? nameEn ?? (rootMeta as any).slug)
         : (nameEn ?? nameDe ?? (rootMeta as any).slug);
       const rootColor = (rootMeta as any).color ?? undefined;
-      const isDe = i18n.language?.startsWith("de");
-      const nameDe = (rootMeta as any).nameDe ?? node.nameDe;
-      const nameEn = (rootMeta as any).nameEn ?? node.nameEn;
-      const rootName = isDe
-        ? (nameDe ?? nameEn ?? (rootMeta as any).slug)
-        : (nameEn ?? nameDe ?? (rootMeta as any).slug);
-      const rootColor = (rootMeta as any).color ?? undefined;
 
-      if (!acc[rootId]) {
-        acc[rootId] = { rootId, rootName, rootColor, items: [] };
-      }
-      acc[rootId].items.push(node);
-    }
-    return acc;
-  }, [nodes, taxonomyIndex, i18n.language]);
       if (!acc[rootId]) {
         acc[rootId] = { rootId, rootName, rootColor, items: [] };
       }
@@ -196,21 +150,16 @@ export function DigitalSolutionCard({
   );
 
   const getRootId = (node: any) => {
-  const getRootId = (node: any) => {
     const idx = taxonomyIndex?.[node.id];
     return idx?.rootId ?? node.id;
   };
-  };
 
-  const rootRank = React.useMemo(() => {
   const rootRank = React.useMemo(() => {
     const m = new Map<string, number>();
     groupedAll.forEach((g, i) => m.set(g.rootId, i));
     return m;
   }, [groupedAll]);
-  }, [groupedAll]);
 
-  const sortedFavNodes = React.useMemo(() => {
   const sortedFavNodes = React.useMemo(() => {
     const lang = i18n.language || "de";
     return [...favNodes].sort((a, b) => {
@@ -218,17 +167,9 @@ export function DigitalSolutionCard({
       const rb = rootRank.get(getRootId(b)) ?? Number.MAX_SAFE_INTEGER;
       if (ra !== rb) return ra - rb;
       return getNodeName(a).localeCompare(getNodeName(b), lang);
-      const ra = rootRank.get(getRootId(a)) ?? Number.MAX_SAFE_INTEGER;
-      const rb = rootRank.get(getRootId(b)) ?? Number.MAX_SAFE_INTEGER;
-      if (ra !== rb) return ra - rb;
-      return getNodeName(a).localeCompare(getNodeName(b), lang);
     });
   }, [favNodes, rootRank, i18n.language, taxonomyIndex]);
-  }, [favNodes, rootRank, i18n.language, taxonomyIndex]);
 
-  const visibleNodes = sortedFavNodes.slice(0, MAX_TAGS);
-  const visibleIds = new Set(visibleNodes.map((n) => n.id));
-  const hiddenNodes = nodes.filter((n) => !visibleIds.has(n.id));
   const visibleNodes = sortedFavNodes.slice(0, MAX_TAGS);
   const visibleIds = new Set(visibleNodes.map((n) => n.id));
   const hiddenNodes = nodes.filter((n) => !visibleIds.has(n.id));
@@ -306,9 +247,6 @@ export function DigitalSolutionCard({
           <Title level={3} style={{ margin: "6px 0" }}>
             {name}
           </Title>
-          <Title level={3} style={{ margin: "6px 0" }}>
-            {name}
-          </Title>
 
           <Paragraph
             ellipsis={{ rows: 8, expandable: false }}
@@ -317,35 +255,6 @@ export function DigitalSolutionCard({
             {shortDescription}
           </Paragraph>
 
-          {/* statt Tags -> farbiger Text */}
-          <div
-            style={{
-              marginTop: "auto",
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-              alignItems: "flex-start",
-            }}
-            className="no-nav"
-            onMouseDown={stopEarly}
-          >
-            {visibleNodes.map((node: any) => (
-              <Typography.Text
-                key={node.id}
-                className="node-text"
-                style={{
-                  color: node.color || "inherit",
-                  lineHeight: "20px",
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setQuery(node);
-                }}
-              >
-                {getNodeName(node)}
-              </Typography.Text>
-            ))}
           {/* statt Tags -> farbiger Text */}
           <div
             style={{
@@ -394,14 +303,6 @@ export function DigitalSolutionCard({
             )}
           </div>
 
-          <DigitalAtlasCardNodeModal
-            open={isMoreOpen}
-            onCancel={closeMore}
-            groupedAll={groupedAll}
-            loading={!taxonomyIndex}
-            getNodeName={getNodeName}
-            setQuery={setQuery}
-          />
           <DigitalAtlasCardNodeModal
             open={isMoreOpen}
             onCancel={closeMore}

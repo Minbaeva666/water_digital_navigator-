@@ -170,7 +170,7 @@ const HelpdeskWidget: React.FC = () => {
             className="helpdesk-btn-icon"
           />
         </div>
-      )}a
+      )}
 
       {/* Widget */}
       {isOpen && (
