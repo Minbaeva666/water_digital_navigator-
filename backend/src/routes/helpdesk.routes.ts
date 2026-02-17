@@ -9,7 +9,7 @@ const helpdeskRouter = Router();
 // Handle chatbot messages
 helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
   try {
-    console.log('📨 Helpdesk chat endpoint called');
+    console.log('[HELPDESK] Chat endpoint called');
     const { message = '', userId, taxonomySelection } = req.body;
 
     logService.info(`Helpdesk chat message received: ${message}, taxonomySelection: ${JSON.stringify(taxonomySelection)}`);
@@ -33,25 +33,25 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
           context = `Ausgewählte Kategorien: ${selectionPath}`;
         }
 
-        console.log('🤖 Calling LISA AI...');
+        console.log('[LISA] Calling LISA AI...');
         
         // Step 1: Send message to LISA
         const lisaResponse = await sendMessageToLisa(message, context);
 
-        console.log('✅ LISA response received:', { 
+        console.log('[LISA] Response received:', { 
           isJson: lisaResponse.isJson,
           hasFilters: !!lisaResponse.filters 
         });
 
         // Step 2: If LISA returned JSON filters, find matching solutions
         if (lisaResponse.isJson && lisaResponse.filters) {
-          console.log('✅ LISA returned filters, finding solutions...', lisaResponse.filters);
+          console.log('[LISA] Returned filters, finding solutions...', lisaResponse.filters);
           logService.info('LISA provided filters, searching for solutions...', { 
             filters: lisaResponse.filters 
           });
 
           const solutions = await findSolutionsFromLisaFilters(lisaResponse.filters);
-          console.log('✅ Found', solutions.length, 'solutions');
+          console.log('[SQL] Found', solutions.length, 'solutions');
 
           if (solutions.length > 0) {
             // Step 3: Format solutions with LISA
@@ -100,7 +100,7 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
         return;
 
       } catch (aiError) {
-        console.error('❌ LISA AI Error:', aiError);
+        console.error('[ERROR] LISA AI Error:', aiError);
         logService.error('Error with LISA AI:', aiError as Error);
         
         // Intelligent fallback based on keywords
@@ -241,7 +241,7 @@ helpdeskRouter.post('/contact', async (req: Request, res: Response) => {
 // Test endpoint to verify LISA API is working
 helpdeskRouter.post('/test-ai', async (req: Request, res: Response) => {
   try {
-    console.log('🧪 Testing LISA API...');
+    console.log('[TEST] Testing LISA API...');
     
     const testPrompt = 'Teste LISA: Antworte kurz auf Deutsch mit "Hallo"';
     const response = await sendMessageToLisa(testPrompt);
@@ -253,7 +253,7 @@ helpdeskRouter.post('/test-ai', async (req: Request, res: Response) => {
       responsePreview: response.content.substring(0, 100)
     });
   } catch (error) {
-    console.error('❌ Test failed:', error);
+    console.error('[ERROR] Test failed:', error);
     res.status(500).json({ 
       error: 'Failed to test LISA API',
       details: (error as any).message || String(error)

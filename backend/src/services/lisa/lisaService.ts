@@ -61,10 +61,10 @@ const LISA_API_BASE = loadEndpoint(LLM_MODEL) || process.env.LISA_API_BASE;
 const LISA_API_URL = buildChatUrl(LISA_API_BASE);
 const USE_MOCK_LISA = process.env.USE_MOCK_LISA === 'true' || !LISA_API_TOKEN || LISA_API_TOKEN.length < 10;
 
-console.log('🔑 LISA API Token:', LISA_API_TOKEN ? `${LISA_API_TOKEN.substring(0, 10)}...` : 'MISSING');
-console.log('📍 LISA API URL:', LISA_API_URL);
-console.log('🤖 LLM Model:', LLM_MODEL);
-console.log('🎭 Using MOCK LISA:', USE_MOCK_LISA ? 'YES (Testing Mode)' : 'NO (Production Mode)');
+console.log('[LISA] API Token:', LISA_API_TOKEN ? `${LISA_API_TOKEN.substring(0, 10)}...` : 'MISSING');
+console.log('[URL] LISA API URL:', LISA_API_URL);
+console.log('[MODEL] LLM Model:', LLM_MODEL);
+console.log('[MODE] Using MOCK LISA:', USE_MOCK_LISA ? 'YES (Testing Mode)' : 'NO (Production Mode)');
 
 export async function sendMessageToLisa(
   userMessage: string,
@@ -136,7 +136,7 @@ ${context ? `\nKontext: ${context}` : ''}`;
         errorMessage: errorText 
       };
       logService.error('LISA API error:', new Error(JSON.stringify(errorInfo)));
-      console.warn('⚠️  LISA API failed, falling back to mock...');
+      console.warn('[WARN] LISA API failed, falling back to mock...');
       return getMockLisaResponse(userMessage, context);
     }
 
