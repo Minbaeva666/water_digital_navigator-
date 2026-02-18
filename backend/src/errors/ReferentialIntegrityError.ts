@@ -21,7 +21,7 @@ export class ReferentialIntegrityError extends ApiError {
 
     toJSON() {
         return {
-            status: this.status,
+            status: this.statusCode,
             error: this.message,
             name: this.name,
             details: this.details || {},

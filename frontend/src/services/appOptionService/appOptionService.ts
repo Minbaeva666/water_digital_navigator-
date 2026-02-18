@@ -6,7 +6,7 @@ import { TermsOfUsePayload } from "../../types/payloads/TermsOfUsePayload.ts";
 import axiosInstance from "../auth/axiosInstance.ts";
 import {AccessibilityStatementDto} from "../../types/dtos/AccessibilityStatementDto.ts";
 import {PrivacyPolicyUpdatePayload} from "../../types/payloads/PrivacyPolicyPayload.ts";
-import {AccessibilityStatementUpdatePayload} from "../../types/payloads/AccessibilityStatementUpdatePayload.ts";
+import {AccessibilityStatementUpdatePayload} from "../../types/payloads/AccessibilityStatementPayload.ts";
 import {ImprintStatementDto} from "../../types/dtos/ImprintStatementDto.ts";
 import {ImprintStatementUpdatePayload} from "../../types/payloads/ImprintStatementPayload.ts";
 const baseUrl = `/app-options`;
