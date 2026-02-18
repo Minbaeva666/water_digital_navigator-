@@ -10,9 +10,13 @@ const RAW_BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string | undefined;
 
 let FILE_BASE_URL = "";
 if (RAW_BACKEND_URL) {
-  const u = new URL(RAW_BACKEND_URL);
-  const basePath = u.pathname.replace(/\/api\/?$/, ""); 
-  FILE_BASE_URL = u.origin + basePath;
+  try {
+    const u = new URL(RAW_BACKEND_URL, window.location.origin);
+    const basePath = u.pathname.replace(/\/api\/?$/, "");
+    FILE_BASE_URL = u.origin + basePath;
+  } catch (e) {
+    FILE_BASE_URL = RAW_BACKEND_URL.replace(/\/api\/?$/, "");
+  }
 }
 
 const buildThumbnailSrc = (path?: string) => {

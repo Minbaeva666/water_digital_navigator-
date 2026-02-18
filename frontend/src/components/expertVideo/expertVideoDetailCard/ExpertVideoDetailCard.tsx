@@ -13,9 +13,14 @@ const RAW_BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string | undefined;
 
 let FILE_BASE_URL = "";
 if (RAW_BACKEND_URL) {
-  const u = new URL(RAW_BACKEND_URL);
-  const basePath = u.pathname.replace(/\/api\/?$/, "");
-  FILE_BASE_URL = u.origin + basePath;
+  try {
+    const u = new URL(RAW_BACKEND_URL, window.location.origin);
+    const basePath = u.pathname.replace(/\/api\/?$/, "");
+    FILE_BASE_URL = u.origin + basePath;
+  } catch (e) {
+    // fallback: treat as path prefix
+    FILE_BASE_URL = RAW_BACKEND_URL.replace(/\/api\/?$/, "");
+  }
 }
 
 const buildThumbnailSrc = (path?: string) => {
@@ -87,17 +92,15 @@ const ExpertVideoDetailCard: React.FC<Props> = ({ video }) => {
       <div className="expert-video-text">
         <Title level={2}>{video.title}</Title>
 
-        {(video.publishedAt ||
-          video.authors?.length ||
-          video.authorName) && (
+        {(video.publishedAt || video.authors?.length || video.authorName) && (
           <Paragraph>
             {video.publishedAt && (
               <Text italic strong>
                 {formatDate(video.publishedAt)}
               </Text>
             )}
-            {(video.publishedAt &&
-              (video.authors?.length || video.authorName)) &&
+            {video.publishedAt &&
+              (video.authors?.length || video.authorName) &&
               " – "}
             {renderAuthors(video)}
           </Paragraph>

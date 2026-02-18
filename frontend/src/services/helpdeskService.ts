@@ -1,13 +1,23 @@
-import axios from 'axios';
+import axiosInstance from './auth/axiosInstance';
 
 interface ChatMessage {
   text: string;
   sender: 'user' | 'bot';
   timestamp: Date;
 }
+
+interface DigitalSolution {
+  id: string;
+  name: string | null;
+  shortDescription: string | null;
+  link: string | null;
+}
+
 interface BotResponse extends ChatMessage {
   suggestions?: Array<{ id: string; label: string }>;
+  solutions?: DigitalSolution[];
 }
+
 interface ContactFormData {
   name: string;
   email: string;
@@ -15,17 +25,12 @@ interface ContactFormData {
   message: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || '/api';
-
 class HelpdeskService {
-  /**
-   * Send a chat message to the helpdesk chatbot
-   */
   async sendChatMessage(message: string, taxonomySelection?: string[]): Promise<BotResponse> {
     try {
       const payload: any = { message };
       if (taxonomySelection) payload.taxonomySelection = taxonomySelection;
-      const response = await axios.post(`${API_BASE_URL}/helpdesk/chat`, payload);
+      const response = await axiosInstance.post(`/helpdesk/chat`, payload);
       return response.data;
     } catch (error) {
       console.error('Error sending chat message:', error);
@@ -33,12 +38,9 @@ class HelpdeskService {
     }
   }
 
-  /**
-   * Submit a contact form
-   */
   async submitContactForm(data: ContactFormData): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/helpdesk/contact`, data);
+      const response = await axiosInstance.post(`/helpdesk/contact`, data);
       return response.data;
     } catch (error) {
       console.error('Error submitting contact form:', error);

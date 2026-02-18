@@ -1,6 +1,6 @@
+import axiosInstance from "../auth/axiosInstance";
 import axios from "axios";
 import { message } from "antd";
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 export interface RegisterFormValues {
     salutationType: string;
@@ -20,7 +20,7 @@ export interface RegisterFormValues {
 
 export const registerAsPrivatePerson = async (values: RegisterFormValues, onSuccess: () => void) => {
     try {
-        await axios.post(backendUrl +"/register/register-as-private", {
+        await axiosInstance.post("/register/register-as-private", {
             salutationType: values.salutationType,
             title: values.title,
             email: values.email,

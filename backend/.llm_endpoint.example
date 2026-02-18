@@ -1,0 +1,14 @@
+# LLM Endpoint Configuration
+# Format: model_name endpoint_url
+# 
+# This file maps model names to their API endpoints.
+# You can optionally use this instead of LISA_API_BASE in .env
+#
+# Example:
+# dilowa https://api.llama-api.com/v1
+# gpt4 https://api.openai.com/v1
+# local-model http://localhost:8000/v1
+#
+# The service will automatically append /chat/completions to the URL
+
+dilowa https://api.llama-api.com/v1

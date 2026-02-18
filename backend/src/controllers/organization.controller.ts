@@ -265,7 +265,7 @@ export const createOrganization = async (
                         longitude = result.lon;
                     }
                 } else {
-                    console.log("❌ Geocoding: SKIPPED - no zip or country code");
+                    console.log("[GEOCODE] SKIPPED - no zip or country code");
                 }
             } catch (err) {
                 console.error("❌ Geocoding error:", err instanceof Error ? err.message : err);
@@ -340,7 +340,7 @@ export const createOrganization = async (
         });
 
         const organization = await prisma.organization.create({ data });
-        console.log("✅ Organization created:", {
+        console.log("[SUCCESS] Organization created:", {
             id: organization.id,
             lat: organization.lat,
             lon: organization.lon,
@@ -639,7 +639,7 @@ export const updateOrganization = async (
                     }
                 }
             } catch (err) {
-                console.error("❌ Geocoding error:", err instanceof Error ? err.message : err);
+                console.error("[ERROR] Geocoding error:", err instanceof Error ? err.message : err);
             }
             // Optional: Beim Umschalten auf "auto" lat/lon löschen, wenn kein Treffer:
             // latLonPatch = { ...latLonPatch, lat: null, lon: null };

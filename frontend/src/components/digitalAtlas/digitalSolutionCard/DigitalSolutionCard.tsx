@@ -3,11 +3,12 @@ import { DigitalSolutionDto } from "../../../types/dtos/DigitalSolutionDto.ts";
 import { useTranslation } from "react-i18next";
 import { formatDateToGerman } from "../../../utils/formDataHelper.ts";
 import i18n from "../../../i18n/i18n.ts";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./DigitalSolutionCard.less";
 import { RightOutlined } from "@ant-design/icons";
 import { TaxonomyIndexRecord } from "../../../types/UiTreeNode.ts";
 import DigitalAtlasCardNodeModal from "../../Modals/digitalAtlasCardNodeModal/DigitalAtlasCardNodeModal.tsx";
+import { buildImageUrl } from "../../../utils/imageUrlHelper.ts";
 import dayjs from "dayjs";
 import React from "react";
 import { PickedNode } from "../../taxonomyFilterNav/TaxonomyFilterNav.tsx";
@@ -20,12 +21,29 @@ export interface DigitalSolutionCardProps {
   setQuery: (node: PickedNode) => void;
 }
 
-type Group = { rootId: string; rootName: string; rootColor?: string; items: any[] };
+type Group = {
+  rootId: string;
+  rootName: string;
+  rootColor?: string;
+  items: any[];
+};
 
-export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }: DigitalSolutionCardProps) {
+export function DigitalSolutionCard({
+  digitalSolution,
+  taxonomyIndex,
+  setQuery,
+}: DigitalSolutionCardProps) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { name, shortDescription, titleImage, offeringCategory, id } = digitalSolution;
+  const {
+    name,
+    shortDescription,
+    titleImage,
+    offeringCategory,
+    id,
+    createdAt,
+  } = digitalSolution;
   const MAX_TAGS = 6;
 
   const [isMoreOpen, setIsMoreOpen] = React.useState(false);
@@ -37,7 +55,7 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
 
   const nodes: any[] = React.useMemo(
     () => Array.from(new Map(rawNodes.map((n: any) => [n.id, n])).values()),
-    [rawNodes]
+    [rawNodes],
   );
 
   const favNodes = React.useMemo(() => {
@@ -56,17 +74,26 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
     });
   }, [nodes, taxonomyIndex]);
 
+  // const visibleNodes = favNodes.slice(0, MAX_TAGS);
+  // const visibleIds = new Set(visibleNodes.map(n => n.id));
+  // const hiddenNodes = nodes.filter(n => !visibleIds.has(n.id));
+
   // Bildquelle
-  const imageSrc = titleImage?.dataUri ?? titleImage?.path ?? "https://via.placeholder.com/300x200";
+  const imageSrc =
+    titleImage?.dataUri ??
+    buildImageUrl(titleImage?.path) ??
+    "https://via.placeholder.com/300x200";
 
-  const offeringCategoryLabel = offeringCategory ? t(`offeringCategoryTypes.${offeringCategory}`) : undefined;
-
-  const displayDateSource = digitalSolution.createdAtOverride;
-  const createdAtDate = displayDateSource ? formatDateToGerman(displayDateSource) : undefined;
+  const offeringCategoryLabel = offeringCategory
+    ? t(`offeringCategoryTypes.${offeringCategory}`)
+    : undefined;
+  const createdAtDate = formatDateToGerman(digitalSolution.createdAt);
 
   const getNodeName = (n: any) => {
     const isDe = i18n.language?.startsWith("de");
-    return isDe ? (n.nameDe ?? n.nameEn ?? n.slug) : (n.nameEn ?? n.nameDe ?? n.slug);
+    return isDe
+      ? (n.nameDe ?? n.nameEn ?? n.slug)
+      : (n.nameEn ?? n.nameDe ?? n.slug);
   };
 
   // Card Interaktionen
@@ -74,12 +101,19 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
     e.stopPropagation();
     setIsMoreOpen(true);
   };
-
   const stopEarly: React.MouseEventHandler = (e) => {
     e.stopPropagation();
   };
-
   const closeMore = () => setIsMoreOpen(false);
+
+  const handleCardClick: React.MouseEventHandler = (e) => {
+    if (isMoreOpen) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    navigate(`/digital-atlas/digitale-solution/${id}`);
+  };
 
   // Gruppierung nach Root (Ebene 0) via taxonomyIndex (vom Parent)
   const groupsMap = React.useMemo(() => {
@@ -109,8 +143,10 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
 
   const groupedAll = React.useMemo(
     () =>
-      Object.values(groupsMap).sort((a, b) => a.rootName.localeCompare(b.rootName, i18n.language || "de")),
-    [groupsMap, i18n.language]
+      Object.values(groupsMap).sort((a, b) =>
+        a.rootName.localeCompare(b.rootName, i18n.language || "de"),
+      ),
+    [groupsMap, i18n.language],
   );
 
   const getRootId = (node: any) => {
@@ -138,17 +174,22 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
   const visibleIds = new Set(visibleNodes.map((n) => n.id));
   const hiddenNodes = nodes.filter((n) => !visibleIds.has(n.id));
 
+  // "Neu"-Bedingung: createdAt innerhalb der letzten 4 Monate?
   const isNew = React.useMemo(() => {
-    if (!displayDateSource) return false;
-    return dayjs(displayDateSource).isAfter(dayjs().subtract(2, "month"));
-  }, [displayDateSource]);
+    if (!createdAt) return false;
+    return dayjs(createdAt).isAfter(dayjs().subtract(2, "month"));
+  }, [createdAt]);
 
   return (
-    <Badge.Ribbon text="Neu" color="geekblue" style={{ display: isNew ? "block" : "none" }}>
-      <Link to={`/digital-atlas/digitale-solution/${id}`} style={{ textDecoration: "none" }}>
-        <Card
-          hoverable
-          className="custom-card"
+    <Badge.Ribbon
+      text="Neu"
+      color="geekblue"
+      style={{ display: isNew ? "block" : "none" }}
+    >
+      <Card
+        onClick={handleCardClick}
+        hoverable
+        className="custom-card"
         cover={
           <div
             style={{
@@ -185,9 +226,21 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
           }}
         >
           {(createdAtDate || offeringCategoryLabel) && (
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
-              {createdAtDate && <Text style={{ fontSize: 12, color: "gray" }}>{createdAtDate}</Text>}
-              {offeringCategoryLabel && <Text style={{ color: "green" }}>{offeringCategoryLabel}</Text>}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: 12,
+              }}
+            >
+              {createdAtDate && (
+                <Text style={{ fontSize: 12, color: "gray" }}>
+                  {createdAtDate}
+                </Text>
+              )}
+              {offeringCategoryLabel && (
+                <Text style={{ color: "green" }}>{offeringCategoryLabel}</Text>
+              )}
             </div>
           )}
 
@@ -195,7 +248,10 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
             {name}
           </Title>
 
-          <Paragraph ellipsis={{ rows: 8, expandable: false }} style={{ whiteSpace: "normal" }}>
+          <Paragraph
+            ellipsis={{ rows: 8, expandable: false }}
+            style={{ whiteSpace: "normal" }}
+          >
             {shortDescription}
           </Paragraph>
 
@@ -238,7 +294,11 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
                 }}
                 className="more-categories-link"
               >
-                +{hiddenNodes.length} {t("digitalSolution.moreCategories", "weitere Kategorien ansehen")}
+                +{hiddenNodes.length}{" "}
+                {t(
+                  "digitalSolution.moreCategories",
+                  "weitere Kategorien ansehen",
+                )}
               </Typography.Link>
             )}
           </div>
@@ -263,14 +323,15 @@ export function DigitalSolutionCard({ digitalSolution, taxonomyIndex, setQuery }
               className="details-link"
               onClick={(e) => {
                 e.stopPropagation();
+                handleCardClick(e);
               }}
             >
-              {t("common.readMore", "Mehr Details zum Projekt")} <RightOutlined />
+              {t("common.readMore", "Mehr Details zum Projekt")}{" "}
+              <RightOutlined />
             </Typography.Link>
           </div>
         </div>
       </Card>
-      </Link>
     </Badge.Ribbon>
   );
 }

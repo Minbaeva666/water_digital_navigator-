@@ -1,0 +1,5 @@
+# model endpoint
+dilowa https://chat-1.ki-awz.iisys.de/api/chat/completions
+lisa-v40-rc2-gpt-oss120b https://chat-1.ki-awz.iisys.de/api/chat/completions
+# optional custom model
+# dilowa https://chat-1.ki-awz.iisys.de
