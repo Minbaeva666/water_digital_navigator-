@@ -149,3 +149,61 @@ export const getParentKeyFromTree = (key: string, tree: TaxonomyNodeDto[]): stri
     }
     return null;
 };
+
+const TARGET_GROUP_PARENT_LABEL = "Zielgruppe / Nutzerkreis";
+const OTHER_TARGET_GROUP_LABEL = "Andere Zielgruppe";
+
+const normalizeLabel = (value: string) => value.trim().toLowerCase();
+
+const flattenTaxonomyNodes = (nodes: TaxonomyNodeDto[]): TaxonomyNodeDto[] => {
+    const flat: TaxonomyNodeDto[] = [];
+    const stack = [...nodes];
+    while (stack.length) {
+        const node = stack.pop()!;
+        flat.push(node);
+        if (node.children?.length) {
+            stack.push(...node.children);
+        }
+    }
+    return flat;
+};
+
+export const findOtherTargetGroupNodeId = (nodes: TaxonomyNodeDto[]): string | null => {
+    if (!nodes.length) return null;
+
+    const flat = flattenTaxonomyNodes(nodes);
+    const byId = new Map(flat.map((n) => [n.id, n] as const));
+
+    const candidates = flat.filter(
+        (n) => normalizeLabel(n.nameDe) === normalizeLabel(OTHER_TARGET_GROUP_LABEL)
+    );
+    if (!candidates.length) return null;
+
+    const topAncestor = (id: string): TaxonomyNodeDto | null => {
+        let cur = byId.get(id);
+        if (!cur) return null;
+        while (cur.parentId && byId.has(cur.parentId)) {
+            cur = byId.get(cur.parentId)!;
+        }
+        return cur;
+    };
+
+    for (const candidate of candidates) {
+        const root = topAncestor(candidate.id);
+        if (root && normalizeLabel(root.nameDe) === normalizeLabel(TARGET_GROUP_PARENT_LABEL)) {
+            return candidate.id;
+        }
+    }
+
+    return candidates[0]?.id ?? null;
+};
+
+export const isOtherTargetGroupSelected = (
+    selections: TaxonomySelectionsMap | undefined,
+    nodes: TaxonomyNodeDto[]
+): boolean => {
+    const otherId = findOtherTargetGroupNodeId(nodes);
+    if (!otherId) return false;
+    const allSelected = Object.values(selections ?? {}).flat();
+    return allSelected.includes(otherId);
+};

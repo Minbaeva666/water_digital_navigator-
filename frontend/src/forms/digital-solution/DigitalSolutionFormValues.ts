@@ -17,6 +17,7 @@ export interface DigitalSolutionFormValues {
     efficiencyDescription: string;
     processDescription: string;
     socialRelevanceDescription: string;
+    targetGroupOther?: string;
     solutionPresentedByUser?: boolean;
     hasAcceptedTerms: boolean;
     hasAcceptedPrivacyPolicy: boolean;

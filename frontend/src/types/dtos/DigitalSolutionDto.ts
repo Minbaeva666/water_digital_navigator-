@@ -28,6 +28,7 @@ export interface DigitalSolutionBackendDto {
     efficiencyDescription: string | null;
     processDescription: string | null;
     socialRelevanceDescription: string | null;
+    targetGroupOther?: string | null;
     hasAcceptedTerms: boolean;
     hasAcceptedPrivacyPolicy: boolean;
     solutionPresentedByUser?: boolean | null;
@@ -67,6 +68,7 @@ export interface DigitalSolutionWithRelationsDto {
     efficiencyDescription: string | null;
     processDescription: string | null;
     socialRelevanceDescription: string | null;
+    targetGroupOther?: string | null;
     hasAcceptedTerms: boolean;
     hasAcceptedPrivacyPolicy: boolean;
     solutionPresentedByUser?: boolean | null;
@@ -106,6 +108,7 @@ export interface DigitalSolutionDto {
     efficiencyDescription: string | null;
     processDescription: string | null;
     socialRelevanceDescription: string | null;
+    targetGroupOther?: string | null;
     hasAcceptedTerms: boolean;
     hasAcceptedPrivacyPolicy: boolean;
     solutionPresentedByUser?: boolean | null;

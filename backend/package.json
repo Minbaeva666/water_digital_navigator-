@@ -17,7 +17,8 @@
     "seed:admin": "ts-node --transpile-only src/prisma/seed/seed.admin.ts",
     "seed:moderator": "ts-node --transpile-only src/prisma/seed/seed.moderator.ts",
     "seed:testuser": "ts-node --transpile-only src/prisma/seed/seed.testuser.ts",
-    "seed:countries": "ts-node --transpile-only src/prisma/seed/seed.countries.ts"
+    "seed:countries": "ts-node --transpile-only src/prisma/seed/seed.countries.ts",
+    "migrate:org-coordinates": "ts-node --transpile-only scripts/regenerate-org-coordinates.ts"
   },
   "keywords": [],
   "author": "",

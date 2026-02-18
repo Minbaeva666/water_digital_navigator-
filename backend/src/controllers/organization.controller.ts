@@ -4,6 +4,7 @@ import { BadRequestError } from "../errors/BadRequestError";
 import { resizeImageBuffer } from "../utils/image";
 import path from "path";
 import fs from "fs";
+import { checkOrganizationReferences } from "../utils/referenceIntegrityChecker";
 
 const prisma = new PrismaClient();
 
@@ -755,52 +756,88 @@ export const getOrganization = async (req: Request, res: Response) => {
 
 export const deleteOrganization: RequestHandler = async (req, res, next) => {
     const { id } = req.params as { id?: string };
+
     if (!id) {
         res.status(400).json({ error: "orgId fehlt." });
+        return;
     }
 
     try {
-        // 1) Existenz prüfen
+        // 1) Check if organization exists
         const org = await prisma.organization.findUnique({
-            where: { id: id },
-            select: { id: true },
+            where: { id },
+            select: { id: true, name: true },
         });
+
         if (!org) {
             res.status(404).json({ error: "Organisation nicht gefunden." });
+            return;
         }
 
-        // 2) Alle DigitalSolutions der Organisation ermitteln
-        const solutions = await prisma.digitalSolution.findMany({
-            where: { organizationId: id },
-            select: { id: true },
-        });
+        // 2) CHECK REFERENCES BEFORE DELETION
+        const refCheck = await checkOrganizationReferences(id);
+        
+        if (refCheck.hasReferences) {
+            res.status(409).json({
+                error: "Löschen nicht möglich, diese Organisation ist bereits in Gebrauch.",
+                details: {
+                    organizationId: id,
+                    organizationName: org.name,
+                    references: refCheck.references,
+                    message: refCheck.message,
+                },
+                suggestion: 
+                    refCheck.references.users > 0
+                        ? `Bitte entfernen Sie zuerst alle ${refCheck.references.users} Benutzer aus dieser Organisation.`
+                        : `Bitte ordnen Sie alle ${refCheck.references.solutions} digitalen Lösungen neu an oder löschen Sie diese zuerst.`,
+            });
+            return;
+        }
 
-        // 3) Für jede Lösung Ordner & Bilder löschen
-        for (const { id } of solutions) {
-            const uploadDir = path.join(
-                process.cwd(),
-                "public",
-                "uploads",
-                "digitalSolutions",
-                id
-            );
-            if (fs.existsSync(uploadDir)) {
-                try {
-                    fs.rmSync(uploadDir, { recursive: true, force: true });
-                } catch (err) {
-                    console.warn(`Konnte Ordner ${uploadDir} nicht löschen:`, err);
+        // 3) SAFE TO DELETE - No references found
+        // Clean up files and delete
+        await prisma.$transaction(async (tx) => {
+            // Find any orphaned solutions (shouldn't exist if references were checked)
+            const solutions = await tx.digitalSolution.findMany({
+                where: { organizationId: id },
+                select: { id: true },
+            });
+
+            // Clean up upload directories
+            for (const { id: solutionId } of solutions) {
+                const uploadDir = path.join(
+                    process.cwd(),
+                    "public",
+                    "uploads",
+                    "digitalSolutions",
+                    solutionId
+                );
+                if (fs.existsSync(uploadDir)) {
+                    try {
+                        fs.rmSync(uploadDir, { recursive: true, force: true });
+                    } catch (err) {
+                        console.warn(`Konnte Ordner ${uploadDir} nicht löschen:`, err);
+                    }
                 }
+                
+                await tx.image.deleteMany({ where: { digitalSolutionId: solutionId } });
+                await tx.digitalSolution.delete({ where: { id: solutionId } });
             }
-            await prisma.image.deleteMany({ where: { digitalSolutionId: id } });
-            await prisma.digitalSolution.delete({ where: { id } });
-        }
 
-        // 4) Organisation selbst löschen
-        await prisma.organization.delete({ where: { id: id } });
+            // Delete municipality profile if exists
+            await tx.municipalityProfile.deleteMany({ where: { organizationId: id } });
+
+            // Delete the organization
+            await tx.organization.delete({ where: { id } });
+        });
 
         res.status(200).json({
             success: true,
-            message: `Organisation ${id} und alle zugehörigen Lösungen wurden gelöscht.`,
+            message: `Organisation "${org.name}" erfolgreich gelöscht.`,
+            deletedOrganization: {
+                id,
+                name: org.name,
+            }
         });
     } catch (error) {
         console.error(`Fehler beim Löschen der Organisation ${id}:`, error);

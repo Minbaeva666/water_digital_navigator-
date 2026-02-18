@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
-import { Form, Select, Typography, FormInstance, Row, Col, Empty } from "antd";
+import { Form, Select, Typography, FormInstance, Row, Col, Empty, Input } from "antd";
 import { DigitalSolutionFormValues } from "../../../../forms/digital-solution/DigitalSolutionFormValues";
 import { TaxonomyNodeDto } from "../../../../types/dtos/TaxonomyNodeDto";
+import { findOtherTargetGroupNodeId } from "../../../../utils/taxonomyTree";
 
 const { Title } = Typography;
 
@@ -48,6 +49,10 @@ function collectDeepestInSubtree(
 
 const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChange }) => {
   const solutionState = Form.useWatch("state", form);
+  const otherTargetGroupId = useMemo(
+    () => findOtherTargetGroupNodeId(taxonomyNodes),
+    [taxonomyNodes]
+  );
 
   const groups: TaxonomyGroup[] = useMemo(() => {
     if (!taxonomyNodes.length) return [];
@@ -59,8 +64,6 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
       return taxonomyNodes.filter((n) => n.parentId === node.id);
     };
 
-    // ⚠️ небольшая правка: filter всегда возвращает массив, поэтому "|| ..." не сработает.
-    // лучше так:
     const roots = taxonomyNodes.filter((n) => n.depth === 0);
     const rootList = roots.length ? roots : taxonomyNodes.filter((n) => n.parentId == null);
 
@@ -88,10 +91,8 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
         return { branch: l1, options };
       });
 
-      // убрать пустые ветки (на всякий случай)
       const nonEmptyBranches = branches.filter((b) => b.options.length > 0);
 
-      // сортировка веток по имени level1
       nonEmptyBranches.sort((a, b) => a.branch.nameDe.localeCompare(b.branch.nameDe, "de"));
 
       return { parent, branches: nonEmptyBranches };
@@ -115,6 +116,14 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
 
             const fieldName = ["taxonomySelections", parent.id] as any;
             const selected = (form.getFieldValue(fieldName) as string[]) || [];
+
+            const isTargetGroupParent =
+              parent.nameDe.trim().toLowerCase() ===
+              "zielgruppe / nutzerkreis".toLowerCase();
+            const showOtherInput =
+              !!otherTargetGroupId &&
+              isTargetGroupParent &&
+              selected.includes(otherTargetGroupId);
 
             return (
               <Row gutter={64} key={parent.id}>
@@ -141,13 +150,18 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
                       allowClear
                       showSearch
                       placeholder={`Bitte ${min > 0 ? `mindestens ${min}` : "Kriterien"} auswählen`}
-                      onChange={onFormChange}
+                      onChange={(vals) => {
+                        onFormChange?.();
+                        if (isTargetGroupParent && otherTargetGroupId && !vals.includes(otherTargetGroupId)) {
+                          form.setFieldValue("targetGroupOther", undefined);
+                        }
+                      }}
                       filterOption={(input, option) => {
                         const label = (option?.label as string) || "";
                         return label.toLowerCase().includes(input.toLowerCase());
                       }}
                       options={branches.map((b) => ({
-                        label: b.branch.nameDe, // <-- сабкатегория (level-1)
+                        label: b.branch.nameDe, 
                         options: b.options.map((n) => ({
                           label: n.nameDe,
                           value: n.id,
@@ -162,6 +176,30 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
                       }}
                     />
                   </Form.Item>
+                  {showOtherInput && (
+                    <Form.Item
+                      name="targetGroupOther"
+                      label="Andere Zielgruppe angeben"
+                      validateTrigger={["onChange", "onBlur"]}
+                      rules={[
+                        {
+                          validator(_, value: string | undefined) {
+                            if (solutionState === "DRAFT" || !showOtherInput) {
+                              return Promise.resolve();
+                            }
+                            if (value && value.trim().length > 0) {
+                              return Promise.resolve();
+                            }
+                            return Promise.reject(
+                              new Error("Bitte die andere Zielgruppe angeben")
+                            );
+                          },
+                        },
+                      ]}
+                    >
+                      <Input placeholder="Andere Zielgruppe angeben" />
+                    </Form.Item>
+                  )}
                 </Col>
               </Row>
             );

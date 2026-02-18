@@ -7,6 +7,7 @@ import {
     mkSlug,
     preflightRejectDuplicateNames,
 } from "../types/taxonomyNodes.types";
+import { checkTaxonomyNodeReferences } from "../utils/referenceIntegrityChecker";
 
 export const getTaxonomyNodes = async (req: Request, res: Response) => {
     try {
@@ -140,9 +141,24 @@ export const updateTaxonomyNodes = async (req: Request, res: Response) => {
             if (idsToDelete.length) {
                 const toDel = await tx.taxonomyNode.findMany({
                     where: { id: { in: idsToDelete } },
-                    select: { id: true, depth: true },
+                    select: { id: true, depth: true, nameDe: true },
                 });
                 toDel.sort((a, b) => b.depth - a.depth);
+                
+                // Check references for each node before deletion
+                for (const { id, nameDe } of toDel) {
+                    const refCheck = await checkTaxonomyNodeReferences(id);
+                    
+                    if (refCheck.hasReferences) {
+                        // Throw error - deletion blocked due to references
+                        throw new Error(
+                            `TAXONOMY_NODE_IN_USE: Cannot delete node "${nameDe}". ` +
+                            `${refCheck.message}`
+                        );
+                    }
+                }
+                
+                // All nodes passed reference check - safe to delete
                 for (const { id } of toDel) {
                     await tx.taxonomyNode.delete({ where: { id } });
                 }
@@ -164,6 +180,19 @@ export const updateTaxonomyNodes = async (req: Request, res: Response) => {
 
         res.json(result);
     } catch (err: any) {
+        // Check for taxonomy node in-use error
+        if (err?.message?.includes("TAXONOMY_NODE_IN_USE")) {
+            const message = err.message.replace("TAXONOMY_NODE_IN_USE: ", "");
+            res.status(409).json({
+                error: {
+                    code: "TAXONOMY_NODE_IN_USE",
+                    message: "Löschen nicht möglich, dieser Knoten ist bereits in Gebrauch.",
+                    details: message,
+                },
+            });
+            return;
+        }
+
         // Prisma-Fehler hübsch mappen
         if (err?.code === "P2002") {
             // Unique-Constraint verletzt (z. B. path oder slug)

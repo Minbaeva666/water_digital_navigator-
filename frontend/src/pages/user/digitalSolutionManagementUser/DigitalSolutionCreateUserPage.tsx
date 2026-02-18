@@ -25,6 +25,7 @@ import { taxonomyNodeService } from "../../../services/taxonomyNodeService/taxon
 import isEqual from "lodash.isequal";
 import { EMPTY_DIGITAL_SOLUTION_FORM } from "../../../services/digitalSolutionService/digitalSolution.mapper";
 import { DigitalSolutionState } from "../../../types/constants/enums";
+import { isOtherTargetGroupSelected } from "../../../utils/taxonomyTree";
 
 // import { useLocalDraftAutosave } from "../../../hooks/useLocalDraftAutosave";
 // import { DraftIndicator } from "../../../components/admin/DraftIndicator";
@@ -84,6 +85,7 @@ export default function DigitalSolutionCreateUserPage() {
     projectPartnerIds: normIdArray(values.projectPartnerIds),
     solutionUserIds: normIdArray(values.solutionUserIds),
     taxonomySelections: (values as any)?.taxonomySelections ?? {},
+    targetGroupOther: normalizeString(values.targetGroupOther),
   });
   type Baseline = ReturnType<typeof normalizeValues>;
 
@@ -174,9 +176,12 @@ export default function DigitalSolutionCreateUserPage() {
           return selected.length >= min;
         });
 
+      let otherTargetGroupOk = true;
+      otherTargetGroupOk = !isOtherTargetGroupSelected(selections, taxonomyNodes) || !!merged.targetGroupOther?.trim();
+
       onTabValidityChange("COMMON", commonValid);
       onTabValidityChange("IMAGES", imagesValid);
-      onTabValidityChange("CRITERIA", criteriaValid);
+      onTabValidityChange("CRITERIA", criteriaValid && otherTargetGroupOk);
     }
 
     const current = normalizeValues(merged);

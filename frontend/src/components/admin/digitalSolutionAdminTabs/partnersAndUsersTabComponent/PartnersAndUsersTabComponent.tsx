@@ -155,21 +155,22 @@ const handleCreateOrg = async () => {
     setOrgSaving(true);
 
     const created = await organizationService.createOrganization({
-  name: values.orgName.trim(),
-  email: values.orgEmail.trim(),
-  website: values.orgWebsite?.trim() || "",
-  street: values.orgStreet.trim(),
-  zip: values.orgZip.trim(),
-  city: values.orgCity.trim(),
-
-  countryCode: values.orgCountry,
-
-  organizationType: values.orgType,
-
-  organizationState: OrganizationState.REQUESTED,
-
-  regionId: null,
-});
+      name: values.orgName.trim(),
+      email: values.orgEmail?.trim() || "",
+      website: values.orgWebsite?.trim() || "",
+      street: values.orgStreet?.trim() || "",
+      zip: values.orgZip.trim(),
+      city: values.orgCity.trim(),
+      countryCode: values.orgCountry,
+      organizationType: values.orgType,
+      organizationState: OrganizationState.LITE,
+      regionId: null,
+      manualCoords: false,
+      municipalityProfile: {
+        organizationId: "",
+        population: 0,
+      },
+    });
 
     const newId =
       (created as any)?.id ?? (created as any)?.organizationId ?? (created as any)?.orgId;
@@ -189,12 +190,16 @@ const handleCreateOrg = async () => {
   } catch (e: any) {
     if (e?.errorFields) return;
     console.error(e);
-    message.error(e?.message ?? "Fehler beim Erstellen der Organisation.");
+    const serverMessage =
+      e?.response?.data?.error ||
+      e?.response?.data?.message ||
+      e?.message ||
+      "Fehler beim Erstellen der Organisation.";
+    message.error(serverMessage);
   } finally {
     setOrgSaving(false);
   }
 };
-
 
   return (
     <div className="pa-container">
@@ -337,7 +342,7 @@ const handleCreateOrg = async () => {
           <Form.Item
             name="orgEmail"
             label="Email Ihrer Organisation"
-            rules={[{ required: true, type: "email" }]}
+            rules={[{ type: "email", message: "Bitte eine gueltige E-Mail eingeben" }]}
           >
             <Input />
           </Form.Item>
@@ -360,14 +365,7 @@ const handleCreateOrg = async () => {
             </Select>
           </Form.Item>
 
-          <Form.Item
-            name="orgStreet"
-            label="Straße"
-            rules={[
-              { required: true, message: "Straße ist erforderlich" },
-              { min: 2, message: "Straße muss mindestens 2 Zeichen lang sein" },
-            ]}
-          >
+          <Form.Item name="orgStreet" label="Straße">
             <Input />
           </Form.Item>
 

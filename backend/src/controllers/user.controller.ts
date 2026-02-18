@@ -16,6 +16,7 @@ import { handleError } from "../utils/handleError";
 import { resizeImageBuffer } from "../utils/image";
 import { prepareOrganizationData } from "../helpers/organizationHelpers";
 import { UserMinimalDto, UserWithOrganization } from "../types/user.types";
+import { checkUserReferences } from "../utils/referenceIntegrityChecker";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -937,9 +938,10 @@ export const deleteUser = async (
   }
 
   try {
+    // 1) Check if user exists
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, email: true },
     });
 
     if (!user) {
@@ -947,41 +949,57 @@ export const deleteUser = async (
       return;
     }
 
-    await prisma.$transaction(async (tx) => {
-      // 1) Alle DigitalSolutions, die von diesem User präsentiert werden, anpassen:
-      //    - organizationId -> null
-      //    - solutionPresentedByUser -> true   (konsistent zur Update-Logik)
-      await tx.digitalSolution.updateMany({
-        where: { presentedByUserId: id },
-        data: {
-          organizationId: null,
-          solutionPresentedByUser: true,
+    // 2) CHECK REFERENCES BEFORE DELETION
+    const refCheck = await checkUserReferences(id);
+    
+    if (refCheck.hasReferences) {
+      res.status(409).json({
+        error: "Löschen nicht möglich, dieser Benutzer ist bereits in Gebrauch.",
+        details: {
+          userId: id,
+          userEmail: user.email,
+          references: refCheck.references,
+          message: refCheck.message,
         },
+        suggestion: "Bitte heben Sie die Zuordnungen auf, bevor Sie löschen.",
       });
+      return;
+    }
 
-      // 3) User löschen (presentedByUserId wird dank onDelete:SetNull automatisch genullt)
+    // 3) SAFE TO DELETE - No references found
+    await prisma.$transaction(async (tx) => {
+      // Clean up any tokens associated with this user
+      await tx.token.deleteMany({
+        where: { userId: id },
+      });
+      
+      // Delete the user
       await tx.user.delete({
         where: { id },
       });
     });
 
-    res.status(200).json({ message: "User erfolgreich gelöscht." });
+    res.status(200).json({ 
+      message: "User erfolgreich gelöscht.",
+      deletedUser: {
+        id,
+        email: user.email,
+      }
+    });
   } catch (error) {
     console.error(`Fehler beim Löschen des Users ${id}:`, error);
 
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      (error as any).code === "P2003"
-    ) {
-      res.status(409).json({
-        error:
-          "Löschen nicht möglich: Der Benutzer ist noch als Besitzer (userId) bei mindestens einer DigitalSolution eingetragen. Bitte Lösungen umhängen oder Ownership entfernen.",
-      });
-      return;
+    // Handle database constraint errors as fallback
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2003" || error.code === "P2014") {
+        res.status(409).json({
+          error: "Löschen nicht möglich, dieser Benutzer ist bereits in Gebrauch.",
+          reason: "database_constraint",
+        });
+        return;
+      }
     }
 
-    res.status(500).json({ error: "Fehler beim Löschen des Users." });
+    next(error);
   }
 };

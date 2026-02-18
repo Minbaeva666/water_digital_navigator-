@@ -2,7 +2,7 @@
 import { OrganizationFormValues } from "../../types/dtos/Organization.dto";
 import { OrganizationType } from "../../types/constants/enums";
 
-export const ORG_STATES = ["LITE", "FULL"] as const;
+export const ORG_STATES = ["LITE", "FULL", "REQUESTED"] as const;
 export type OrgState = typeof ORG_STATES[number];
 export const isOrgState = (s: unknown): s is OrgState =>
     ORG_STATES.includes(s as OrgState);
@@ -15,6 +15,7 @@ export type FieldPath =
 // Basis-Pflichten pro State
 export const REQUIRED_COMMON: Record<OrgState, (keyof OrganizationFormValues)[]> = {
     LITE: ["organizationState","name","organizationType","zip","city","countryCode"],
+    REQUESTED: ["organizationState","name","organizationType","zip","city","countryCode"],
     FULL: ["organizationState","name","email","website","organizationType","street","zip","city","countryCode"],
 };
 

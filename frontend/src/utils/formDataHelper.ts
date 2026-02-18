@@ -65,6 +65,7 @@ export function mapDigitalSolutionDtoToForm(
         efficiencyDescription: dto.efficiencyDescription ?? "",
         processDescription: dto.processDescription ?? "",
         socialRelevanceDescription: dto.socialRelevanceDescription ?? "",
+        targetGroupOther: dto.targetGroupOther ?? "",
 
         presentedByUserId: dto.presentedByUser?.id ?? "",
         solutionPresentedByUser: dto.solutionPresentedByUser ?? undefined,

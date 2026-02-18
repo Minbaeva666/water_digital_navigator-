@@ -6,9 +6,103 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Digital Lotse Wasser</title>
+    <!-- Klaro CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/KIProtect/klaro@latest/dist/klaro.css" />
+    <script>
+      // Initialize Klaro config before Klaro script loads
+      window.klaroConfig = {
+        version: 1,
+        basePath: '/',
+        elementID: 'klaro',
+        storageMethod: 'cookie',
+        cookieName: 'dilowa-consent',
+        cookieExpiresAfterDays: 365,
+        privacyPolicy: '/datenschutz',
+        default: false,
+        mustConsent: false,
+        acceptAll: true,
+        hideDeclineAll: false,
+        hideLearnMore: false,
+        disablePoweredBy: true,
+        lang: 'de',
+        fallbackLang: 'de',
+        noticeAsModal: false,
+        htmlTexts: true,
+        translations: {
+          en: {
+            consentModal: {
+              title: 'Privacy Settings',
+              description: 'This site uses consent-requiring cookies and third-party technologies to integrate certain features. When you click "Accept All", these features are enabled. You can revoke your consent at any time.',
+            },
+            consentNotice: {
+              title: 'Privacy Settings',
+              description: 'This site uses consent-requiring cookies and third-party technologies to integrate certain features. When you click "Accept All", these features are enabled.<br><br><a href="/datenschutz" target="_blank" rel="noopener">Privacy Policy</a> | <a href="/impressum" target="_blank" rel="noopener">Imprint</a>',
+              learnMore: 'More',
+              acceptAll: 'Accept All',
+              decline: 'Deny',
+            },
+          },
+          de: {
+            consentModal: {
+              title: 'Datenschutz-Einstellungen',
+              description: 'Diese Website verwendet zustimmungspflichtige Cookies und Drittanbieter-Technologien zur Integration bestimmter Features. Wenn Sie auf „Alle akzeptieren" klicken, werden diese Funktionen aktiviert. Sie können Ihre Zustimmung jederzeit widerrufen. Unsere <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> können Sie hier einsehen.',
+              acceptAll: 'Alle akzeptieren',
+              acceptSelected: 'Ausgewählte akzeptieren',
+              decline: 'Ich lehne ab',
+            },
+            consentNotice: {
+              title: 'Datenschutz-Einstellungen',
+              description: 'Diese Website verwendet zustimmungspflichtige Cookies und Drittanbieter-Technologien zur Integration bestimmter Features. Wenn Sie auf „Alle akzeptieren" klicken, werden diese Funktionen aktiviert. Sie können Ihre Zustimmung jederzeit widerrufen. Unsere <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> können Sie hier einsehen.',
+              learnMore: 'Mehr',
+              acceptAll: 'Alle akzeptieren',
+              decline: 'Ich lehne ab',
+            },
+            purposes: {
+              functional: {
+                title: 'Funktional',
+              },
+            },
+            servicePurposeDescription: '{name} verwendet diese Cookies, um einen Service zu erbringen.',
+          },
+        },
+        purposes: {
+          functional: {
+            title: 'Funktional',
+          },
+        },
+        services: [
+          {
+            name: 'serviceProvision',
+            title: 'Dienstbereitstellung',
+            description: 'Diese Dienste sind für die korrekte Funktion dieser Website unerlässlich. Sie können sie hier nicht deaktivieren, da der Dienst sonst nicht richtig funktionieren würde.',
+            purposes: ['functional'],
+            required: true,
+            default: true,
+          },
+          {
+            name: 'analytics',
+            title: 'Analytik',
+            description: 'Hilft uns zu verstehen, wie Sie unsere Website nutzen, damit wir sie verbessern können.',
+            purposes: ['functional'],
+            required: false,
+            default: false,
+          },
+        ],
+      };
+
+      // Function to open cookie settings
+      window.openCookieSettings = function() {
+        if (window.klaro && window.klaro.show) {
+          window.klaro.show();
+        }
+      };
+    </script>
   </head>
   <body>
+    <div id="klaro"></div>
     <div id="root"></div>
+    <!-- Klaro Script -->
+    <script src="https://cdn.jsdelivr.net/gh/KIProtect/klaro@latest/dist/klaro.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -11,9 +11,9 @@
   transition: right 0.3s ease;
 }
 
-/* Collapsed state: slide a bit to the right outside the viewport */
+/* Collapsed state: slide slightly to the right, keeping toggle button mostly visible */
 .fab-wrapper-collapsed {
-  right: -32px;           /* only part of the toggle button is visible */
+  right: -20px;           /* keeps most of the toggle button visible */
 }
 
 /* Toggle button (collapse/expand) */
@@ -48,7 +48,7 @@
   }
 
   .fab-wrapper-collapsed {
-    right: -28px;
+    right: -18px;         /* keeps more of toggle button visible on mobile */
   }
 
   .contact-fab,

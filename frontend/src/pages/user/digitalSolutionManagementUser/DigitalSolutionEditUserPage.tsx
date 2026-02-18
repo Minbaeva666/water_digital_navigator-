@@ -25,7 +25,7 @@ import {taxonomyNodeService} from "../../../services/taxonomyNodeService/taxonom
 import CriteriaTabComponent
     from "../../../components/admin/digitalSolutionAdminTabs/criteriaTabComponent/CriteriaTabComponent.tsx";
 import {TaxonomyNodeDto} from "../../../types/dtos/TaxonomyNodeDto.ts";
-import {buildGroupedSelections} from "../../../utils/taxonomyTree.ts";
+import {buildGroupedSelections, isOtherTargetGroupSelected} from "../../../utils/taxonomyTree.ts";
 import {FileAddOutlined, SaveOutlined} from "@ant-design/icons";
 import {DigitalSolutionState} from "../../../types/constants/enums.ts";
 // import "./DigitalSolutionEditAdminPage.less"
@@ -379,9 +379,15 @@ export default function DigitalSolutionEditAdminPage() {
                     return selected.length >= min;
                 });
 
+            const merged = form.getFieldsValue();
+            let otherTargetGroupOk = true;
+            if (!isDraft) {
+                otherTargetGroupOk = !isOtherTargetGroupSelected(selections, taxonomyNodes) || !!merged.targetGroupOther?.trim();
+            }
+
             onTabValidityChange("COMMON", commonValid);
             onTabValidityChange("IMAGES", imagesValid);
-            onTabValidityChange("CRITERIA", criteriaValid);
+            onTabValidityChange("CRITERIA", criteriaValid && otherTargetGroupOk);
         }
 
         // --- Änderungen erkennen (immer) ---
@@ -410,7 +416,8 @@ export default function DigitalSolutionEditAdminPage() {
                 taxonomySelections: values.taxonomySelections,
                 publishedBy: values.publishedBy ?? null,
                 publishedAt: values.publishedAt ?? null,
-                publishedSource: normalizeString(values.publishedSource)
+                publishedSource: normalizeString(values.publishedSource),
+                targetGroupOther: normalizeString(values.targetGroupOther)
             });
 
             const valuesChanged = !isEqual(

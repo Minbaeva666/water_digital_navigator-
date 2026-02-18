@@ -278,6 +278,7 @@ model DigitalSolution {
   efficiencyDescription      String?              @db.Text
   processDescription         String?              @db.Text
   socialRelevanceDescription String?              @db.Text
+  targetGroupOther           String?              @db.Text
   hasAcceptedTerms           Boolean              @default(false)
   hasAcceptedPrivacyPolicy   Boolean              @default(false)
   presentedByUserId          String?

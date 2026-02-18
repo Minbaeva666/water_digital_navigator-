@@ -13,6 +13,7 @@ export const EMPTY_DIGITAL_SOLUTION_FORM: DigitalSolutionFormValues = {
     efficiencyDescription: "",
     processDescription: "",
     socialRelevanceDescription: "",
+    targetGroupOther: "",
 
     solutionPresentedByUser: undefined,
 

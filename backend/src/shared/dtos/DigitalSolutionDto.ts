@@ -21,6 +21,7 @@ export interface DigitalSolutionBaseDto {
     efficiencyDescription: string;
     processDescription: string;
     socialRelevanceDescription: string;
+    targetGroupOther?: string;
     hasAcceptedTerms: boolean;
     hasAcceptedPrivacyPolicy: boolean;
     presentedByUser: UserBaseDto;
@@ -64,6 +65,7 @@ export interface DigitalSolutionFormValues {
     efficiencyDescription: string;
     processDescription: string;
     socialRelevanceDescription: string;
+    targetGroupOther?: string;
     projectPartners: OrganizationBaseDto[];
     solutionUsers: OrganizationBaseDto[];
 

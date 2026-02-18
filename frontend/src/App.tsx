@@ -11,8 +11,7 @@ import AppFooter from "./components/footer/footer.tsx";
 import "./utils/utilities.css.less";
 import ContactFloatingButton from "./components/contact/ContactFloatingButton";
 import HelpdeskWidget from "./components/helpdesk/HelpdeskWidget";
-
-
+import 'klaro/dist/klaro.css';
 
 const { Content } = Layout;
 
@@ -53,7 +52,8 @@ const KontaktPage = lazy(() => import('./pages/kontakt/KontaktPage.tsx'));
 // const DigitalSolutionsOverviewPage = lazy(() => import('./pages/digitalSolutionsOverviewPage/DigitalSolutionsOverviewPage.tsx'));
 const DigitalSolutionsOverviewPage = lazy(() => import('./pages/digitalSolutionsOverviewPage/DigitalSolutionsOverviewPage.tsx'));
 
-const AppWrapper: React.FC = () => (
+const AppWrapper: React.FC = () => {
+  return (
     <ConfigProvider locale={customLocale} theme={customTheme}>
         <AntdApp>
         <Router>
@@ -123,6 +123,7 @@ const AppWrapper: React.FC = () => (
         </Router>
         </AntdApp>
     </ConfigProvider>
-);
+  );
+};
 
 export default AppWrapper;

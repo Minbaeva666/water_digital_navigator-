@@ -1,6 +1,6 @@
 // src/components/footer/AppFooter.tsx
 import React from 'react';
-import { Layout, Space, Typography, Grid } from 'antd';
+import { Layout, Space, Typography, Grid, Button } from 'antd';
 import { NavLink } from 'react-router-dom';
 import './footer.less';
 
@@ -10,6 +10,12 @@ const { useBreakpoint } = Grid;
 const AppFooter: React.FC = () => {
     const screens = useBreakpoint();
     const isMobile = !screens.md;
+
+    const handleCookieSettings = () => {
+        if (window.openCookieSettings) {
+            window.openCookieSettings();
+        }
+    };
 
     return (
         <Footer className="app-footer" role="contentinfo" aria-label="Fußbereich mit rechtlichen Informationen">
@@ -21,6 +27,14 @@ const AppFooter: React.FC = () => {
                     <NavLink to="/nutzungsbedingungen" className="footer-link">Nutzungsbedingungen</NavLink>
                     <NavLink to="/faq" className="footer-link">FAQ</NavLink>
                     <NavLink to="/kontakt" className="footer-link">Kontakt</NavLink>
+                    <Button 
+                        type="text" 
+                        onClick={handleCookieSettings}
+                        className="footer-link"
+                        style={{ padding: 0, height: 'auto' }}
+                    >
+                        Cookie-Einstellungen
+                    </Button>
 
                 </Space>
 

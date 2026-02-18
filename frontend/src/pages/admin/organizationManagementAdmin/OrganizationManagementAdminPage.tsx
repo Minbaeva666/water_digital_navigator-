@@ -1,5 +1,5 @@
-import {useCallback, useEffect, useState} from "react";
-import {message} from "antd";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {message, Input, Select, Space} from "antd";
 import {ColumnsType} from "antd/es/table";
 import {useLocation, useNavigate} from "react-router-dom";
 import {organizationService} from "../../../services/organization/organizationService.ts";
@@ -79,6 +79,8 @@ const OrganizationManagementAdminPage = () => {
     const [activeTab, setActiveTab] = useState<keyof typeof TAB_KEYS>(initialTab);
     const [organizations, setOrganizations] = useState<OrganizationFullDto[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
 
     const loadOrganizations = useCallback(async () => {
@@ -96,6 +98,38 @@ const OrganizationManagementAdminPage = () => {
     useEffect(() => {
         loadOrganizations();
     }, []);
+
+    const filteredOrganizations = useMemo(() => {
+        const term = searchTerm.trim().toLowerCase();
+        let list = organizations.slice();
+
+        if (term) {
+            list = list.filter((org) => {
+            const name = (org.name ?? "").toLowerCase();
+            const email = (org.email ?? "").toLowerCase();
+            const website = (org.website ?? "").toLowerCase();
+            const city = (org.city ?? "").toLowerCase();
+            const zip = (org.zip ?? "").toLowerCase();
+            return (
+                name.includes(term) ||
+                email.includes(term) ||
+                website.includes(term) ||
+                city.includes(term) ||
+                zip.includes(term)
+            );
+            });
+        }
+
+        list.sort((a, b) => {
+            const aName = String(a.name ?? "").toLowerCase();
+            const bName = String(b.name ?? "").toLowerCase();
+            if (aName < bName) return sortDirection === "asc" ? -1 : 1;
+            if (aName > bName) return sortDirection === "asc" ? 1 : -1;
+            return 0;
+        });
+
+        return list;
+    }, [organizations, searchTerm, sortDirection]);
 
     const handleTabChange = (key: string) => {
         setActiveTab(key as keyof typeof TAB_KEYS);
@@ -118,6 +152,28 @@ const OrganizationManagementAdminPage = () => {
         );
     };
 
+    const headerControls = (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Space>
+                <Input.Search
+                    placeholder="Nach Name, E-Mail, Website oder Ort suchen"
+                    onSearch={(v) => setSearchTerm(v)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    allowClear
+                    style={{ width: 420 }}
+                />
+                <Select
+                    value={sortDirection}
+                    onChange={(v) => setSortDirection(v)}
+                    style={{ width: 160 }}
+                >
+                    <Select.Option value="asc">Name A-Z</Select.Option>
+                    <Select.Option value="desc">Name Z-A</Select.Option>
+                </Select>
+            </Space>
+        </div>
+    );
+
     return (
         <section className="page-fill page-top">
             <TableView<OrganizationFullDto>
@@ -127,11 +183,12 @@ const OrganizationManagementAdminPage = () => {
                 tabs={TABS}
                 activeTabKey={activeTab}
                 onTabChange={handleTabChange}
-                data={organizations}
+                data={filteredOrganizations}
                 columns={columns}
                 rowKey="id"
                 loading={loading}
                 onRowClick={handleRowClick}
+                headerExtra={headerControls}
             />
         </section>
     );

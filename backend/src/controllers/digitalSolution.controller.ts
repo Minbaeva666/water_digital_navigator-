@@ -55,6 +55,7 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
             efficiencyDescription,
             processDescription,
             socialRelevanceDescription,
+            targetGroupOther,
             hasAcceptedTerms,
             hasAcceptedPrivacyPolicy,
             projectPartnerIds,
@@ -80,6 +81,7 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
             efficiencyDescription?: string;
             processDescription?: string;
             socialRelevanceDescription?: string;
+            targetGroupOther?: string;
             hasAcceptedTerms: string | boolean;
             hasAcceptedPrivacyPolicy: string | boolean;
             projectPartnerIds: string[] | string;
@@ -180,6 +182,7 @@ if (effectivePresenterId) {                        // ← use it
                     ...(efficiencyDescription ? { efficiencyDescription } : {}),
                     ...(socialRelevanceDescription ? { socialRelevanceDescription } : {}),
                     ...(processDescription ? { processDescription } : {}),
+                    ...(targetGroupOther?.trim() ? { targetGroupOther: targetGroupOther.trim() } : {}),
                     ...(toConnect(projectPartnerIds) ? { projectPartners: toConnect(projectPartnerIds) } : {}),
                     ...(toConnect(solutionUserIds) ? { solutionUsers: toConnect(solutionUserIds) } : {}),
                     ...presenterConnect,
@@ -262,6 +265,7 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
             efficiencyDescription,
             processDescription,
             socialRelevanceDescription,
+            targetGroupOther,
             hasAcceptedTerms,
             hasAcceptedPrivacyPolicy,
             projectPartnerIds,
@@ -349,6 +353,7 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
                     ...(efficiencyDescription ? { efficiencyDescription } : {}),
                     ...(socialRelevanceDescription ? { socialRelevanceDescription } : {}),
                     ...(processDescription ? { processDescription } : {}),
+                    ...(typeof targetGroupOther === "string" && targetGroupOther.trim() ? { targetGroupOther: targetGroupOther.trim() } : {}),
 
                     // Presenter-Relationen
                     ...(await (async () => {

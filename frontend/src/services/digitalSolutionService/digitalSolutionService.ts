@@ -97,6 +97,7 @@ export const createDigitalSolution = async (
         publishedBy,
         publishedAt,
         publishedSource,
+        targetGroupOther,
     } = values;
 
     const payload = {
@@ -123,7 +124,8 @@ export const createDigitalSolution = async (
         solutionPresentedByUser,
         publishedBy,
         publishedAt,
-        publishedSource
+        publishedSource,
+        targetGroupOther,
     };
 
     const {data} = await axiosInstance.post<{ digitalSolutionId: string }>(baseUrl, payload);
@@ -237,7 +239,8 @@ const updateDigitalSolution = async (values: DigitalSolutionFormValues): Promise
         solutionPresentedByUser: values.solutionPresentedByUser,
         publishedBy: values.publishedBy,
         publishedAt: values.publishedAt,
-        publishedSource: values.publishedSource
+        publishedSource: values.publishedSource,
+        targetGroupOther: values.targetGroupOther,
     };
 
     const {data} = await axiosInstance.put<DigitalSolutionWithRelationsDto>(
