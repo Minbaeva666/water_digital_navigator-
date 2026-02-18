@@ -1,0 +1,110 @@
+flowchart LR
+
+subgraph 0["src"]
+subgraph 1["controllers"]
+2["accessibility.controller.ts"]
+3["admin.controller.ts"]
+4["auth.controller.ts"]
+A["digitalSolution.controller.ts"]
+K["faq.controller.ts"]
+L["imprint.controller.ts"]
+M["inputController.ts"]
+O["organization.controller.ts"]
+T["privacyPolicy.controller.ts"]
+U["publicPdf.controller.ts"]
+W["registration.controller.ts"]
+X["taxonomyNodes.controller.ts"]
+Y["termsOfUse.controller.ts"]
+Z["user.controller.ts"]
+end
+subgraph 6["config"]
+subgraph 7["permissions"]
+8["roleNavigation.ts"]
+9["rolePermissions.ts"]
+end
+V["pdf-dir.ts"]
+1H["loggerConfig.ts"]
+end
+subgraph E["helpers"]
+F["imagesHelper.ts"]
+N["input.helpers.ts"]
+10["organizationHelpers.ts"]
+end
+subgraph G["utils"]
+H["cleanupUploadFolder.ts"]
+I["date.ts"]
+J["mapper.ts"]
+S["image.ts"]
+12["handleError.ts"]
+13["prismaErrorMapper.ts"]
+1D["email.ts"]
+1E["response.ts"]
+end
+subgraph P["errors"]
+Q["BadRequestError.ts"]
+R["ApiError.ts"]
+11["ConflictError.ts"]
+1C["EmailError.ts"]
+end
+subgraph 14["models"]
+15["registration.models.ts"]
+16["user.models.ts"]
+end
+subgraph 17["services"]
+subgraph 18["auth"]
+19["authService.ts"]
+end
+subgraph 1A["email"]
+1B["sendMail.ts"]
+end
+subgraph 1F["logger"]
+1G["loggerService.ts"]
+end
+end
+end
+5["crypto"]
+subgraph B["fs"]
+C["promises"]
+end
+D["path"]
+4-->8
+4-->9
+4-->5
+A-->F
+A-->H
+A-->I
+A-->J
+A-->5
+A-->B
+A-->C
+A-->D
+F-->5
+F-->C
+F-->D
+H-->C
+H-->D
+M-->N
+O-->Q
+O-->S
+O-->B
+O-->D
+Q-->R
+U-->V
+U-->B
+U-->D
+V-->B
+V-->D
+Z-->10
+Z-->12
+Z-->S
+Z-->5
+10-->Q
+10-->11
+11-->R
+12-->13
+1B-->1C
+1B-->1D
+1D-->1E
+1D-->C
+1D-->D
+1G-->1H

@@ -7,6 +7,12 @@ import './footer.less';
 const { Footer } = Layout;
 const { useBreakpoint } = Grid;
 
+declare global {
+  interface Window {
+    openCookieSettings?: () => void;
+  }
+}
+
 const AppFooter: React.FC = () => {
     const screens = useBreakpoint();
     const isMobile = !screens.md;

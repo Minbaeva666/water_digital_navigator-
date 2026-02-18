@@ -12,6 +12,12 @@ import "./utils/utilities.css.less";
 import ContactFloatingButton from "./components/contact/ContactFloatingButton";
 import HelpdeskWidget from "./components/helpdesk/HelpdeskWidget";
 
+declare global {
+  interface Window {
+    openCookieSettings?: () => void;
+  }
+}
+
 const { Content } = Layout;
 
 const HomePage = lazy(() => import("./pages/homePage/HomePage"));
@@ -130,7 +136,7 @@ const DigitalSolutionsOverviewPage = lazy(
 const AppWrapper: React.FC = () => (
   <ConfigProvider locale={customLocale} theme={customTheme}>
     <AntdApp>
-      <Router basename="/dilowa">
+      <Router>
         <Layout className="app-layout">
           <div className="app-container">
             <AppHeader />
