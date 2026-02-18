@@ -52,7 +52,7 @@ function buildChatUrl(base?: string): string {
   if (/\/(api|v1)\/chat\/completions$/i.test(baseUrl)) return baseUrl;
   if (/\/api$/i.test(baseUrl)) return baseUrl + '/chat/completions';
   if (/\/v1$/i.test(baseUrl)) return baseUrl + '/chat/completions';
-  return baseUrl + '/chat/completions';
+  return baseUrl + '/api/chat/completions';
 }
 
 const LISA_API_TOKEN = process.env.LISA_API_TOKEN || process.env.LISA_API_KEY;
