@@ -45,6 +45,7 @@ pids/
 *.sqlite
 *.sqlite3
 *.db
+*.sql
 
 # OS
 .DS_Store

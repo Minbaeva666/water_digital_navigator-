@@ -11,7 +11,6 @@ import AppFooter from "./components/footer/footer.tsx";
 import "./utils/utilities.css.less";
 import ContactFloatingButton from "./components/contact/ContactFloatingButton";
 import HelpdeskWidget from "./components/helpdesk/HelpdeskWidget";
-import 'klaro/dist/klaro.css';
 
 const { Content } = Layout;
 

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { logService } from '../services/logger/loggerService';
 import { prisma } from '../prisma/prisma';
-import { sendMessageToLisa, formatSolutionsWithLisa } from '../services/lisa/lisaService';
+import { sendMessageToLisa, formatSolutionsWithLisa, getSystemPrompt } from '../services/lisa/lisaService';
 import { findSolutionsFromLisaFilters } from '../services/solution/solutionService';
 
 const helpdeskRouter = Router();
@@ -258,6 +258,20 @@ helpdeskRouter.post('/test-ai', async (req: Request, res: Response) => {
       error: 'Failed to test LISA API',
       details: (error as any).message || String(error)
     });
+  }
+});
+
+helpdeskRouter.get('/system-prompt', async (req: Request, res: Response) => {
+  try {
+    const prompt = getSystemPrompt();
+    res.status(200).json({
+      prompt,
+      model: process.env.LLM_MODEL || 'lisa-v40-rc2-gpt-oss120b',
+      usesMock: process.env.USE_MOCK_LISA === 'true'
+    });
+  } catch (error) {
+    console.error('[ERROR] Failed to fetch system prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch system prompt' });
   }
 });
 
