@@ -18,15 +18,14 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: dilowa-backend
+    network_mode: host
     env_file:
       - ./backend/.env.production
     environment:
       - CLIENT_ORIGIN=http://192.168.84.86
-      - DATABASE_URL=mysql://root:dilowa_admiN25@mysql:3306/dilowa-db
+      - DATABASE_URL=mysql://root:dilowa_admiN25@127.0.0.1:3307/dilowa-db
     depends_on:
       - mysql
-    ports:
-      - "3001:3001"
     volumes:
       - /var/www/html/dilowa_backend/public:/app/public
     restart: on-failure
