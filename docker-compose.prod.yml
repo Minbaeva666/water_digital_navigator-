@@ -34,7 +34,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_BACKEND_URL: /api
+        VITE_BACKEND_URL: /dilowa/api
     container_name: dilowa-frontend
     depends_on:
       - backend
