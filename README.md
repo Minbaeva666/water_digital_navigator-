@@ -19,6 +19,12 @@ The platform includes:
 - **AI-Powered Helpdesk**: LISA chatbot for solution recommendations
 - **User Dashboard**: Manage your organization's solutions and profile
 
+## Documentation
+
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide for dev and production
+- **[SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md)** - Security audit findings
+- **[SECURITY_REMEDIATION_QUICKSTART.md](SECURITY_REMEDIATION_QUICKSTART.md)** - Security fixes guide
+
 ## Tech Stack
 
 ### Backend
