@@ -27,6 +27,8 @@ services:
       - mysql
     ports:
       - "3001:3001"
+    volumes:
+      - /var/www/html/dilowa_backend/public:/app/public
     restart: on-failure
 
   frontend:
