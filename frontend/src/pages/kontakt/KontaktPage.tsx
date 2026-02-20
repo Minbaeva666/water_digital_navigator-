@@ -51,7 +51,7 @@ const KontaktPage: React.FC = () => {
             Ihre Anfrage an INWA
           </Title>
           <Paragraph style={{ textAlign: "center", marginBottom: 32 }}>
-            Sie können uns über dieses Formular eine Nachricht schicken.
+            Sie können uns über dieses Formular eine Nachricht schicken. Test
           </Paragraph>
 
           <Form<ContactFormValues>
