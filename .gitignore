@@ -10,6 +10,8 @@ pnpm-lock.yaml
 .env.local
 .env.*.local
 backend/.env
+backend/.env.production
+backend/.env.development
 backend/.env.local
 backend/.llm_endpoint
 
