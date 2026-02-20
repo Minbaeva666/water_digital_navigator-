@@ -1,13 +1,26 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, RequestHandler } from 'express';
 import { logService } from '../services/logger/loggerService';
 import { prisma } from '../prisma/prisma';
 import { sendMessageToLisa, formatSolutionsWithLisa, getSystemPrompt } from '../services/lisa/lisaService';
 import { findSolutionsFromLisaFilters } from '../services/solution/solutionService';
+import { authenticate } from '../middlewares/login/authMiddelware';
 
 const helpdeskRouter = Router();
 
+const requireChatAuth: RequestHandler = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.status(401).json({
+      error: 'auth_required',
+      message: 'Um den KI-Chatbot zu nutzen, musst du dich einloggen.',
+    });
+    return;
+  }
+  authenticate(req, res, next);
+};
+
 // Handle chatbot messages
-helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
+helpdeskRouter.post('/chat', requireChatAuth, async (req: Request, res: Response) => {
   try {
     console.log('[HELPDESK] Chat endpoint called');
     const { message = '', userId, taxonomySelection } = req.body;
@@ -104,14 +117,14 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
         logService.error('Error with LISA AI:', aiError as Error);
         
         // Intelligent fallback based on keywords
-        let fallbackResponse = 'Entschuldigung, ich habe gerade technische Schwierigkeiten. Bitte versuche es später erneut oder kontaktiere unser Support-Team.';
+        let fallbackResponse = 'Entschuldigung, ich konnte deine Anfrage gerade nicht beantworten. Bitte nutze das Kontaktformular unter /kontakt oder versuche es später erneut.';
         
         if (message.toLowerCase().includes('lösung') || message.toLowerCase().includes('software')) {
-          fallbackResponse = 'Du suchst nach digitalen Lösungen? Ich kann dir helfen, passende Tools zu finden. Beschreibe mir genauer, was du benötigst (z.B. Wassermanagement, Monitoring, Datenanalyse).';
+          fallbackResponse = 'Du suchst nach digitalen Lösungen? Ich kann dir helfen, passende Tools zu finden. Beschreibe mir genauer, was du benötigst (z.B. Wassermanagement, Monitoring, Datenanalyse). Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
         } else if (message.toLowerCase().includes('wasser')) {
-          fallbackResponse = 'Bei Wasserthemen kann ich dir weiterhelfen! Geht es um Wassersparen, Wasserqualität, Abwasser oder etwas anderes?';
+          fallbackResponse = 'Bei Wasserthemen kann ich dir weiterhelfen! Geht es um Wassersparen, Wasserqualität, Abwasser oder etwas anderes? Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
         } else if (message.toLowerCase().includes('klima')) {
-          fallbackResponse = 'Klimaschutz ist wichtig! Suchst du nach Informationen zu Klimaanpassung, Emissionsreduktion oder nachhaltigen Technologien?';
+          fallbackResponse = 'Klimaschutz ist wichtig! Suchst du nach Informationen zu Klimaanpassung, Emissionsreduktion oder nachhaltigen Technologien? Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
         }
         
         const botResponse = {
@@ -204,7 +217,10 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
 
   } catch (error) {
     logService.error('Error processing helpdesk chat:', error as Error);
-    res.status(500).json({ error: 'Failed to process message' });
+    res.status(500).json({
+      error: 'Failed to process message',
+      message: 'Entschuldigung, ich konnte deine Anfrage gerade nicht beantworten. Bitte nutze das Kontaktformular unter /kontakt oder versuche es später erneut.',
+    });
   }
 });
 

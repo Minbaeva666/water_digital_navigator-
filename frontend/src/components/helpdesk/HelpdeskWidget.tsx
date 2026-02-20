@@ -16,6 +16,17 @@ interface Message {
 }
 
 const HelpdeskWidget: React.FC = () => {
+  const getChatErrorMessage = (error: unknown): string => {
+    const status = (error as any)?.response?.status;
+    const apiMessage = (error as any)?.response?.data?.message;
+    if (status === 401) {
+      return "Um den KI-Chatbot zu nutzen, musst du dich einloggen.";
+    }
+    if (typeof apiMessage === "string" && apiMessage.trim().length > 0) {
+      return apiMessage;
+    }
+    return "Entschuldigung, ich konnte deine Anfrage gerade nicht beantworten. Bitte nutze das Kontaktformular unter /kontakt oder versuche es später erneut.";
+  };
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -64,6 +75,13 @@ const HelpdeskWidget: React.FC = () => {
       setSuggestions(botResponse.suggestions ?? []);
     } catch (error) {
       console.error("Error loading categories:", error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: getChatErrorMessage(error),
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
@@ -103,7 +121,7 @@ const HelpdeskWidget: React.FC = () => {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Entschuldigung, es gab einen Fehler bei der Verarbeitung deiner Nachricht. Bitte versuche es später erneut.",
+        text: getChatErrorMessage(error),
         sender: "bot",
         timestamp: new Date(),
       };
@@ -142,6 +160,13 @@ const HelpdeskWidget: React.FC = () => {
       setSuggestions(botResponse.suggestions ?? []);
     } catch (e) {
       console.error(e);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: getChatErrorMessage(e),
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
