@@ -74,19 +74,22 @@ export function getSystemPrompt(context?: string): string {
 
 export async function sendMessageToLisa(
   userMessage: string,
-  context?: string
+  context?: string,
+  systemPrompt?: string
 ): Promise<LisaResponse> {
   try {
     if (USE_MOCK_LISA) {
       return getMockLisaResponse(userMessage, context);
     }
 
+    const defaultSystem = 'Du bist ein präziser Bot. Antworte immer KURZ und DIREKT. Niemals Tabellen, Diagramme, Erklärungen.';
+
     const payload = {
       messages: [
+        { role: 'system', content: systemPrompt || defaultSystem },
         { role: 'user', content: userMessage }
       ],
       model: LLM_MODEL,
-      agent: 'dilowa',
       stream: false,
       max_tokens: 500,
       temperature: 0.7,
@@ -214,38 +217,21 @@ export async function formatSolutionsWithLisa(
       portalLink: `${frontendUrl}/digital-atlas/digitale-solution/${s.id}`
     }));
 
-    const prompt = `SYSTEM INSTRUCTION - STRICTLY FOLLOW THIS FORMAT:
+    const systemPromptForSolutions = `You output database solutions ONLY. Absolute rules:
+1. Maximum 10 lines total
+2. NEVER add: tables, diagrams, architecture, planning, questions
+3. Format: "[Name](link) - description" (one line per solution)
+4. ONLY use data from the JSON. Nothing invented.
+5. German language, concise, direct.`;
 
-You are presenting database solutions. NEVER create new content.
-
-SOLUTIONS DATABASE (use ONLY these, do not invent):
+    const prompt = `SOLUTIONS (use ONLY these):
 ${JSON.stringify(solutionPayload, null, 2)}
 
-USER QUERY: "${originalQuery}"
+Request: "${originalQuery}"
 
-OUTPUT FORMAT (EXACT):
-- Line 1: Brief summary (1 sentence max)
-- Line 2: blank
-- Line 3+: List format: "N. [SolutionName](link) - shortDescription"
-- Final line: "Die Vorschläge stammen aus unserer Datenbank."
+Output solutions concisely with links.`;
 
-TOTAL: Maximum 10 lines.
-
-FORBIDDEN (will result in error):
-❌ NO tables, NO diagrams, NO architecture sketches
-❌ NO Zieldefinition, Anforderungsprofil, Planungsschritte
-❌ NO additional questions to the user
-❌ NO invented solutions, specs, or technical details
-❌ NO "Kern-Anforderungen", "Systemarchitektur", "Detailplanung"
-❌ NO content beyond the JSON database
-
-REQUIRED:
-✅ Use markdown: [Solution Name](portalLink)
-✅ Keep shortDescription on ONE line
-✅ German language only
-✅ Concise, direct, no elaboration`;
-
-    const response = await sendMessageToLisa(prompt);
+    const response = await sendMessageToLisa(prompt, undefined, systemPromptForSolutions);
     if (response.isMock || response.isJson) {
       return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
         solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
