@@ -217,17 +217,25 @@ export async function formatSolutionsWithLisa(
     const prompt = `User request: "${originalQuery}"
 
 Here are the solutions from our database (JSON). Use ONLY these solutions and do not invent any others.
-For each solution, include the portalLink as a clickable markdown link:
 ${JSON.stringify(solutionPayload, null, 2)}
 
-Please respond in German with:
-1) Kurze Zusammenfassung
-2) Liste der Lösungen mit Namen und portalLink als clickable markdown link format: [Solution Name](link)
-3) Kurze Beschreibung unter jedem Link (use shortDescription)
-4) Hinweis: "Die Vorschläge stammen aus unserer Datenbank."
+IMPORTANT - Format EXACTLY as follows (strict rules):
+1) ONE line summary of what the user is looking for
+2) THEN blank line
+3) THEN list in this format ONLY:
+   1. [Solution Name](portalLink) - shortDescription (max 1 line)
+   2. [Solution Name](portalLink) - shortDescription (max 1 line)
+4) THEN blank line
+5) THEN: "Die Vorschläge stammen aus unserer Datenbank."
 
-Do not add any solutions not in the JSON.
-Always format links as markdown: [Solution Name](portalLink)`;
+DO NOT ADD:
+- Tables, diagrams, or technical specs
+- Zieldefinition or Anforderungsprofil sections
+- Questions to the user
+- Any content not from the JSON data
+- Explanations or elaborations
+
+Keep it SHORT. Total response should be under 10 lines.`;
 
     const response = await sendMessageToLisa(prompt);
     if (response.isMock || response.isJson) {
