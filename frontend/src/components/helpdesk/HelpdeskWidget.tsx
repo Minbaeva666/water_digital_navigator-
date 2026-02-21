@@ -20,7 +20,7 @@ const HelpdeskWidget: React.FC = () => {
     const status = (error as any)?.response?.status;
     const apiMessage = (error as any)?.response?.data?.message;
     if (status === 401) {
-      return "Um den KI-Chatbot zu nutzen, musst du dich einloggen.";
+      return "Um den KI-Chatbot zu nutzen, musst du dich anmelden";
     }
     if (typeof apiMessage === "string" && apiMessage.trim().length > 0) {
       return apiMessage;

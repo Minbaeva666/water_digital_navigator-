@@ -12,7 +12,7 @@ const requireChatAuth: RequestHandler = (req, res, next) => {
   if (!authHeader) {
     res.status(401).json({
       error: 'auth_required',
-      message: 'Um den KI-Chatbot zu nutzen, musst du dich einloggen.',
+      message: 'Um den KI-Chatbot zu nutzen, musst du dich anmelden',
     });
     return;
   }
