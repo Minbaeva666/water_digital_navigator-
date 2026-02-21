@@ -214,28 +214,36 @@ export async function formatSolutionsWithLisa(
       portalLink: `${frontendUrl}/digital-atlas/digitale-solution/${s.id}`
     }));
 
-    const prompt = `User request: "${originalQuery}"
+    const prompt = `SYSTEM INSTRUCTION - STRICTLY FOLLOW THIS FORMAT:
 
-Here are the solutions from our database (JSON). Use ONLY these solutions and do not invent any others.
+You are presenting database solutions. NEVER create new content.
+
+SOLUTIONS DATABASE (use ONLY these, do not invent):
 ${JSON.stringify(solutionPayload, null, 2)}
 
-IMPORTANT - Format EXACTLY as follows (strict rules):
-1) ONE line summary of what the user is looking for
-2) THEN blank line
-3) THEN list in this format ONLY:
-   1. [Solution Name](portalLink) - shortDescription (max 1 line)
-   2. [Solution Name](portalLink) - shortDescription (max 1 line)
-4) THEN blank line
-5) THEN: "Die Vorschläge stammen aus unserer Datenbank."
+USER QUERY: "${originalQuery}"
 
-DO NOT ADD:
-- Tables, diagrams, or technical specs
-- Zieldefinition or Anforderungsprofil sections
-- Questions to the user
-- Any content not from the JSON data
-- Explanations or elaborations
+OUTPUT FORMAT (EXACT):
+- Line 1: Brief summary (1 sentence max)
+- Line 2: blank
+- Line 3+: List format: "N. [SolutionName](link) - shortDescription"
+- Final line: "Die Vorschläge stammen aus unserer Datenbank."
 
-Keep it SHORT. Total response should be under 10 lines.`;
+TOTAL: Maximum 10 lines.
+
+FORBIDDEN (will result in error):
+❌ NO tables, NO diagrams, NO architecture sketches
+❌ NO Zieldefinition, Anforderungsprofil, Planungsschritte
+❌ NO additional questions to the user
+❌ NO invented solutions, specs, or technical details
+❌ NO "Kern-Anforderungen", "Systemarchitektur", "Detailplanung"
+❌ NO content beyond the JSON database
+
+REQUIRED:
+✅ Use markdown: [Solution Name](portalLink)
+✅ Keep shortDescription on ONE line
+✅ German language only
+✅ Concise, direct, no elaboration`;
 
     const response = await sendMessageToLisa(prompt);
     if (response.isMock || response.isJson) {
