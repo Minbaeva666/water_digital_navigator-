@@ -18,11 +18,11 @@ const router = express.Router();
 router.get("/for-registration", getOrganizationsForRegistration);
 router.get("/minimal-organizations-without-presenter", authenticate, getOrganizationsMinimalWithoutPresenter);
 router.get("/base", getOrganizationsBase);
+router.get("/", getOrganizations);
+router.post("/", uploadLogo.single('logoBase64'), createOrganization);
 router.get("/:id", getOrganization);
 router.put("/:id",uploadLogo.single('logoBase64'),  updateOrganization);
 router.delete("/:id", deleteOrganization);
-router.get("/", getOrganizations);
-router.post("/", uploadLogo.single('logoBase64'), createOrganization);
 
 
 export default router;

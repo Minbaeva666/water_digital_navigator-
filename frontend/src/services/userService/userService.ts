@@ -7,9 +7,7 @@ import {
     UserWithOrganizationDto
 } from "../../types/dtos/User.dto.ts";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-const baseUrl = `${backendUrl}/users`;
+const baseUrl = `/users`;
 
 
 const fetchUsersMinimal = async (): Promise<UserMinimalDto[]> => {
