@@ -74,22 +74,19 @@ export function getSystemPrompt(context?: string): string {
 
 export async function sendMessageToLisa(
   userMessage: string,
-  context?: string,
-  systemPrompt?: string
+  context?: string
 ): Promise<LisaResponse> {
   try {
     if (USE_MOCK_LISA) {
       return getMockLisaResponse(userMessage, context);
     }
 
-    const defaultSystem = 'Du bist ein präziser Bot. Antworte immer KURZ und DIREKT. Niemals Tabellen, Diagramme, Erklärungen.';
-
     const payload = {
       messages: [
-        { role: 'system', content: systemPrompt || defaultSystem },
         { role: 'user', content: userMessage }
       ],
       model: LLM_MODEL,
+      agent: 'dilowa',
       stream: false,
       max_tokens: 500,
       temperature: 0.7,
@@ -217,21 +214,20 @@ export async function formatSolutionsWithLisa(
       portalLink: `${frontendUrl}/digital-atlas/digitale-solution/${s.id}`
     }));
 
-    const systemPromptForSolutions = `You output database solutions ONLY. Absolute rules:
-1. Maximum 10 lines total
-2. NEVER add: tables, diagrams, architecture, planning, questions
-3. Format: "[Name](link) - description" (one line per solution)
-4. ONLY use data from the JSON. Nothing invented.
-5. German language, concise, direct.`;
-
     const prompt = `SOLUTIONS (use ONLY these):
-${JSON.stringify(solutionPayload, null, 2)}
+  ${JSON.stringify(solutionPayload, null, 2)}
 
-Request: "${originalQuery}"
+  Request: "${originalQuery}"
 
-Output solutions concisely with links.`;
+  STRICT FORMAT (do not add anything else):
+  - One short summary line
+  - Then list: "1. [Solution Name](portalLink) - shortDescription" (one line each)
+  - Final line: "Die Vorschläge stammen aus unserer Datenbank."
 
-    const response = await sendMessageToLisa(prompt, undefined, systemPromptForSolutions);
+  FORBIDDEN: tables, diagrams, architecture, planning steps, extra questions, invented content.
+  Keep total response under 10 lines.`;
+
+    const response = await sendMessageToLisa(prompt);
     if (response.isMock || response.isJson) {
       return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
         solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
