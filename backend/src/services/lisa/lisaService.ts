@@ -198,9 +198,12 @@ export async function formatSolutionsWithLisa(
   originalQuery: string
 ): Promise<string> {
   try {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    
     if (USE_MOCK_LISA) {
       return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-        solutions.map((s, idx) => `${idx + 1}. ${s.name || 'Unbenannt'}\n   ${s.shortDescription || 'Keine Beschreibung verfügbar'}\n   Link: ${s.link || 'N/A'}`).join('\n\n')
+        solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
+   ${s.shortDescription || 'Keine Beschreibung verfügbar'}`).join('\n\n')
       }\n\nMehr Details sind verfügbar.`;
     }
 
@@ -208,38 +211,37 @@ export async function formatSolutionsWithLisa(
       id: s.id,
       name: s.name,
       shortDescription: s.shortDescription,
-      link: s.link
+      portalLink: `${frontendUrl}/digital-atlas/digitale-solution/${s.id}`
     }));
-
-    const solutionsText = solutions.map((s, idx) => 
-      `${idx + 1}. ${s.name || 'Unbenannt'}
-   ${s.shortDescription || 'Keine Beschreibung verfügbar'}
-   Link: ${s.link || 'N/A'}`
-    ).join('\n\n');
 
     const prompt = `User request: "${originalQuery}"
 
-  Here are the solutions from our database (JSON). Use ONLY these solutions and do not invent any others:
-  ${JSON.stringify(solutionPayload)}
+Here are the solutions from our database (JSON). Use ONLY these solutions and do not invent any others.
+For each solution, include the portalLink as a clickable markdown link:
+${JSON.stringify(solutionPayload, null, 2)}
 
-  Please respond in German with:
-  1) Kurze Zusammenfassung
-  2) Liste der Lösungen (Name + Kurzbeschreibung)
-  3) Hinweis, dass mehr Details verfügbar sind
+Please respond in German with:
+1) Kurze Zusammenfassung
+2) Liste der Lösungen mit Namen und portalLink als clickable markdown link format: [Solution Name](link)
+3) Kurze Beschreibung unter jedem Link (use shortDescription)
+4) Hinweis: "Die Vorschläge stammen aus unserer Datenbank."
 
-  Do not add any solutions not in the JSON.`;
+Do not add any solutions not in the JSON.
+Always format links as markdown: [Solution Name](portalLink)`;
 
     const response = await sendMessageToLisa(prompt);
     if (response.isMock || response.isJson) {
       return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-        solutions.map((s, idx) => `${idx + 1}. ${s.name || 'Unbenannt'}\n   ${s.shortDescription || 'Keine Beschreibung verfügbar'}\n   Link: ${s.link || 'N/A'}`).join('\n\n')
-      }\n\nMehr Details sind verfügbar.`;
+        solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
+   ${s.shortDescription || 'Keine Beschreibung verfügbar'}`).join('\n\n')
+      }\n\nDie Vorschläge stammen aus unserer Datenbank.`;
     }
     return response.content;
   } catch (error) {
     logService.error('Error formatting solutions with LISA:', error as Error);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-      solutions.map((s, idx) => `${idx + 1}. ${s.name || 'Unbenannt'}`).join('\n')
-    }\n\nMehr Details sind verfügbar.`;
+      solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})`).join('\n')
+    }\n\nDie Vorschläge stammen aus unserer Datenbank.`;
   }
 }

@@ -5,6 +5,7 @@ import {
   CloseOutlined,
   MessageOutlined,
 } from "@ant-design/icons";
+import ReactMarkdown from "react-markdown";
 import "./HelpdeskWidget.less";
 import helpdeskService from "../../services/helpdeskService";
 
@@ -219,7 +220,13 @@ const HelpdeskWidget: React.FC = () => {
                     msg.sender === "user" ? "user-message" : "bot-message"
                   }`}
                 >
-                  <div className="message-bubble">{msg.text}</div>
+                  <div className="message-bubble">
+                    {msg.sender === "bot" ? (
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    ) : (
+                      msg.text
+                    )}
+                  </div>
                 </div>
               ))}
               {loading && (

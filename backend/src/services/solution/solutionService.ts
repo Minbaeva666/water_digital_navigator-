@@ -3,6 +3,8 @@ import { logService } from '../logger/loggerService';
 import type { LisaFilters } from '../lisa/lisaService';
 import { resolveTaxonomyNodeIds } from '../taxonomy/taxonomyService';
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 export interface DigitalSolutionFilter {
   taxonomyNodeIds: string[];
 }
@@ -22,6 +24,13 @@ export interface DigitalSolutionResult {
       type: string;
     };
   }[];
+}
+
+/**
+ * Generate portal URL for a solution
+ */
+function generateSolutionUrl(solutionId: string): string {
+  return `${FRONTEND_URL}/solutions/${solutionId}`;
 }
 
 export async function mapFiltersToTaxonomyIds(filters: LisaFilters): Promise<string[]> {
