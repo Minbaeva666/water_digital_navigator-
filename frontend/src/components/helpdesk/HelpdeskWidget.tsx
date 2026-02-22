@@ -222,7 +222,17 @@ const HelpdeskWidget: React.FC = () => {
                 >
                   <div className="message-bubble">
                     {msg.sender === "bot" ? (
-                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                      <ReactMarkdown
+                        components={{
+                          a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+                            <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                              {children}
+                            </a>
+                          )
+                        }}
+                      >
+                        {msg.text}
+                      </ReactMarkdown>
                     ) : (
                       msg.text
                     )}

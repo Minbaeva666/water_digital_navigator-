@@ -197,6 +197,7 @@ export async function formatSolutionsWithLisa(
   solutions: any[],
   originalQuery: string
 ): Promise<string> {
+  const finalLine = 'Die Vorschläge stammen aus unserer Datenbank.';
   try {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     
@@ -232,7 +233,11 @@ export async function formatSolutionsWithLisa(
       return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
         solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
    ${s.shortDescription || 'Keine Beschreibung verfügbar'}`).join('\n\n')
-      }\n\nDie Vorschläge stammen aus unserer Datenbank.`;
+      }\n\n${finalLine}`;
+    }
+    const trimmed = response.content.trim();
+    if (!trimmed.endsWith(finalLine)) {
+      return `${trimmed}\n${finalLine}`;
     }
     return response.content;
   } catch (error) {
@@ -240,6 +245,6 @@ export async function formatSolutionsWithLisa(
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
       solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})`).join('\n')
-    }\n\nDie Vorschläge stammen aus unserer Datenbank.`;
+    }\n\n${finalLine}`;
   }
 }

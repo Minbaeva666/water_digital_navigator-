@@ -34,7 +34,7 @@ helpdeskRouter.post('/chat', requireChatAuth, async (req: Request, res: Response
     if (hasMessage) {
       try {
         // Build context from taxonomy selection if provided
-        let context = '';
+        let context = 'Bitte antworte knapp. Wenn Informationen fehlen, stelle maximal eine kurze Rückfrage.';
         if (Array.isArray(taxonomySelection) && taxonomySelection.length > 0) {
           const selection = taxonomySelection.slice(0, 3);
           const nodes = await prisma.taxonomyNode.findMany({ 
@@ -43,7 +43,7 @@ helpdeskRouter.post('/chat', requireChatAuth, async (req: Request, res: Response
           });
           const names = nodes.map(n => n.nameDe || n.nameEn || n.slug);
           const selectionPath = names.join(' › ');
-          context = `Ausgewählte Kategorien: ${selectionPath}`;
+          context = `${context}\nAusgewählte Kategorien: ${selectionPath}`;
         }
 
         console.log('[LISA] Calling LISA AI...');
