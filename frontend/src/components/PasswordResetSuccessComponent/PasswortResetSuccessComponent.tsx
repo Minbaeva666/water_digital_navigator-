@@ -1,5 +1,6 @@
 import React from 'react';
 import {Row, Col, Typography, Button, Space} from 'antd';
+import { NavLink } from 'react-router-dom';
 
 const {Title, Text} = Typography;
 
@@ -27,9 +28,11 @@ const PasswordResetSuccessComponent: React.FC<PasswordResetSuccessProps> = ({suc
                     <Title level={3}>Passwort erfolgreich geändert!</Title>
                     <Text>{successMessage}</Text>
                     <Col style={{display: "flex", justifyContent: "center", width: "100%"}}>
-                        <Button type="primary" href="/login" size="large" style={{width: "100%", maxWidth: "300px"}}>
-                            Jetzt anmelden
-                        </Button>
+                        <NavLink to="/login" style={{ width: "100%", maxWidth: "300px" }}>
+                            <Button type="primary" size="large" style={{width: "100%", maxWidth: "300px"}}>
+                                Jetzt anmelden
+                            </Button>
+                        </NavLink>
                     </Col>
 
                 </Space>

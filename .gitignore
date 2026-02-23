@@ -64,3 +64,4 @@ coverage/
 .next/
 out/
 .vite/
+public/

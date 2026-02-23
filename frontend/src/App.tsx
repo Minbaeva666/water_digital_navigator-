@@ -136,7 +136,7 @@ const DigitalSolutionsOverviewPage = lazy(
 const AppWrapper: React.FC = () => (
   <ConfigProvider locale={customLocale} theme={customTheme}>
     <AntdApp>
-      <Router>
+      <Router basename={import.meta.env.BASE_URL}>
         <Layout className="app-layout">
           <div className="app-container">
             <AppHeader />

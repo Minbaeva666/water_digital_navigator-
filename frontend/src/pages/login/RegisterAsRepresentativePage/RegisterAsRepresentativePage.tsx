@@ -19,6 +19,7 @@ import {
 import { UploadOutlined } from "@ant-design/icons";
 import type { UploadFile, UploadProps } from "antd";
 import React, { useState, useEffect, useRef } from "react";
+import { NavLink } from "react-router-dom";
 import {
   registerAsRepresentative,
   RegisterFormValues,
@@ -821,9 +822,9 @@ const onFinish = async (values: RegisterFormValues) => {
             }}
           >
             Oder doch lieber als Privatperson registrieren?{" "}
-            <a href="/login/registration/register-as-private-person">
+            <NavLink to="/login/registration/register-as-private-person">
               Dann klicken Sie hier!
-            </a>
+            </NavLink>
           </Text>
         </Col>
       </Row>

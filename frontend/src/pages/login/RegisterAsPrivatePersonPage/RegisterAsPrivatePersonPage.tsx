@@ -10,6 +10,7 @@ import {
 } from "../../../services/registration/registerAsPrivatPersonService.ts";
 import ValidatedInput from "../../../components/Form/validatedInput.tsx";
 import {fetchSalutationTypes, TranslatedEnumOption} from "../../../services/input/inputService.ts";
+import { NavLink } from "react-router-dom";
 
 const {Title, Text} = Typography;
 const {Option} = Select;
@@ -290,8 +291,8 @@ const RegisterAsPrivatePersonPage: React.FC = () => {
                     <Divider/>
 
                     <Text type="secondary" style={{paddingBottom: "30px", textAlign: "center", display: "block"}}>
-                        Oder doch lieber als Vertreter einer Organisation registrieren? <a
-                        href="/login/registration/register-as-representative">Dann klicke Sie hier!</a>
+                        Oder doch lieber als Vertreter einer Organisation registrieren? <NavLink
+                        to="/login/registration/register-as-representative">Dann klicke Sie hier!</NavLink>
                     </Text>
                 </Col>
             </Row>

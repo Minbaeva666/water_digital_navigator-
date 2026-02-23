@@ -1,12 +1,12 @@
 // klaroConfig.js
 const klaroConfig = {
   version: 1,
-  basePath: '/',
+  basePath: '/dilowa/',
   elementID: 'klaro',
   storageMethod: 'cookie',
   cookieName: 'dilowa-consent',
   cookieExpiresAfterDays: 365,
-  privacyPolicy: '/datenschutz',
+  privacyPolicy: '/dilowa/datenschutz',
   default: false,
   mustConsent: false,
   acceptAll: true,
@@ -28,7 +28,7 @@ const klaroConfig = {
       consentNotice: {
         title: 'Privacy Settings',
         description:
-          'This site uses consent-requiring cookies and third-party technologies to integrate certain features. When you click "Accept All", these features are enabled.<br><br><a href="/datenschutz" target="_blank" rel="noopener">Privacy Policy</a> | <a href="/impressum" target="_blank" rel="noopener">Imprint</a>',
+          'This site uses consent-requiring cookies and third-party technologies to integrate certain features. When you click "Accept All", these features are enabled.<br><br><a href="/dilowa/datenschutz" target="_blank" rel="noopener">Privacy Policy</a> | <a href="/dilowa/impressum" target="_blank" rel="noopener">Imprint</a>',
         learnMore: 'More',
         acceptAll: 'Accept All',
         decline: 'Deny',
@@ -50,7 +50,7 @@ const klaroConfig = {
       consentNotice: {
         title: 'Datenschutz-Einstellungen',
         description:
-          'Diese Website verwendet zustimmungspflichtige Cookies und Drittanbieter-Technologien. Wenn Sie auf „Alle akzeptieren" klicken, werden diese Funktionen aktiviert.<br><br><a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> | <a href="/impressum" target="_blank" rel="noopener">Impressum</a>',
+          'Diese Website verwendet zustimmungspflichtige Cookies und Drittanbieter-Technologien. Wenn Sie auf „Alle akzeptieren" klicken, werden diese Funktionen aktiviert.<br><br><a href="/dilowa/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> | <a href="/dilowa/impressum" target="_blank" rel="noopener">Impressum</a>',
         learnMore: 'Mehr',
         acceptAll: 'Alle akzeptieren',
         decline: 'Ablehnen',
