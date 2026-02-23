@@ -7,6 +7,7 @@ import {
   Prisma,
   PrismaClient,
   Role,
+  SalutationType,
   TokenType,
 } from "@prisma/client";
 import bcrypt from "bcrypt";
@@ -364,6 +365,113 @@ export const createUser = async (
 
     res.status(201).json(createdUser);
   } catch (error: any) {
+    next(error);
+  }
+};
+
+export const createColleagueInMyOrganization = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const currentUserId = req.user?.id;
+    const currentOrganizationId = req.user?.organizationId;
+
+    if (!currentUserId) {
+      res.status(401).json({ message: "Nicht authentifiziert." });
+      return;
+    }
+
+    const {
+      salutationType,
+      title,
+      email,
+      firstName,
+      phonenumber,
+      lastName,
+    } = req.body as {
+      salutationType?: string;
+      title?: string;
+      email?: string;
+      firstName?: string;
+      phonenumber?: string;
+      lastName?: string;
+    };
+
+    const normalizedEmail = (email ?? "").trim().toLowerCase();
+    const normalizedFirstName = (firstName ?? "").trim();
+    const normalizedLastName = (lastName ?? "").trim();
+
+    const missing: string[] = [];
+    if (!salutationType) missing.push("salutationType");
+    if (!normalizedFirstName) missing.push("firstName");
+    if (!normalizedLastName) missing.push("lastName");
+    if (!normalizedEmail) missing.push("email");
+
+    if (missing.length > 0) {
+      res.status(400).json({
+        message: `Es fehlen erforderliche Felder: ${missing.join(", ")}.`,
+      });
+      return;
+    }
+
+    const existing = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+
+    if (existing) {
+      res.status(409).json({ message: "E-Mail ist bereits vergeben." });
+      return;
+    }
+
+    const generatedPassword = crypto.randomBytes(6).toString("hex");
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+    const createdUser = await prisma.user.create({
+      data: {
+        role: Role.USER,
+        salutationType: salutationType as SalutationType,
+        title: title?.trim() || undefined,
+        email: normalizedEmail,
+        password: hashedPassword,
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
+        phonenumber: phonenumber?.trim() || undefined,
+        hasAcceptedPrivacyPolicy: true,
+        hasAcceptedTerms: true,
+        accountState: AccountState.REGISTERED,
+        createdBy: {
+          connect: { id: currentUserId },
+        },
+        ...(currentOrganizationId
+          ? {
+              organization: {
+                connect: { id: currentOrganizationId },
+              },
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        organizationId: true,
+        organization: { select: { name: true } },
+      },
+    });
+
+    res.status(201).json({
+      id: createdUser.id,
+      firstName: createdUser.firstName,
+      lastName: createdUser.lastName,
+      email: createdUser.email,
+      organizationId: createdUser.organizationId,
+      organizationName: createdUser.organization?.name ?? null,
+    });
+  } catch (error) {
     next(error);
   }
 };

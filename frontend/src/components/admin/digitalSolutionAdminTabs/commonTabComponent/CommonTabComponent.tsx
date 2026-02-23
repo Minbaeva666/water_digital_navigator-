@@ -1,19 +1,19 @@
 import React, {useEffect, useRef, useState} from "react";
-import {Button, Col, DatePicker, Form, FormInstance, Input, Popover, Radio, Row, Select} from "antd";
+import {App, Button, Col, DatePicker, Form, FormInstance, Input, Modal, Popover, Radio, Row, Select} from "antd";
 import TextArea from "antd/es/input/TextArea";
 import dayjs from "dayjs";
 
 import {
     fetchMaturityDegrees, fetchDigitalSolutionStateTypes,
     fetchOfferingCategoryTypes,
-    TranslatedEnumOption, fetchPublishedByTypes,
+    TranslatedEnumOption, fetchPublishedByTypes, fetchSalutationTypes,
 } from "../../../../services/input/inputService";
 import {userService} from "../../../../services/userService/userService";
 import {UserMinimalDto} from "../../../../types/dtos/User.dto.ts";
-import {InfoCircleOutlined} from "@ant-design/icons";
+import {InfoCircleOutlined, PlusOutlined} from "@ant-design/icons";
 import {DigitalSolutionFormValues} from "../../../../forms/digital-solution/DigitalSolutionFormValues.ts";
 import GenericModal from "../../../Modals/genericModal/GenericModal.tsx";
-import {DigitalSolutionState} from "../../../../types/constants/enums.ts";
+import {DigitalSolutionState, SalutationType} from "../../../../types/constants/enums.ts";
 
 const {Option} = Select;
 
@@ -23,11 +23,21 @@ interface CommonTabComponentProps {
     allowedStates?: DigitalSolutionState[];
 }
 
+type ColleagueFormValues = {
+    salutationType: SalutationType;
+    title?: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phonenumber?: string;
+};
+
 const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
                                                                    form,
                                                                    onFormChange,
                                                                    allowedStates,
                                                                }) => {
+    const { message } = App.useApp();
     const presentedByUserId = Form.useWatch('presentedByUserId', form);
     const solutionState = Form.useWatch("state", form);
 
@@ -50,6 +60,11 @@ const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
     const [digitalSolutionStateTypesLoading, setDigitalSolutionStateTypesLoading] = useState(false);
     const [digitalSolutionStateTypes, setDigitalSolutionStateTypes] = useState<TranslatedEnumOption[]>([]);
 
+    const [salutationTypes, setSalutationTypes] = useState<TranslatedEnumOption[]>([]);
+    const [colleagueModalOpen, setColleagueModalOpen] = useState(false);
+    const [colleagueSaving, setColleagueSaving] = useState(false);
+    const [colleagueForm] = Form.useForm<ColleagueFormValues>();
+
     const publishedBy = Form.useWatch("publishedBy", form);
     const hasFetchedPublishedByTypes = useRef(false);
     const [publishedByTypesLoading, setPublishedByTypesLoading] = useState(false);
@@ -61,6 +76,12 @@ const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
     const [presenterChangeOpen, setPresenterChangeOpen] = useState(false);
     const [presenterChangeText, setPresenterChangeText] = useState<React.ReactNode>(null);
     const prevPresenterIdRef = useRef<string | null>(null);
+
+    const reloadUsers = async (): Promise<UserMinimalDto[]> => {
+        const us = await userService.fetchUsersMinimal();
+        setUsers(us);
+        return us;
+    };
 
 
     // initial mit aktuellem Form-Wert befüllen (kein Popup beim ersten Render)
@@ -122,19 +143,25 @@ const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
                 setMaturityDegreesLoading(false);
             }
 
-            const us = await userService.fetchUsersMinimal();
-            setUsers(us);
+            await reloadUsers();
         };
         loadData();
     }, []);
 
+    useEffect(() => {
+        (async () => {
+            const list = await fetchSalutationTypes();
+            setSalutationTypes(list);
+        })();
+    }, []);
 
-    const handlePresentedByUserIdChange = (userId: string | null) => {
+
+    const handlePresentedByUserIdChange = (userId: string | null, usersSource: UserMinimalDto[] = users) => {
         const nextId = userId ?? null;
         const prevId = prevPresenterIdRef.current;
 
         // User + Org ermitteln
-        const user = users.find(u => u.id === nextId);
+        const user = usersSource.find(u => u.id === nextId);
         const orgId = user?.organizationId ?? null;
         const orgName = user?.organizationName ?? null;
 
@@ -198,6 +225,37 @@ const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
         }
 
         onFormChange?.();
+    };
+
+    const handleCreateColleague = async () => {
+        try {
+            const values = await colleagueForm.validateFields();
+            setColleagueSaving(true);
+
+            const created = await userService.createColleagueInMyOrganization({
+                salutationType: values.salutationType,
+                title: values.title?.trim() || undefined,
+                firstName: values.firstName.trim(),
+                lastName: values.lastName.trim(),
+                email: values.email.trim(),
+                phonenumber: values.phonenumber?.trim() || undefined,
+            });
+
+            const nextUsers = await reloadUsers();
+
+            form.setFieldValue("presentedByUserId", created.id);
+            handlePresentedByUserIdChange(created.id, nextUsers);
+
+            setColleagueModalOpen(false);
+            colleagueForm.resetFields();
+            message.success("Ansprechpartner wurde erfolgreich erstellt.");
+        } catch (error: any) {
+            if (error?.errorFields) return;
+            const serverMessage = error?.response?.data?.message || "Ansprechpartner konnte nicht erstellt werden.";
+            message.error(serverMessage);
+        } finally {
+            setColleagueSaving(false);
+        }
     };
 
     return (
@@ -340,7 +398,19 @@ const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
 
                 <Form.Item
                     name="presentedByUserId"
-                    label="Ansprechpartner"
+                    label={(
+                        <span>
+                            Ansprechpartner
+                            <Button
+                                type="link"
+                                icon={<PlusOutlined />}
+                                style={{ marginLeft: 8, padding: 0, height: "auto" }}
+                                onClick={() => setColleagueModalOpen(true)}
+                            >
+                                Neu
+                            </Button>
+                        </span>
+                    )}
                 >
                     <Select
                         showSearch
@@ -484,6 +554,71 @@ const CommonTabComponent: React.FC<CommonTabComponentProps> = ({
                 onConfirm={() => setPresenterChangeOpen(false)}
                 confirmText="OK"
             />
+
+            <Modal
+                open={colleagueModalOpen}
+                title="Neuen Ansprechpartner hinzufügen"
+                onCancel={() => {
+                    setColleagueModalOpen(false);
+                    colleagueForm.resetFields();
+                }}
+                onOk={handleCreateColleague}
+                okText="Speichern"
+                cancelText="Abbrechen"
+                confirmLoading={colleagueSaving}
+                destroyOnClose
+            >
+                <Form form={colleagueForm} layout="vertical">
+                    <Form.Item
+                        name="salutationType"
+                        label="Anrede"
+                        rules={[{ required: true, message: "Bitte Anrede auswählen" }]}
+                    >
+                        <Select placeholder="Anrede auswählen">
+                            {salutationTypes.map((type) => (
+                                <Option key={type.value} value={type.value}>
+                                    {type.label}
+                                </Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+
+                    <Form.Item name="title" label="Titel">
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="firstName"
+                        label="Vorname"
+                        rules={[{ required: true, message: "Vorname ist erforderlich" }]}
+                    >
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="lastName"
+                        label="Nachname"
+                        rules={[{ required: true, message: "Nachname ist erforderlich" }]}
+                    >
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="email"
+                        label="E-Mail"
+                        rules={[
+                            { required: true, message: "E-Mail ist erforderlich" },
+                            { type: "email", message: "Bitte eine gültige E-Mail eingeben" },
+                        ]}
+                    >
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item name="phonenumber" label="Telefonnummer">
+                        <Input />
+                    </Form.Item>
+                </Form>
+            </Modal>
         </Row>
     );
 };

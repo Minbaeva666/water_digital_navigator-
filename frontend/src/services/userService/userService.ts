@@ -6,6 +6,7 @@ import {
     UserFullDto, UserMinimalDto,
     UserWithOrganizationDto
 } from "../../types/dtos/User.dto.ts";
+import { SalutationType } from "../../types/constants/enums.ts";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -56,6 +57,21 @@ const createUser = async (
         const serverMessage = error.response?.data?.message;
         throw serverMessage ?? "Erstellen des Benutzers fehlgeschlagen.";
     }
+};
+
+const createColleagueInMyOrganization = async (payload: {
+    salutationType: SalutationType;
+    firstName: string;
+    lastName: string;
+    email: string;
+    title?: string;
+    phonenumber?: string;
+}): Promise<UserMinimalDto> => {
+    const { data } = await axiosInstance.post<UserMinimalDto>(
+        `${baseUrl}/colleagues`,
+        payload
+    );
+    return data;
 };
 
 
@@ -282,6 +298,7 @@ const fetchUser = async (userId?: string): Promise<UserBaseDto> => {
         fetchUsersMinimal,
         // createUserWithOrganization,
         createUser,
+        createColleagueInMyOrganization,
         fetchUser,
         editUser,
         // editUserWithCreateOrganization,

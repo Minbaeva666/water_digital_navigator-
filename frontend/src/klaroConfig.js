@@ -15,7 +15,7 @@ const klaroConfig = {
   disablePoweredBy: true,
   lang: 'en',
   fallbackLang: 'en', 
-  noticeAsModal: false,
+  noticeAsModal: true,
   htmlTexts: true,
 
   translations: {

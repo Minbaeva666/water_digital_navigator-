@@ -15,7 +15,9 @@ import {
   Modal,
   Input,
   App,
+  Upload,
 } from "antd";
+import type { UploadFile } from "antd/es/upload/interface";
 import { InfoCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { organizationService } from "../../../../services/organization/organizationService";
 import { OrganizationMinimalDto } from "../../../../types/dtos/Organization.dto";
@@ -43,9 +45,9 @@ type OrgCreateFormValues = {
   orgZip: string;
   orgCity: string;
   orgCountry: string;
+  orgLogo?: UploadFile[];
 };
 
-// (можно вынести в общий файл, как в регистрации)
 const countries = [
   { code: "DE", nameDe: "Deutschland" },
   { code: "AT", nameDe: "Österreich" },
@@ -75,6 +77,11 @@ const PartnersAndUsersTabComponent: React.FC<Props> = ({ form, onFormChange }) =
   const [orgModalTarget, setOrgModalTarget] = useState<TargetField>("solutionUserIds");
   const [orgSaving, setOrgSaving] = useState(false);
   const [orgForm] = Form.useForm<OrgCreateFormValues>();
+  const orgStateForTarget =
+    orgModalTarget === "projectPartnerIds"
+      ? OrganizationState.FULL
+      : OrganizationState.LITE;
+  const isFullOrganizationCreate = orgStateForTarget === OrganizationState.FULL;
 
   // types for orgType select
   const [organizationTypes, setOrganizationTypes] = useState<TranslatedEnumOption[]>([]);
@@ -163,13 +170,14 @@ const handleCreateOrg = async () => {
       city: values.orgCity.trim(),
       countryCode: values.orgCountry,
       organizationType: values.orgType,
-      organizationState: OrganizationState.LITE,
+      organizationState: orgStateForTarget,
       regionId: null,
       manualCoords: false,
       municipalityProfile: {
         organizationId: "",
         population: 0,
       },
+      logoBase64: values.orgLogo,
     });
 
     const newId =
@@ -323,7 +331,11 @@ const handleCreateOrg = async () => {
         okText="Speichern"
         cancelText="Abbrechen"
         confirmLoading={orgSaving}
-        title="Neue Organisation registrieren"
+        title={
+          orgModalTarget === "projectPartnerIds"
+            ? "Neue Projektpartner-Organisation registrieren"
+            : "Neue Anwenderorganisation registrieren"
+        }
         destroyOnClose
       >
         <Form form={orgForm} layout="vertical">
@@ -339,17 +351,58 @@ const handleCreateOrg = async () => {
             <Input />
           </Form.Item>
 
-          <Form.Item
-            name="orgEmail"
-            label="Email Ihrer Organisation"
-            rules={[{ type: "email", message: "Bitte eine gueltige E-Mail eingeben" }]}
-          >
-            <Input />
-          </Form.Item>
+          {isFullOrganizationCreate && (
+            <>
+              <Form.Item
+                name="orgEmail"
+                label="Email Ihrer Organisation"
+                rules={[
+                  {
+                    required: true,
+                    message: "E-Mail ist erforderlich",
+                  },
+                  { type: "email", message: "Bitte eine gueltige E-Mail eingeben" },
+                ]}
+              >
+                <Input />
+              </Form.Item>
 
-          <Form.Item name="orgWebsite" label="Webseite Ihrer Organisation">
-            <Input />
-          </Form.Item>
+              <Form.Item
+                name="orgWebsite"
+                label="Webseite Ihrer Organisation"
+                rules={[
+                  {
+                    required: true,
+                    message: "Webseite ist erforderlich",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+
+              <Form.Item
+                name="orgLogo"
+                label="Logo"
+                valuePropName="fileList"
+                getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList ?? [])}
+                rules={[
+                  {
+                    required: true,
+                    message: "Logo ist erforderlich",
+                  },
+                ]}
+              >
+                <Upload
+                  beforeUpload={() => false}
+                  maxCount={1}
+                  accept="image/*"
+                  listType="text"
+                >
+                  <Button>Logo hochladen</Button>
+                </Upload>
+              </Form.Item>
+            </>
+          )}
 
           <Form.Item
             name="orgType"
@@ -365,9 +418,20 @@ const handleCreateOrg = async () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="orgStreet" label="Straße">
-            <Input />
-          </Form.Item>
+          {isFullOrganizationCreate && (
+            <Form.Item
+              name="orgStreet"
+              label="Straße"
+              rules={[
+                {
+                  required: true,
+                  message: "Straße ist erforderlich",
+                },
+              ]}
+            >
+              <Input />
+            </Form.Item>
+          )}
 
           <Form.Item
             name="orgZip"

@@ -1,6 +1,7 @@
 import express from "express";
 import {
-    createUser, createUserWithOrganization, deleteUser, getUser, getUserMinimal,
+  createColleagueInMyOrganization,
+  createUser, createUserWithOrganization, deleteUser, getUser, getUserMinimal,
     getUsersByRoles,
     getUsersByState, getUsersMinimal,
     getUsersWithOrganizations,
@@ -24,6 +25,7 @@ router.get("/by-role",authenticate, requirePermission("user.read"), getUsersByRo
 router.get("/with-organization",authenticate, requirePermission("user.read"), getUsersWithOrganizations);
 router.get("/minimal-users", getUsersMinimal);
 router.get("/minimal-user",authenticate, requirePermission("user.read"), getUserMinimal);
+router.post('/colleagues', authenticate, createColleagueInMyOrganization);
 
 router.post('/create-user-with-organization',uploadLogo.single('logo'), authenticate, requirePermission("user.create"), createUserWithOrganization);
 router.get("/:id",authenticate, requirePermission("user.read"), getUser);
