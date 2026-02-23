@@ -16,6 +16,7 @@ const AppHeader: React.FC = () => {
     const location = useLocation();
     const isInAccountSection = location.pathname.startsWith("/admin");
     const isInCreateDigitalSolutionSection = location.pathname.startsWith("/create-digital-solution");
+    const isInKiAtlasSection = location.pathname.startsWith("/ki-atlas");
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 992);
@@ -107,6 +108,12 @@ const AppHeader: React.FC = () => {
                                         </NavLink>
                                     </Menu.Item>
 
+                                    <Menu.Item key="ki-atlas">
+                                        <NavLink to="/ki-atlas" onClick={() => setMenuOpen(false)}>
+                                            KI-Atlas
+                                        </NavLink>
+                                    </Menu.Item>
+
                                     <Menu.Item key="expert-videos">
                                         <NavLink to="/expert-videos" onClick={() => setMenuOpen(false)}>
                                             Interviews/Videos
@@ -141,6 +148,13 @@ const AppHeader: React.FC = () => {
                             className={`nav-link ${isInCreateDigitalSolutionSection ? "active" : ""}`}
                         >
                             <Title level={4}>Digitale Lösung einreichen</Title>
+                        </NavLink>
+
+                        <NavLink
+                            to="/ki-atlas"
+                            className={`nav-link ${isInKiAtlasSection ? "active" : ""}`}
+                        >
+                            <Title level={4}>KI-Atlas</Title>
                         </NavLink>
 
                         <NavLink

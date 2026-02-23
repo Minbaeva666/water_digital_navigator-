@@ -151,6 +151,7 @@ const AppWrapper: React.FC = () => (
                   />
                   <Route path="/expert-videos" element={<ExpertVideosPage />} />
                   <Route path="/digital-atlas" element={<DigitalAtlasPage />} />
+                  <Route path="/ki-atlas" element={<DigitalAtlasPage />} />
                   <Route
                     path="/digital-atlas/digitale-solution/:id"
                     element={<DigitalAtlasDetailPage />}

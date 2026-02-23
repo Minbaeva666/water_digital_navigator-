@@ -21,6 +21,7 @@ import {
   SortAscendingOutlined,
 } from "@ant-design/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { DatePicker } from "antd";
 import { DigitalSolutionDto } from "../../types/dtos/DigitalSolutionDto.ts";
 import { digitalSolutionService } from "../../services/digitalSolutionService/digitalSolutionService.ts";
@@ -42,10 +43,12 @@ import { toApiDate } from "../../utils/apiHelpers.ts";
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 const { Search } = Input;
+const KI_TAXONOMY_PATH = "/digitalisierungsthemen/kuenstliche-intelligenz";
 
 type SortKey = "newest" | "oldest" | "az" | "za";
 
 const DigitalAtlasPage = () => {
+  const location = useLocation();
   const [digitalSolutions, setDigitalSolutions] = useState<
     DigitalSolutionDto[]
   >([]);
@@ -73,13 +76,15 @@ const DigitalAtlasPage = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // < md => Drawer
   const [filterOpen, setFilterOpen] = useState(false);
+  const isKiAtlasRoute = location.pathname.startsWith("/ki-atlas");
+  const forcedTaxonomyPath = isKiAtlasRoute ? KI_TAXONOMY_PATH : undefined;
 
   const loadParams = useMemo(
     () => ({
       page: current,
       pageSize,
       taxonomyNodeId: picked?.id,
-      taxonomyPath: picked?.path,
+      taxonomyPath: picked?.path ?? forcedTaxonomyPath,
       q: query || undefined,
       sort: sortBy,
       dateFrom: toApiDate(dateFrom),
@@ -90,6 +95,7 @@ const DigitalAtlasPage = () => {
       pageSize,
       picked?.id,
       picked?.path,
+      forcedTaxonomyPath,
       query,
       sortBy,
       dateFrom,
