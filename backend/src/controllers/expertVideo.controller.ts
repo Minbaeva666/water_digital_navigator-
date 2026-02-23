@@ -10,6 +10,7 @@ import {
   ExpertVideoUpdateDto,
 } from "../services/expertVideo/expertVideo.service";
 import logger from "../config/loggerConfig";
+import { checkExpertVideoReferences } from "../utils/referenceIntegrityChecker";
 
 interface MulterErrorRequest extends Request {
   file?: Express.Multer.File;
@@ -116,6 +117,21 @@ export async function deleteExpertVideo(
       res.status(400).json({ error: "expertVideoId fehlt." });
       return;
     }
+
+    const refCheck = await checkExpertVideoReferences(id);
+    if (refCheck.hasReferences) {
+      res.status(409).json({
+        error: "Löschen nicht möglich, dieses Expertenvideo ist bereits in Gebrauch.",
+        details: {
+          expertVideoId: id,
+          references: refCheck.references,
+          message: refCheck.message,
+        },
+        suggestion: "Bitte entfernen Sie zuerst alle Verknüpfungen, bevor Sie löschen.",
+      });
+      return;
+    }
+
     await ExpertVideoService.delete(id);
 
     res.status(204).send();

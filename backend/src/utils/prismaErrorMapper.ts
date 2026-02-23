@@ -49,14 +49,14 @@ export function mapPrismaError(error: any): { statusCode: number; message: strin
 
         case 'P2003':
             return {
-                statusCode: 400,
-                message: 'Verknüpfter Datensatz existiert nicht (Fremdschlüsselverletzung)',
+                statusCode: 409,
+                message: 'Löschen oder Ändern nicht möglich, Datensatz wird noch referenziert.',
             };
 
         case 'P2014':
             return {
-                statusCode: 400,
-                message: 'Fehlerhafte Beziehung oder verschachtelter Write',
+                statusCode: 409,
+                message: 'Änderung nicht möglich, da verknüpfte Datenbeziehungen verletzt würden.',
             };
 
         case 'P2010':

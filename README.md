@@ -22,8 +22,7 @@ The platform includes:
 ## Documentation
 
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide for dev and production
-- **[SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md)** - Security audit findings
-- **[SECURITY_REMEDIATION_QUICKSTART.md](SECURITY_REMEDIATION_QUICKSTART.md)** - Security fixes guide
+- **[ROLE_ACCESS_CONTROL.md](ROLE_ACCESS_CONTROL.md)** - Roles, authorized pages, and permission matrix
 
 ## Tech Stack
 

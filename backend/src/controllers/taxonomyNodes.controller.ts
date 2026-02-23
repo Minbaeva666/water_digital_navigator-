@@ -8,7 +8,6 @@ import {
     mkSlug,
     preflightRejectDuplicateNames,
 } from "../types/taxonomyNodes.types";
-import { checkTaxonomyNodeReferences } from "../utils/referenceIntegrityChecker";
 
 export const getTaxonomyNodes = async (req: Request, res: Response) => {
     try {
@@ -145,18 +144,24 @@ export const updateTaxonomyNodes = async (req: Request, res: Response) => {
                     select: { id: true, depth: true, nameDe: true },
                 });
                 toDel.sort((a, b) => b.depth - a.depth);
-                
-                // Check references for each node before deletion
-                for (const { id, nameDe } of toDel) {
-                    const refCheck = await checkTaxonomyNodeReferences(id);
-                    
-                    if (refCheck.hasReferences) {
-                        // Throw error - deletion blocked due to references
-                        throw new Error(
-                            `TAXONOMY_NODE_IN_USE: Cannot delete node "${nameDe}". ` +
-                            `${refCheck.message}`
-                        );
-                    }
+
+                // Strict guard: forbid delete when taxonomy nodes are used in any digital atlas
+                const usage = await tx.digitalSolutionTaxonomy.groupBy({
+                    by: ["taxonomyNodeId"],
+                    where: { taxonomyNodeId: { in: idsToDelete } },
+                    _count: { _all: true },
+                });
+
+                if (usage.length > 0) {
+                    const usageMap = new Map(usage.map((row) => [row.taxonomyNodeId, row._count._all]));
+                    const blocked = toDel
+                        .filter((node) => usageMap.has(node.id))
+                        .map((node) => `${node.nameDe} (${usageMap.get(node.id)} Atlas-Zuordnung(en))`)
+                        .join(", ");
+
+                    throw new Error(
+                        `TAXONOMY_NODE_IN_USE: Löschen nicht möglich. Folgende Kategorien werden in Atlassen verwendet: ${blocked}`
+                    );
                 }
                 
                 // All nodes passed reference check - safe to delete
