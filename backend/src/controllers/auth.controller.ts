@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt, {
-  JsonWebTokenError,
-  TokenExpiredError,
   SignOptions,
   Secret,
 } from "jsonwebtoken";
@@ -10,6 +8,7 @@ import { PrismaClient, Role, TokenType, AccountState } from "@prisma/client";
 import { ROLE_PERMISSIONS } from "../config/permissions/rolePermissions";
 import { ROLE_NAVIGATION } from "../config/permissions/roleNavigation";
 import crypto from "crypto";
+import logger from "../config/loggerConfig";
 
 const prisma = new PrismaClient();
 
@@ -20,6 +19,19 @@ const REFRESH_SECRET: Secret = process.env.REFRESH_SECRET as string;
 // Ablaufzeiten
 const ACCESS_EXPIRES_IN: SignOptions["expiresIn"] = "15m";
 const REFRESH_EXPIRES_IN: SignOptions["expiresIn"] = "7d";
+
+const logError = (...args: unknown[]) => {
+  logger.error("auth.controller error", {
+    environment: process.env.NODE_ENV ?? "development",
+    details: args.map((arg) =>
+      arg instanceof Error
+        ? { name: arg.name, message: arg.message, stack: arg.stack }
+        : typeof arg === "object"
+          ? JSON.stringify(arg)
+          : String(arg)
+    ),
+  });
+};
 
 // Hilfsfunktion: Refresh-Cookie setzen
 function setRefreshCookie(res: Response, refreshToken: string) {
@@ -61,7 +73,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   if (!email || !password) {
     res.status(400).json({
       error: "Email and password required.",
-      reason: "missing_credentials",
     });
     return;
   }
@@ -86,7 +97,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!user || user.password == null) {
       res.status(401).json({
         error: "Invalid login details.",
-        reason: "invalid_credentials",
       });
       return;
     }
@@ -95,7 +105,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!ok) {
       res.status(401).json({
         error: "Invalid login details.",
-        reason: "invalid_credentials",
       });
       return;
     }
@@ -104,7 +113,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (user.accountState !== AccountState.REGISTERED) {
       res.status(403).json({
         error: "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.",
-        reason: "email_not_verified",
         accountState: user.accountState,
       });
       return;
@@ -166,15 +174,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       permissions,
     });
   } catch (error) {
-    console.error(
-      "Login error:",
-      (error as any)?.code,
-      (error as any)?.message,
-      error
-    );
+      logError(
+        "Login error:",
+        (error as any)?.code,
+        (error as any)?.message,
+        error
+      );
     res.status(500).json({
       error: "Server error during login.",
-      reason: "login_failed",
     });
   }
 };
@@ -192,7 +199,6 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
   if (!raw) {
     res.status(401).json({
       error: "No refresh token available.",
-      reason: "no_refresh_token",
     });
     return;
   }
@@ -203,7 +209,6 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     if (!decoded?.id || !decoded?.role) {
       res.status(401).json({
         error: "Invalid refresh token payload.",
-        reason: "refresh_token_invalid_payload",
       });
       return;
     }
@@ -217,7 +222,6 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     if (!row || row.tokenType !== TokenType.REFRESH_TOKEN) {
       res.status(401).json({
         error: "Refresh token not recognized.",
-        reason: "refresh_token_invalid",
       });
       return;
     }
@@ -227,7 +231,6 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       await prisma.token.delete({ where: { id: row.id } });
       res.status(401).json({
         error: "Refresh token expired.",
-        reason: "refresh_token_expired",
       });
       return;
     }
@@ -265,14 +268,8 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     setRefreshCookie(res, newRefreshToken);
     res.status(200).json({ token: newAccessToken });
   } catch (error) {
-    console.error("Refresh token error:", error);
-    const reason =
-      error instanceof TokenExpiredError
-        ? "refresh_token_expired"
-        : error instanceof JsonWebTokenError
-        ? "refresh_token_invalid"
-        : "refresh_failed";
-    res.status(401).json({ error: "Token invalid or expired.", reason });
+      logError("Refresh token error:", error);
+    res.status(401).json({ error: "Token invalid or expired." });
   }
 };
 
@@ -303,10 +300,9 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({ message: "Logout successfully." });
   } catch (error) {
-    console.error("Logout error:", error);
+      logError("Logout error:", error);
     res.status(500).json({
       error: "Server error during logout.",
-      reason: "logout_failed",
     });
   }
 };
@@ -318,7 +314,7 @@ export const me = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      res.status(401).json({ error: "Not authorized.", reason: "no_token" });
+      res.status(401).json({ error: "Not authorized." });
       return;
     }
 
@@ -339,7 +335,6 @@ export const me = async (req: Request, res: Response): Promise<void> => {
     if (!user) {
       res.status(404).json({
         error: "User not found.",
-        reason: "user_not_found",
       });
       return;
     }
@@ -365,7 +360,7 @@ export const me = async (req: Request, res: Response): Promise<void> => {
       permissions,
     });
   } catch (error) {
-    console.error("auth/me failed:", error);
-    res.status(500).json({ error: "Server error.", reason: "me_failed" });
+      logError("auth/me failed:", error);
+    res.status(500).json({ error: "Server error." });
   }
 };

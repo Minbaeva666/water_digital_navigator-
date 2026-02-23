@@ -10,6 +10,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../prisma/prisma";
 import { checkUserReferences } from "../utils/referenceIntegrityChecker";
 import { ConflictError } from "../errors/ConflictError";
+import logger from "../config/loggerConfig";
 
 export const deleteUserUPDATED = async (
   req: Request,
@@ -74,7 +75,7 @@ export const deleteUserUPDATED = async (
       }
     });
   } catch (error) {
-    console.error(`Fehler beim Löschen des Users ${id}:`, error);
+    logger.error(`Fehler beim Löschen des Users ${id}:`, error);
     next(error);
   }
 };
@@ -149,7 +150,7 @@ export const deleteOrganizationUPDATED = async (req: Request, res: Response, nex
         try {
           fs.rmSync(uploadDir, { recursive: true, force: true });
         } catch (err) {
-          console.warn(`Could not delete folder ${uploadDir}:`, err);
+          logger.warn(`Could not delete folder ${uploadDir}:`, err);
         }
       }
       await prisma.image.deleteMany({ where: { digitalSolutionId: solutionId } });
@@ -171,7 +172,7 @@ export const deleteOrganizationUPDATED = async (req: Request, res: Response, nex
       }
     });
   } catch (error) {
-    console.error(`Fehler beim Löschen der Organisation ${id}:`, error);
+    logger.error(`Fehler beim Löschen der Organisation ${id}:`, error);
     next(error);
   }
 };
@@ -237,7 +238,7 @@ export const deleteTaxonomyNodeUPDATED = async (req: Request, res: Response) => 
       }
     });
   } catch (error) {
-    console.error(`Error deleting taxonomy node ${nodeId}:`, error);
+    logger.error(`Error deleting taxonomy node ${nodeId}:`, error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

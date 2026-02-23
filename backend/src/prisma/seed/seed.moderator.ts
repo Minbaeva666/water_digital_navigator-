@@ -2,6 +2,7 @@
 import bcrypt from "bcrypt";
 import { prisma } from "../prisma";
 import { Role, SalutationType } from "@prisma/client";
+import logger from "../../config/loggerConfig";
 
 async function seedModeratorUser() {
     const email = "paola.acosta.carrascal@hof-university.de";
@@ -34,7 +35,7 @@ async function seedModeratorUser() {
             },
         })
         .then(() =>
-            console.log(
+            logger.info(
                 `✅ Moderator ${email} ist vorhanden (Passwort: "${passwordPlain}")${
                     org ? `, Organisation: ${ORG_NAME}` : ""
                 }.`
@@ -45,7 +46,7 @@ async function seedModeratorUser() {
 }
 
 seedModeratorUser().catch(async (err) => {
-    console.error("❌ Seeding Moderator fehlgeschlagen:", err);
+    logger.error("❌ Seeding Moderator fehlgeschlagen:", err);
     await prisma.$disconnect();
     process.exit(1);
 });

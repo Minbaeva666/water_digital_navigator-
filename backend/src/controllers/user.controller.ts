@@ -18,6 +18,7 @@ import { resizeImageBuffer } from "../utils/image";
 import { prepareOrganizationData } from "../helpers/organizationHelpers";
 import { UserMinimalDto, UserWithOrganization } from "../types/user.types";
 import { checkUserReferences } from "../utils/referenceIntegrityChecker";
+import logger from "../config/loggerConfig";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -28,6 +29,13 @@ const prisma = new PrismaClient();
 // Hash token for storing/comparing with the tokenHash field in DB
 const hashToken = (t: string) =>
   crypto.createHash("sha256").update(t).digest("hex");
+
+const generateTemporaryPassword = (): string =>
+  crypto
+    .randomBytes(32)
+    .toString("base64")
+    .replace(/[+/=]/g, "")
+    .substring(0, 24);
 
 export const resetPasswordRequest = async (
   req: Request,
@@ -84,14 +92,14 @@ export const resetPasswordRequest = async (
       res.status(201).json({ message: "Reset Password send", data: user });
       return;
     } catch (emailError) {
-      console.error("Mailversand fehlgeschlagen:", emailError);
+      logger.error("Mailversand fehlgeschlagen:", emailError);
       res.status(500).json({
         error: "Fehler beim Versenden der Reset Passwort E-Mail.",
       });
       return;
     }
   } catch (error) {
-    console.error("Reset password request error:", error);
+    logger.error("Reset password request error:", error);
     res.status(500).json({ error: "An internal server error occurred." });
     return;
   }
@@ -143,7 +151,7 @@ export const resetPassword = async (
     res.status(200).json({ message: "Password successfully reset." });
     return;
   } catch (error) {
-    console.error("Reset password error:", error);
+    logger.error("Reset password error:", error);
     res.status(500).json({ error: "An internal server error occurred." });
     return;
   }
@@ -178,7 +186,7 @@ export const getUsersByState = async (
 
     res.status(200).json(users);
   } catch (error) {
-    console.error("Fehler beim Abrufen alles User:", error);
+    logger.error("Fehler beim Abrufen alles User:", error);
     res.status(500).json({ error: "Fehler beim Abrufen alles User" });
   }
 };
@@ -215,7 +223,7 @@ export const getUsersByRoles = async (
 
     res.status(200).json(users);
   } catch (error) {
-    console.error("Fehler beim Abrufen alles User:", error);
+    logger.error("Fehler beim Abrufen alles User:", error);
     res.status(500).json({ error: "Fehler beim Abrufen alles User" });
   }
 };
@@ -232,7 +240,7 @@ export const getUsersWithOrganizations = async (
     });
     res.status(200).json(usersWithOrg); // korrekte Variable
   } catch (error) {
-    console.error("Fehler beim Laden der Benutzer + Org:", error);
+    logger.error("Fehler beim Laden der Benutzer + Org:", error);
     res.status(500).json({ error: "Fehler beim Laden der Benutzer" });
   }
 };
@@ -267,7 +275,7 @@ export const getUsersMinimal = async (
 
     res.status(200).json(payload);
   } catch (error) {
-    console.error("Fehler beim Laden der Benutzer:", error);
+    logger.error("Fehler beim Laden der Benutzer:", error);
     res.status(500).json({ error: "Fehler beim Laden der Benutzer" });
   }
 };
@@ -320,7 +328,7 @@ export const createUser = async (
     }
 
     // Passwort-Generierung …
-    const generatedPassword = crypto.randomBytes(6).toString("hex");
+    const generatedPassword = generateTemporaryPassword();
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     // User anlegen und optional Organisation verknüpfen
@@ -426,7 +434,7 @@ export const createColleagueInMyOrganization = async (
       return;
     }
 
-    const generatedPassword = crypto.randomBytes(6).toString("hex");
+    const generatedPassword = generateTemporaryPassword();
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     const createdUser = await prisma.user.create({
@@ -611,7 +619,7 @@ export const createUserWithOrganization = async (
     const logoMimeType = file.mimetype;
 
     // 9) Passwort generieren & hashen
-    const rawPw = crypto.randomBytes(6).toString("hex");
+    const rawPw = generateTemporaryPassword();
     const pwHash = await bcrypt.hash(rawPw, 10);
 
     // 10) Org-CreateInput vorbereiten (inkl. Country/Region Connect + Logo)
@@ -664,7 +672,7 @@ export const createUserWithOrganization = async (
       message: "User und Organisation erfolgreich angelegt.",
     });
   } catch (error) {
-    console.error("Fehler beim Erstellen von User mit neuer Organisation:", error);
+    logger.error("Fehler beim Erstellen von User mit neuer Organisation:", error);
     return next(error);
   }
 };
@@ -687,7 +695,7 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json(user);
   } catch (error) {
-    console.error(`Fehler beim Abrufen des Users mit ID ${id}:`, error);
+    logger.error(`Fehler beim Abrufen des Users mit ID ${id}:`, error);
     res.status(500).json({ error: "Fehler beim Laden des Users" });
   }
 };
@@ -715,7 +723,7 @@ export const getUserMinimal = async (
 
     res.status(200).json(user);
   } catch (error) {
-    console.error(`Fehler beim Abrufen des Users mit ID ${id}:`, error);
+    logger.error(`Fehler beim Abrufen des Users mit ID ${id}:`, error);
     res.status(500).json({ error: "Fehler beim Laden des Users" });
   }
 };
@@ -831,7 +839,7 @@ export const updateUser = async (
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    console.error(`Fehler beim Aktualisieren des Users mit ID ${userId}:`, error);
+    logger.error(`Fehler beim Aktualisieren des Users mit ID ${userId}:`, error);
     handleError(error, next);
   }
 };
@@ -977,7 +985,7 @@ export const updateUserWithCreateOrganization = async (
     try {
       resizedBuffer = await resizeImageBuffer(req.file.buffer);
     } catch (imgErr) {
-      console.error("Fehler beim Skalieren des Logos:", imgErr);
+      logger.error("Fehler beim Skalieren des Logos:", imgErr);
       res.status(500).json({ message: "Logo-Verarbeitung fehlgeschlagen" });
       return;
     }
@@ -1025,7 +1033,7 @@ export const updateUserWithCreateOrganization = async (
     // 12) Antwort
     res.status(200).json(result);
   } catch (error) {
-    console.error(
+    logger.error(
       "Fehler beim Aktualisieren des Users + Anlegen neuer Organisation:",
       error
     );
@@ -1095,7 +1103,7 @@ export const deleteUser = async (
       }
     });
   } catch (error) {
-    console.error(`Fehler beim Löschen des Users ${id}:`, error);
+    logger.error(`Fehler beim Löschen des Users ${id}:`, error);
 
     // Handle database constraint errors as fallback
     if (error instanceof Prisma.PrismaClientKnownRequestError) {

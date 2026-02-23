@@ -1,3 +1,5 @@
+import logger from "../config/loggerConfig";
+
 export async function safeRun<T>(
     fn: () => Promise<T>,
     onError?: (error: unknown) => Promise<void> | void,
@@ -15,7 +17,7 @@ export async function safeRun<T>(
         if (onError) {
             await onError(error);
         } else {
-            console.error('[safeRun] Unhandled error:', formatError(error));
+            logger.error('[safeRun] Unhandled error:', formatError(error));
         }
         return undefined;
     }

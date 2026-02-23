@@ -3,6 +3,7 @@ import path from "node:path";
 import { promises as fs } from "node:fs";
 import type { Stats } from "node:fs";
 import { PDF_DIR } from "../config/pdf-dir"
+import logger from "../config/loggerConfig";
 
 function getPublicOrigin(req: Request): string {
     const env = process.env.PUBLIC_ORIGIN?.replace(/\/+$/, "");
@@ -53,7 +54,7 @@ export async function getPublicPdf(req: Request, res: Response) {
       updatedAt: info.stat.mtime.toISOString(),
     });
   } catch (e) {
-    console.error(e);
+        logger.error(e);
     res.status(500).json({ error: "Fehler beim Lesen der PDF." });
   }
 }
@@ -105,7 +106,7 @@ export async function upsertPublicPdf(req: Request, res: Response) {
             message: "PDF erfolgreich hochgeladen.",
         });
     } catch (e) {
-        console.error(e);
+        logger.error(e);
         res.status(500).json({ error: "Upload fehlgeschlagen." });
     }
 }
@@ -130,7 +131,7 @@ export async function deletePublicPdf(req: Request, res: Response) {
             message: deleted > 0 ? "PDF gelöscht." : "Keine PDF vorhanden.",
         });
     } catch (e) {
-        console.error(e);
+        logger.error(e);
         res.status(500).json({ error: "Löschen fehlgeschlagen." });
     }
 }

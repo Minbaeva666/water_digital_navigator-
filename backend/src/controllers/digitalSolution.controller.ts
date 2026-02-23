@@ -24,10 +24,116 @@ import {
 import {readFile, rename, writeFile} from "node:fs/promises";
 import { parseOrToday } from "../utils/date";
 import { sendDigitalSolutionCreatedNotification } from "../services/email/sendMail";
+import logger from "../config/loggerConfig";
 
 interface MulterErrorRequest extends Request {
     multerError?: Error;
 }
+
+const logError = (...args: unknown[]) => {
+    logger.error("digitalSolution.controller error", {
+        details: args,
+    });
+};
+
+const slugifyTaxonomy = (input: string) =>
+    input
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/ä/g, "ae")
+        .replace(/ö/g, "oe")
+        .replace(/ü/g, "ue")
+        .replace(/ß/g, "ss")
+        .replace(/&/g, "und")
+        .replace(/\//g, "-")
+        .replace(/[^a-zA-Z0-9\- ]+/g, "")
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .toLowerCase();
+
+const ensureUniqueSlug = async (
+    tx: Prisma.TransactionClient,
+    baseSlug: string,
+    parentId: string
+) => {
+    const suffix = parentId.slice(-6);
+    let attempt = 0;
+    while (attempt < 1000) {
+        const candidate = attempt === 0
+            ? `${baseSlug}-${suffix}`
+            : `${baseSlug}-${suffix}-${attempt}`;
+        const exists = await tx.taxonomyNode.findUnique({
+            where: { slug: candidate },
+            select: { id: true },
+        });
+        if (!exists) return candidate;
+        attempt++;
+    }
+    throw new Error("Kein eindeutiger Slug für Taxonomie-Knoten gefunden.");
+};
+
+const ensureTaxonomyOtherNodes = async (
+    tx: Prisma.TransactionClient,
+    taxonomyOther: Record<string, string> | undefined,
+    taxonomyIdSet: Set<string>
+) => {
+    if (!taxonomyOther) return;
+
+    for (const [parentId, rawText] of Object.entries(taxonomyOther)) {
+        const text = (rawText ?? "").trim();
+        if (!parentId || !text) continue;
+
+        const parent = await tx.taxonomyNode.findUnique({
+            where: { id: parentId },
+            select: {
+                id: true,
+                path: true,
+                depth: true,
+                type: true,
+                color: true,
+            },
+        });
+        if (!parent) continue;
+
+        const siblings = await tx.taxonomyNode.findMany({
+            where: { parentId },
+            select: { id: true, nameDe: true, sort: true },
+        });
+
+        const existing = siblings.find(
+            (node) => node.nameDe.trim().toLowerCase() === text.toLowerCase()
+        );
+        if (existing) {
+            taxonomyIdSet.add(existing.id);
+            continue;
+        }
+
+        const baseSlug = slugifyTaxonomy(text) || "kategorie";
+        const slug = await ensureUniqueSlug(tx, baseSlug, parent.id);
+        const path = `${parent.path}/${slug}`;
+        const nextSort = siblings.length
+            ? Math.max(...siblings.map((s) => s.sort ?? 0)) + 1
+            : 1;
+
+        const created = await tx.taxonomyNode.create({
+            data: {
+                parentId: parent.id,
+                type: parent.type,
+                slug,
+                nameDe: text,
+                path,
+                depth: parent.depth + 1,
+                sort: nextSort,
+                color: parent.color ?? undefined,
+            },
+            select: { id: true },
+        });
+
+        taxonomyIdSet.add(created.id);
+    }
+};
 
 // ---------------------------------------------------------------------
 // CREATE
@@ -62,6 +168,7 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
             solutionUserIds,
             solutionPresentedByUser,
             taxonomyNodeIds,
+            taxonomyOther,
             publishedBy,
             publishedSource
         } = req.body as {
@@ -88,6 +195,7 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
             solutionUserIds: string[] | string;
             solutionPresentedByUser?: boolean;
             taxonomyNodeIds?: string[] | string;
+            taxonomyOther?: Record<string, string>;
         };
 
         const isUser = user.role === "USER";
@@ -115,6 +223,7 @@ export const createDigitalSolution: RequestHandler = async (req, res, next) => {
                 ? [taxonomyNodeIds]
                 : [];
         const taxonomyIds = [...new Set(flatTaxIds.filter(Boolean))];
+        const taxonomyIdSet = new Set<string>(taxonomyIds);
 
         // (Optional) Validierung: existieren alle TaxonomyNode-IDs?
         if (taxonomyIds.length > 0) {
@@ -160,6 +269,9 @@ if (effectivePresenterId) {                        // ← use it
 
         // Alles in einer Transaktion
         const result = await prisma.$transaction(async (tx) => {
+            await ensureTaxonomyOtherNodes(tx, taxonomyOther, taxonomyIdSet);
+            const taxonomyIdsFinal = [...taxonomyIdSet];
+
             const solution = await tx.digitalSolution.create({
                 data: {
                     name,
@@ -191,9 +303,9 @@ if (effectivePresenterId) {                        // ← use it
             });
 
             // Taxonomie-Relationen anlegen
-            if (taxonomyIds.length > 0) {
+            if (taxonomyIdsFinal.length > 0) {
                 await tx.digitalSolutionTaxonomy.createMany({
-                    data: taxonomyIds.map((taxonomyNodeId) => ({
+                    data: taxonomyIdsFinal.map((taxonomyNodeId) => ({
                         digitalSolutionId: solution.id,
                         taxonomyNodeId,
                     })),
@@ -217,8 +329,8 @@ if (effectivePresenterId) {                        // ← use it
             creatorName: creator.firstName && creator.lastName ? `${creator.firstName} ${creator.lastName}` : undefined,
             state: normalizedState,
           });
-        } catch (e) {
-          console.error("EMAIL SEND FAILED (digitalSolutionCreated)", {
+                } catch (e) {
+                    logError("EMAIL SEND FAILED (digitalSolutionCreated)", {
             ctx: "sendDigitalSolutionCreatedNotification",
             error: e,
           });
@@ -273,6 +385,7 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
             solutionPresentedByUser,
             state,
             taxonomyNodeIds,
+            taxonomyOther,
             publishedBy,
             publishedSource
         } = req.body as any;
@@ -300,6 +413,7 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
                 ? [taxonomyNodeIds]
                 : [];
         const taxonomyIds = [...new Set(flatTaxIds.filter(Boolean))];
+        const taxonomyIdSet = new Set<string>(taxonomyIds);
 
         // Optional validieren, ob die Nodes existieren
         if (taxonomyIds.length > 0) {
@@ -322,6 +436,9 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
         }
 
         await prisma.$transaction(async (tx) => {
+            await ensureTaxonomyOtherNodes(tx, taxonomyOther, taxonomyIdSet);
+            const taxonomyIdsFinal = [...taxonomyIdSet];
+
             await tx.digitalSolution.update({
                 where: { id },
                 data: {
@@ -398,9 +515,9 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
                 where: { digitalSolutionId: id },
             });
 
-            if (taxonomyIds.length > 0) {
+            if (taxonomyIdsFinal.length > 0) {
                 await tx.digitalSolutionTaxonomy.createMany({
-                    data: taxonomyIds.map(taxonomyNodeId => ({
+                    data: taxonomyIdsFinal.map(taxonomyNodeId => ({
                         digitalSolutionId: id,
                         taxonomyNodeId,
                     })),
@@ -411,7 +528,7 @@ export const updateDigitalSolution: RequestHandler = async (req, res, next) => {
 
         res.json({ id });
     } catch (error) {
-        console.error("Error updating digital solution:", error);
+        logError("Error updating digital solution:", error);
         next(error);
     }
 };
@@ -466,7 +583,7 @@ export const updateDigitalSolutionTitleImage: RequestHandler = async (req, res, 
 
         res.status(200).json(created);
     } catch (error) {
-        console.error("Fehler beim Aktualisieren des Titelbildes:", error);
+        logError("Fehler beim Aktualisieren des Titelbildes:", error);
         next(error);
     }
 };
@@ -573,7 +690,7 @@ export const deleteDigitalSolution: RequestHandler = async (
             try {
                 fs.rmSync(uploadDir, {recursive: true, force: true});
             } catch (err) {
-                console.warn(
+                logger.warn(
                     `Ordner ${uploadDir} konnte nicht gelöscht werden:`,
                     err
                 );
@@ -593,7 +710,7 @@ export const deleteDigitalSolution: RequestHandler = async (
             message: `DigitalSolution ${id} erfolgreich gelöscht.`
         });
     } catch (error) {
-        console.error(
+        logError(
             `Fehler beim Löschen der DigitalSolution ${id}:`,
             error
         );
@@ -764,8 +881,8 @@ export const getActiveDigitalSolutionsWithTitleImage = async (
     );
 
     res.json({ items: enriched, total, page, pageSize });
-  } catch (err) {
-    console.error("Fehler beim Laden der DigitalSolutions:", err);
+    } catch (err) {
+        logError("Fehler beim Laden der DigitalSolutions:", err);
     res.status(500).json({ error: "Serverfehler." });
   }
 };
@@ -846,7 +963,7 @@ export const uploadDigitalSolutionTitleImage: RequestHandler = async (
             return;
         }
     } catch (error) {
-        console.error("Error uploading title image:", error);
+        logError("Error uploading title image:", error);
         next(error);
     }
 };
@@ -938,7 +1055,7 @@ export const uploadDigitalSolutionDetailImages: RequestHandler = async (
             return;
         }
     } catch (error) {
-        console.error("Error uploading detail images:", error);
+        logError("Error uploading detail images:", error);
         next(error);
     }
 };
@@ -1081,7 +1198,7 @@ export const getDigitalSolutionById = async (
         }
         res.status(200).json(ds);
     } catch (error) {
-        console.error(
+        logError(
             `Fehler beim Abrufen der digitalen Lösung ${id}:`,
             error
         );
@@ -1131,7 +1248,7 @@ export const getDigitalSolutions = async (
 
         res.status(200).json(list);
     } catch (error) {
-        console.error("Fehler beim Abrufen aller digitalen Lösungen:", error);
+        logError("Fehler beim Abrufen aller digitalen Lösungen:", error);
         res.status(500).json({error: "Fehler beim Laden der digitalen Lösungen"});
     }
 };
@@ -1165,7 +1282,7 @@ export const getTitleImageByDigitalSolution = async (
         const dataUri = `data:${image.mimeType};base64,${buf.toString("base64")}`;
         res.json({...image, dataUri});
     } catch (err) {
-        console.error("Fehler beim Laden des Bildes:", err);
+        logError("Fehler beim Laden des Bildes:", err);
         res.status(500).json({error: "Serverfehler beim Bildabruf."});
     }
 };
@@ -1211,8 +1328,8 @@ export const getMyDigitalSolutions: RequestHandler = async (req: Request, res: R
     });
 
     res.status(200).json(list);
-  } catch (error) {
-    console.error("Fehler beim Abrufen meiner digitalen Lösungen:", error);
+    } catch (error) {
+        logError("Fehler beim Abrufen meiner digitalen Lösungen:", error);
     res
       .status(500)
       .json({ error: "Fehler beim Laden der digitalen Lösungen des Users." });
@@ -1264,7 +1381,7 @@ export const getDetailImagesByDigitalSolution = async (req: Request, res: Respon
 
         res.json(result);
     } catch (err) {
-        console.error("Fehler beim Laden der Detailbilder:", err);
+        logError("Fehler beim Laden der Detailbilder:", err);
         res.status(500).json({error: "Serverfehler beim Detailbilder-Abruf."});
     }
 };
@@ -1308,7 +1425,7 @@ export const getActiveDigitalSolutions = async (req: Request, res: Response) => 
 
         res.status(200).json(solutions);
     } catch (error) {
-        console.error("Fehler beim Laden aktiver Lösungen mit Organisation:", error);
+        logError("Fehler beim Laden aktiver Lösungen mit Organisation:", error);
         res.status(500).json({ error: "Fehler beim Abrufen der digitalen Lösungen" });
     }
 };
@@ -1352,7 +1469,7 @@ export const getAllCoordinates = async (req: Request, res: Response) => {
 
         res.status(200).json(solutions);
     } catch (error) {
-        console.error("Fehler beim Laden aller Koordinaten:", error);
+        logError("Fehler beim Laden aller Koordinaten:", error);
         res.status(500).json({ error: "Fehler beim Abrufen aller Koordinaten" });
     }
 };

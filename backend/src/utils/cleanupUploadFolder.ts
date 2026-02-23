@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import logger from '../config/loggerConfig';
 
 export const cleanupUploadFolder = async (digitalSolutionId: string) => {
     const folderPath = path.join(
@@ -12,8 +13,8 @@ export const cleanupUploadFolder = async (digitalSolutionId: string) => {
 
     try {
         await fs.rm(folderPath, { recursive: true, force: true });
-        console.log(`Ordner gelöscht: ${folderPath}`);
+        logger.info(`Ordner gelöscht: ${folderPath}`);
     } catch (err) {
-        console.error("Fehler beim Löschen des Upload-Ordners:", err);
+        logger.error("Fehler beim Löschen des Upload-Ordners:", err);
     }
 };

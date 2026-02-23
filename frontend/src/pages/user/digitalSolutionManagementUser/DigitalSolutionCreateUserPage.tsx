@@ -217,7 +217,7 @@ export default function DigitalSolutionCreateUserPage() {
 
       const taxonomyNodeIds: string[] = Object.values(taxonomySelections)
         .flat()
-        .filter((id): id is string => typeof id === "string");
+        .filter((id): id is string => typeof id === "string" && !id.startsWith("__other__:"));
 
       const payload: DigitalSolutionFormValues = {
         ...values,
@@ -289,7 +289,7 @@ export default function DigitalSolutionCreateUserPage() {
 
       const taxonomyNodeIds: string[] = Object.values(taxonomySelections)
         .flat()
-        .filter((id): id is string => typeof id === "string");
+        .filter((id): id is string => typeof id === "string" && !id.startsWith("__other__:"));
 
       const payload: DigitalSolutionFormValues = {
         ...values,

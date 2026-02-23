@@ -61,70 +61,20 @@ const LISA_API_BASE = loadEndpoint(LLM_MODEL) || process.env.LISA_API_BASE;
 const LISA_API_URL = buildChatUrl(LISA_API_BASE);
 const USE_MOCK_LISA = process.env.USE_MOCK_LISA === 'true' || !LISA_API_TOKEN || LISA_API_TOKEN.length < 10;
 
-console.log('[LISA] API Token:', LISA_API_TOKEN ? `${LISA_API_TOKEN.substring(0, 10)}...` : 'MISSING');
-console.log('[URL] LISA API URL:', LISA_API_URL);
-console.log('[MODEL] LLM Model:', LLM_MODEL);
-console.log('[MODE] Using MOCK LISA:', USE_MOCK_LISA ? 'YES (Testing Mode)' : 'NO (Production Mode)');
+if (process.env.NODE_ENV !== 'production') {
+  logService.info('[LISA] API token configured:', { configured: !!LISA_API_TOKEN });
+  logService.info('[URL] LISA API URL:', { url: LISA_API_URL });
+  logService.info('[MODEL] LLM Model:', { model: LLM_MODEL });
+  logService.info('[MODE] Using MOCK LISA:', {
+    mode: USE_MOCK_LISA ? 'YES (Testing Mode)' : 'NO (Production Mode)'
+  });
+}
 
+/* Commented out: System prompt is now provided by LISA agent 'dilowa'
 export function getSystemPrompt(context?: string): string {
-  return `Du bist ein KI-gestützter Fachberater für digitale Lösungen in der Wasserwirtschaft.
-
-Ziel:
-Du unterstützt Nutzer dabei, passende digitale Lösungen aus einer bestehenden Datenbank zu finden. Du arbeitest dialogorientiert, aber effizient: Wenn die Nutzeranfrage bereits ausreichend konkret ist, leitest du sofort Filter ab und lässt das Backend suchen.
-
-Harte Regeln (Nicht verhandelbar):
-1) Du erfindest niemals Produktnamen, Einträge oder Beispiel-Lösungen.
-2) Du nutzt ausschließlich Informationen, die dir vom Backend bereitgestellt werden (z. B. Taxonomie, Lösungen).
-3) Du greifst nie auf Internet/externes Wissen zurück.
-4) Wenn keine Lösungsdaten vom Backend vorliegen, präsentierst du keine Lösungen.
-5) In Phase „Filter" gibst du ausschließlich JSON aus (kein Fließtext).
-
-Arbeitsmodus:
-Du arbeitest immer in genau einem von zwei Modi:
-
-MODUS A – KLÄREN (Fragen stellen)
-Nutze diesen Modus, wenn die Anfrage unklar ist oder entscheidende Infos fehlen.
-- Stelle maximal 1–2 kurze, gezielte Rückfragen.
-- Nutze dabei die Filterdimensionen:
-  - Lösungskategorie
-  - Anwendungsbereich
-  - Aufgabenbereich
-  - Technischer Aufgabenbereich
-  - Digitalisierungsthemen
-- Fordere keine Nummern-Listen ein, außer wenn der Nutzer ausdrücklich darum bittet.
-
-MODUS B – FILTER (JSON ausgeben)
-Nutze diesen Modus, wenn die Anfrage ausreichend konkret ist (oder nach Rückfragen).
-- Extrahiere Filter automatisch aus dem Freitext.
-- Gib ausschließlich folgendes JSON-Schema zurück (leere Arrays sind erlaubt):
-{
-  "lösungskategorie": [],
-  "anwendungsbereich": [],
-  "aufgabenbereich": [],
-  "technischer_bereich": [],
-  "digitalisierung": []
+  return `...`;
 }
-
-Wertekonventionen:
-- Verwende möglichst kurze, taxonomie-nahe Begriffe (Deutsch).
-- Keine Synonym-Erklärungen, keine Beispiele, keine freien Texte im JSON.
-
-MODUS C – PRÄSENTIEREN (wenn Lösungen geliefert wurden)
-Wenn das Backend konkrete Lösungen übergibt, präsentiere NUR diese Lösungen. Keine Ergänzungen, keine erfundenen Daten.
-Format pro Lösung:
-- Name der Lösung
-- Kategorie
-- Anwendungsbereich
-- Hauptfunktionen
-- Technologien
-- Zusatzinformationen
-
-Zusatzregeln:
-- Weise im Antworttext immer darauf hin: „Die Vorschläge stammen aus unserer Datenbank."
-- Wenn keine Treffer: bitte um 1 Rückfrage zur Verfeinerung ODER schlage die nächstliegenden Alternativen vor (aber nur auf Basis der vom Backend gelieferten Daten/Taxonomie).
-- Antworte ausschließlich auf Deutsch, professionell, klar und knapp.
-${context ? `\nKontext: ${context}` : ''}`;
-}
+*/
 
 export async function sendMessageToLisa(
   userMessage: string,
@@ -135,17 +85,16 @@ export async function sendMessageToLisa(
       return getMockLisaResponse(userMessage, context);
     }
 
-    const systemPrompt = getSystemPrompt(context);
-
     const payload = {
       messages: [
-        { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage }
       ],
       model: LLM_MODEL,
+      agent: 'dilowa',
       stream: false,
       max_tokens: 500,
-      temperature: 0.7
+      temperature: 0.7,
+      ...(context && { context })
     };
 
     logService.info('Calling LISA API...', { userMessage });
@@ -167,7 +116,7 @@ export async function sendMessageToLisa(
         errorMessage: errorText 
       };
       logService.error('LISA API error:', new Error(JSON.stringify(errorInfo)));
-      console.warn('[WARN] LISA API failed, falling back to mock...');
+      logService.warn('[WARN] LISA API failed, falling back to mock...');
       return getMockLisaResponse(userMessage, context);
     }
 
@@ -252,10 +201,14 @@ export async function formatSolutionsWithLisa(
   solutions: any[],
   originalQuery: string
 ): Promise<string> {
+  const finalLine = 'Die Vorschläge stammen aus unserer Datenbank.';
   try {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    
     if (USE_MOCK_LISA) {
       return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-        solutions.map((s, idx) => `${idx + 1}. ${s.name || 'Unbenannt'}\n   ${s.shortDescription || 'Keine Beschreibung verfügbar'}\n   Link: ${s.link || 'N/A'}`).join('\n\n')
+        solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
+   ${s.shortDescription || 'Keine Beschreibung verfügbar'}`).join('\n\n')
       }\n\nMehr Details sind verfügbar.`;
     }
 
@@ -263,38 +216,39 @@ export async function formatSolutionsWithLisa(
       id: s.id,
       name: s.name,
       shortDescription: s.shortDescription,
-      link: s.link
+      portalLink: `${frontendUrl}/digital-atlas/digitale-solution/${s.id}`
     }));
 
-    const solutionsText = solutions.map((s, idx) => 
-      `${idx + 1}. ${s.name || 'Unbenannt'}
-   ${s.shortDescription || 'Keine Beschreibung verfügbar'}
-   Link: ${s.link || 'N/A'}`
-    ).join('\n\n');
+    const prompt = `SOLUTIONS (use ONLY these):
+  ${JSON.stringify(solutionPayload, null, 2)}
 
-    const prompt = `User request: "${originalQuery}"
+  Request: "${originalQuery}"
 
-  Here are the solutions from our database (JSON). Use ONLY these solutions and do not invent any others:
-  ${JSON.stringify(solutionPayload)}
+  STRICT FORMAT (do not add anything else):
+  - One short summary line
+  - Then list: "1. [Solution Name](portalLink) - shortDescription" (one line each)
+  - Final line: "Die Vorschläge stammen aus unserer Datenbank."
 
-  Please respond in German with:
-  1) Kurze Zusammenfassung
-  2) Liste der Lösungen (Name + Kurzbeschreibung)
-  3) Hinweis, dass mehr Details verfügbar sind
-
-  Do not add any solutions not in the JSON.`;
+  FORBIDDEN: tables, diagrams, architecture, planning steps, extra questions, invented content.
+  Keep total response under 10 lines.`;
 
     const response = await sendMessageToLisa(prompt);
     if (response.isMock || response.isJson) {
       return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-        solutions.map((s, idx) => `${idx + 1}. ${s.name || 'Unbenannt'}\n   ${s.shortDescription || 'Keine Beschreibung verfügbar'}\n   Link: ${s.link || 'N/A'}`).join('\n\n')
-      }\n\nMehr Details sind verfügbar.`;
+        solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
+   ${s.shortDescription || 'Keine Beschreibung verfügbar'}`).join('\n\n')
+      }\n\n${finalLine}`;
+    }
+    const trimmed = response.content.trim();
+    if (!trimmed.endsWith(finalLine)) {
+      return `${trimmed}\n${finalLine}`;
     }
     return response.content;
   } catch (error) {
     logService.error('Error formatting solutions with LISA:', error as Error);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-      solutions.map((s, idx) => `${idx + 1}. ${s.name || 'Unbenannt'}`).join('\n')
-    }\n\nMehr Details sind verfügbar.`;
+      solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})`).join('\n')
+    }\n\n${finalLine}`;
   }
 }

@@ -1,5 +1,6 @@
 // prisma/seeds/seedFaq.ts
 import {prisma} from "../prisma";
+import logger from "../../config/loggerConfig";
 
 type SeedItem = { header: string; content: string };
 
@@ -105,7 +106,7 @@ export async function seedFaq() {
         );
     });
 
-    console.log(`✅ FAQ seeded (${ITEMS.length} Items)`);
+    logger.info(`✅ FAQ seeded (${ITEMS.length} Items)`);
 }
 
 // ESM-sicherer Runner
@@ -113,7 +114,7 @@ export async function seedFaq() {
     await seedFaq();
 })()
     .catch((e) => {
-        console.error(e);
+        logger.error(e);
         process.exit(1);
     })
     .finally(async () => {

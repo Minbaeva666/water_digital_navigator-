@@ -4,6 +4,7 @@ import {
   OfferingCategory,
   DigitalSolutionState,
 } from "@prisma/client";
+import logger from "../../config/loggerConfig";
 
 type SeedItem = {
   name: string;
@@ -85,12 +86,12 @@ export async function seedDigitalSolutions() {
     });
 
     if (existing) {
-      console.log(`ℹ️ DigitalSolution "${data.name}" уже существует (ID=${existing.id}).`);
+      logger.info(`ℹ️ DigitalSolution "${data.name}" уже существует (ID=${existing.id}).`);
       continue;
     }
 
     await prisma.digitalSolution.create({ data });
-    console.log(`✅ DigitalSolution "${data.name}" создана.`);
+    logger.info(`✅ DigitalSolution "${data.name}" создана.`);
   }
 }
 
@@ -99,7 +100,7 @@ export async function seedDigitalSolutions() {
   await seedDigitalSolutions();
 })()
   .catch((e) => {
-    console.error(e);
+    logger.error(e);
     process.exit(1);
   })
   .finally(async () => {

@@ -1,4 +1,5 @@
 import { prisma } from "../prisma";
+import logger from "../../config/loggerConfig";
 
 type CountrySeed = { code: string; nameDe: string; nameEn?: string };
 type RegionSeed  = { countryId: string; code: string; nameDe: string; nameEn?: string };
@@ -195,7 +196,7 @@ export async function seedCountriesAndRegions() {
             create: { code: c.code, nameDe: c.nameDe, nameEn: c.nameEn },
         });
     }
-    console.log(`✅ ${COUNTRIES.length} Länder upserted`);
+    logger.info(`✅ ${COUNTRIES.length} Länder upserted`);
 
     // Regionen anlegen (idempotent via skipDuplicates)
     if (REGIONS.length > 0) {
@@ -209,7 +210,7 @@ export async function seedCountriesAndRegions() {
             })),
             skipDuplicates: true,
         });
-        console.log(`✅ ${REGIONS.length} Regionen angelegt/übersprungen (skipDuplicates)`);
+        logger.info(`✅ ${REGIONS.length} Regionen angelegt/übersprungen (skipDuplicates)`);
     }
 }
 
@@ -218,7 +219,7 @@ export async function seedCountriesAndRegions() {
     await seedCountriesAndRegions();
 })()
     .catch((e) => {
-        console.error(e);
+        logger.error(e);
         process.exit(1);
     })
     .finally(async () => {

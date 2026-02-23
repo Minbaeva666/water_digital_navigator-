@@ -8,9 +8,7 @@ import {
 } from "../../types/dtos/User.dto.ts";
 import { SalutationType } from "../../types/constants/enums.ts";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-const baseUrl = `${backendUrl}/users`;
+const baseUrl = `/users`;
 
 
 const fetchUsersMinimal = async (): Promise<UserMinimalDto[]> => {

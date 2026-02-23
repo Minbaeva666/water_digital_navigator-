@@ -1,6 +1,11 @@
 import { prisma } from "../prisma/prisma";
 import { Request, Response } from "express";
+import logger from "../config/loggerConfig";
 // import {UsingOrganizationDto, toUserDto} from "../shared/dtos/UsingOrganizationDto";
+
+const logError = (...args: unknown[]) => {
+  logger.error("admin.controller error", { details: args });
+};
 
 export const getUnverifiedUsers = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -21,7 +26,7 @@ export const getUnverifiedUsers = async (req: Request, res: Response): Promise<v
 
     res.status(200).json(users);
   } catch (error) {
-    console.error("Fehler beim Laden der Benutzer:", error);
+    logError("Fehler beim Laden der Benutzer:", error);
     res.status(500).json({ error: "Fehler beim Laden der Benutzer" });
   }
 };
@@ -37,7 +42,7 @@ export const getRegisteredUsers = async (req: Request, res: Response): Promise<v
 
     res.status(200).json(users);
   } catch (error) {
-    console.error("Error loading all registered users:", error);
+    logError("Error loading all registered users:", error);
     res.status(500).json({ error: "Error loading all registered users" });
   }
 };
@@ -52,7 +57,7 @@ export const getModerators = async (req: Request, res: Response): Promise<void> 
 
     res.status(200).json(users);
   } catch (error) {
-    console.error("Error loading all admins and moderators:", error);
+    logError("Error loading all admins and moderators:", error);
     res.status(500).json({ error: "Error loading all admins and moderators" });
   }
 };

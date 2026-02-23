@@ -1,5 +1,6 @@
 import type { Request, Response, RequestHandler } from "express";
 import {prisma} from "../prisma/prisma";
+import logger from "../config/loggerConfig";
 
 const selectUpdatedByUser = {
     id: true,
@@ -28,7 +29,7 @@ export const getImprintStatement: RequestHandler = async (req: Request, res: Res
         }
         res.status(200).json(imprint);
     } catch (err) {
-        console.error("Fehler beim Laden des Impressums:", err);
+        logger.error("Fehler beim Laden des Impressums:", err);
         res.status(500).json({ error: "Serverfehler beim Impressums-Abruf." });
     }
 };
@@ -71,7 +72,7 @@ export const updateImprintStatement: RequestHandler = async (req: Request, res: 
 
         res.status(201).json(created);
     } catch (err) {
-        console.error("Fehler beim Aktualisieren des Impressums:", err);
+        logger.error("Fehler beim Aktualisieren des Impressums:", err);
         res.status(500).json({ error: "Serverfehler beim Aktualisieren des Impressums." });
     }
 };

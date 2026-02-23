@@ -1,15 +1,28 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, RequestHandler } from 'express';
 import { logService } from '../services/logger/loggerService';
 import { prisma } from '../prisma/prisma';
-import { sendMessageToLisa, formatSolutionsWithLisa, getSystemPrompt } from '../services/lisa/lisaService';
+import { sendMessageToLisa, formatSolutionsWithLisa } from '../services/lisa/lisaService';
 import { findSolutionsFromLisaFilters } from '../services/solution/solutionService';
+import { authenticate } from '../middlewares/login/authMiddelware';
 
 const helpdeskRouter = Router();
 
+const requireChatAuth: RequestHandler = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.status(401).json({
+      error: 'auth_required',
+      message: 'Um den KI-Chatbot zu nutzen, musst du dich anmelden',
+    });
+    return;
+  }
+  authenticate(req, res, next);
+};
+
 // Handle chatbot messages
-helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
+helpdeskRouter.post('/chat', requireChatAuth, async (req: Request, res: Response) => {
   try {
-    console.log('[HELPDESK] Chat endpoint called');
+    logService.info('[HELPDESK] Chat endpoint called');
     const { message = '', userId, taxonomySelection } = req.body;
 
     logService.info(`Helpdesk chat message received: ${message}, taxonomySelection: ${JSON.stringify(taxonomySelection)}`);
@@ -21,7 +34,7 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
     if (hasMessage) {
       try {
         // Build context from taxonomy selection if provided
-        let context = '';
+        let context = 'Bitte antworte knapp. Wenn Informationen fehlen, stelle maximal eine kurze Rückfrage.';
         if (Array.isArray(taxonomySelection) && taxonomySelection.length > 0) {
           const selection = taxonomySelection.slice(0, 3);
           const nodes = await prisma.taxonomyNode.findMany({ 
@@ -30,28 +43,28 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
           });
           const names = nodes.map(n => n.nameDe || n.nameEn || n.slug);
           const selectionPath = names.join(' › ');
-          context = `Ausgewählte Kategorien: ${selectionPath}`;
+          context = `${context}\nAusgewählte Kategorien: ${selectionPath}`;
         }
 
-        console.log('[LISA] Calling LISA AI...');
+        logService.info('[LISA] Calling LISA AI...');
         
         // Step 1: Send message to LISA
         const lisaResponse = await sendMessageToLisa(message, context);
 
-        console.log('[LISA] Response received:', { 
+        logService.info('[LISA] Response received:', { 
           isJson: lisaResponse.isJson,
           hasFilters: !!lisaResponse.filters 
         });
 
         // Step 2: If LISA returned JSON filters, find matching solutions
         if (lisaResponse.isJson && lisaResponse.filters) {
-          console.log('[LISA] Returned filters, finding solutions...', lisaResponse.filters);
+          logService.info('[LISA] Returned filters, finding solutions...', lisaResponse.filters);
           logService.info('LISA provided filters, searching for solutions...', { 
             filters: lisaResponse.filters 
           });
 
           const solutions = await findSolutionsFromLisaFilters(lisaResponse.filters);
-          console.log('[SQL] Found', solutions.length, 'solutions');
+          logService.info('[SQL] Found solutions', { count: solutions.length });
 
           if (solutions.length > 0) {
             // Step 3: Format solutions with LISA
@@ -100,18 +113,18 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
         return;
 
       } catch (aiError) {
-        console.error('[ERROR] LISA AI Error:', aiError);
+        logService.error('[ERROR] LISA AI Error:', aiError as Error);
         logService.error('Error with LISA AI:', aiError as Error);
         
         // Intelligent fallback based on keywords
-        let fallbackResponse = 'Entschuldigung, ich habe gerade technische Schwierigkeiten. Bitte versuche es später erneut oder kontaktiere unser Support-Team.';
+        let fallbackResponse = 'Entschuldigung, ich konnte deine Anfrage gerade nicht beantworten. Bitte nutze das Kontaktformular unter /kontakt oder versuche es später erneut.';
         
         if (message.toLowerCase().includes('lösung') || message.toLowerCase().includes('software')) {
-          fallbackResponse = 'Du suchst nach digitalen Lösungen? Ich kann dir helfen, passende Tools zu finden. Beschreibe mir genauer, was du benötigst (z.B. Wassermanagement, Monitoring, Datenanalyse).';
+          fallbackResponse = 'Du suchst nach digitalen Lösungen? Ich kann dir helfen, passende Tools zu finden. Beschreibe mir genauer, was du benötigst (z.B. Wassermanagement, Monitoring, Datenanalyse). Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
         } else if (message.toLowerCase().includes('wasser')) {
-          fallbackResponse = 'Bei Wasserthemen kann ich dir weiterhelfen! Geht es um Wassersparen, Wasserqualität, Abwasser oder etwas anderes?';
+          fallbackResponse = 'Bei Wasserthemen kann ich dir weiterhelfen! Geht es um Wassersparen, Wasserqualität, Abwasser oder etwas anderes? Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
         } else if (message.toLowerCase().includes('klima')) {
-          fallbackResponse = 'Klimaschutz ist wichtig! Suchst du nach Informationen zu Klimaanpassung, Emissionsreduktion oder nachhaltigen Technologien?';
+          fallbackResponse = 'Klimaschutz ist wichtig! Suchst du nach Informationen zu Klimaanpassung, Emissionsreduktion oder nachhaltigen Technologien? Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
         }
         
         const botResponse = {
@@ -204,7 +217,10 @@ helpdeskRouter.post('/chat', async (req: Request, res: Response) => {
 
   } catch (error) {
     logService.error('Error processing helpdesk chat:', error as Error);
-    res.status(500).json({ error: 'Failed to process message' });
+    res.status(500).json({
+      error: 'Failed to process message',
+      message: 'Entschuldigung, ich konnte deine Anfrage gerade nicht beantworten. Bitte nutze das Kontaktformular unter /kontakt oder versuche es später erneut.',
+    });
   }
 });
 
@@ -241,7 +257,7 @@ helpdeskRouter.post('/contact', async (req: Request, res: Response) => {
 // Test endpoint to verify LISA API is working
 helpdeskRouter.post('/test-ai', async (req: Request, res: Response) => {
   try {
-    console.log('[TEST] Testing LISA API...');
+    logService.info('[TEST] Testing LISA API...');
     
     const testPrompt = 'Teste LISA: Antworte kurz auf Deutsch mit "Hallo"';
     const response = await sendMessageToLisa(testPrompt);
@@ -253,7 +269,7 @@ helpdeskRouter.post('/test-ai', async (req: Request, res: Response) => {
       responsePreview: response.content.substring(0, 100)
     });
   } catch (error) {
-    console.error('[ERROR] Test failed:', error);
+    logService.error('[ERROR] Test failed:', error as Error);
     res.status(500).json({ 
       error: 'Failed to test LISA API',
       details: (error as any).message || String(error)
@@ -261,18 +277,6 @@ helpdeskRouter.post('/test-ai', async (req: Request, res: Response) => {
   }
 });
 
-helpdeskRouter.get('/system-prompt', async (req: Request, res: Response) => {
-  try {
-    const prompt = getSystemPrompt();
-    res.status(200).json({
-      prompt,
-      model: process.env.LLM_MODEL || 'lisa-v40-rc2-gpt-oss120b',
-      usesMock: process.env.USE_MOCK_LISA === 'true'
-    });
-  } catch (error) {
-    console.error('[ERROR] Failed to fetch system prompt:', error);
-    res.status(500).json({ error: 'Failed to fetch system prompt' });
-  }
-});
+// System prompt endpoint removed: LISA agent 'dilowa' now provides the system prompt
 
 export default helpdeskRouter;

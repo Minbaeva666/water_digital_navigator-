@@ -1,6 +1,7 @@
 import {Request, Response, NextFunction} from 'express';
 import {ApiError} from '../errors/ApiError';
 import {mapPrismaError} from "../utils/prismaErrorMapper";
+import logger from "../config/loggerConfig";
 
 export const errorHandler = (
     err: any,
@@ -8,7 +9,9 @@ export const errorHandler = (
     res: Response,
     next: NextFunction
 ): void => {
-    console.error('[Error]', err);
+    if (process.env.NODE_ENV !== 'production') {
+        logger.error('[Error]', err);
+    }
 
     // Eigene definierte Fehlerklasse
     if (err instanceof ApiError) {

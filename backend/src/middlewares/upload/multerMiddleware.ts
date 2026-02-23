@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { Request } from 'express';
 import { randomUUID } from 'crypto';
+import logger from '../../config/loggerConfig';
 
 const uploadBaseDir = path.join(process.cwd(), 'public', 'uploads');
 
@@ -25,7 +26,7 @@ const storage = multer.diskStorage({
             fs.mkdirSync(folderPath, { recursive: true });
             cb(null, folderPath);
         } catch (err) {
-            console.error('Fehler beim Erstellen des Upload-Verzeichnisses:', err);
+            logger.error('Fehler beim Erstellen des Upload-Verzeichnisses:', err);
             cb(err as Error, '');
         }
     },

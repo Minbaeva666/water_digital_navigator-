@@ -1,5 +1,6 @@
 import type { Request, Response, RequestHandler } from "express";
 import { prisma } from "../prisma/prisma";
+import logger from "../config/loggerConfig";
 
 /**
  * GET /terms-of-use
@@ -34,7 +35,7 @@ export const getTermsOfUse: RequestHandler = async (req: Request, res: Response)
 
         res.status(200).json(terms);
     } catch (err) {
-        console.error("Fehler beim Laden der Terms of Use:", err);
+        logger.error("Fehler beim Laden der Terms of Use:", err);
         res.status(500).json({ error: "Serverfehler beim Terms-of-Use-Abruf." });
     }
 };
@@ -89,7 +90,7 @@ export const updateTermsOfUse: RequestHandler = async (req: Request, res: Respon
 
         res.status(201).json(created);
     } catch (err) {
-        console.error("Fehler beim Aktualisieren der Terms of Use:", err);
+        logger.error("Fehler beim Aktualisieren der Terms of Use:", err);
         res.status(500).json({ error: "Serverfehler beim Aktualisieren der Terms of Use." });
     }
 };

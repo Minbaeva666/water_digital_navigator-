@@ -5,10 +5,13 @@ yarn.lock
 pnpm-lock.yaml
 
 # Environment variables (NEVER commit secrets!)
+*.env
 .env
 .env.local
 .env.*.local
 backend/.env
+backend/.env.production
+backend/.env.development
 backend/.env.local
 backend/.llm_endpoint
 

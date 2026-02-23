@@ -3,6 +3,7 @@ import handlebars from 'handlebars';
 import path from 'path';
 import {Response} from "express";
 import {sendSuccess} from "./response";
+import logger from '../config/loggerConfig';
 
 export async function loadEmailTemplate(templateRelativePath: string, data: Record<string, any>): Promise<string> {
     const fullPath = path.resolve(__dirname, templateRelativePath);
@@ -23,7 +24,7 @@ export async function safeEmailRun<T>(
         await emailFn();
         sendSuccess(res, successStatus, successData, successMessage);
     } catch (error) {
-        console.error(`[safeEmailRun] ${errorMessage}:`, error);
+        logger.error(`[safeEmailRun] ${errorMessage}:`, error);
         res.status(500).json({ error: errorMessage });
     }
 }

@@ -97,6 +97,7 @@ export const createDigitalSolution = async (
         publishedAt,
         publishedSource,
         targetGroupOther,
+        taxonomyOther,
     } = values;
 
     const payload = {
@@ -125,6 +126,7 @@ export const createDigitalSolution = async (
         publishedAt,
         publishedSource,
         targetGroupOther,
+        taxonomyOther,
     };
 
     const {data} = await axiosInstance.post<{ digitalSolutionId: string }>(baseUrl, payload);
@@ -208,6 +210,7 @@ const updateDigitalSolution = async (values: DigitalSolutionFormValues): Promise
     const taxonomySelections = values.taxonomySelections ?? {};
     const taxonomyNodeIds = Object.values(taxonomySelections)
         .flat()
+        .filter((id): id is string => typeof id === "string" && !id.startsWith("__other__:"))
         .filter((id, idx, arr) => arr.indexOf(id) === idx);
 
     const payload = {
@@ -240,6 +243,7 @@ const updateDigitalSolution = async (values: DigitalSolutionFormValues): Promise
         publishedAt: values.publishedAt,
         publishedSource: values.publishedSource,
         targetGroupOther: values.targetGroupOther,
+        taxonomyOther: values.taxonomyOther,
     };
 
     const {data} = await axiosInstance.put<DigitalSolutionWithRelationsDto>(

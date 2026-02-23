@@ -9,8 +9,7 @@ import {findMissing, requiredPathsFor} from "./organizationAdminRequired.ts";
 import {OrganizationState, OrganizationType} from "../../types/constants/enums.ts";
 
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-const baseUrl = `${backendUrl}/organizations`;
+const baseUrl = `/organizations`;
 
 
 const fetchOrganizationsBase = async (): Promise<OrganizationBaseDto[]> => {

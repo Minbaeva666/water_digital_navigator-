@@ -4,6 +4,7 @@ import {
     Role,
     SalutationType,
 } from "@prisma/client";
+import logger from "../../config/loggerConfig";
 
 async function seedTestUser() {
     const email = "testuser@dilowa.de";
@@ -27,7 +28,7 @@ async function seedTestUser() {
             },
         })
         .then(() =>
-            console.log(
+            logger.info(
                 `✅ Test User ${email} ist vorhanden (Passwort: "${passwordPlain}").`
             )
         );
@@ -37,7 +38,7 @@ async function seedTestUser() {
 }
 
 seedTestUser().catch(async (err) => {
-    console.error("❌ Seeding Test user fehlgeschlagen:", err);
+    logger.error("❌ Seeding Test user fehlgeschlagen:", err);
     await prisma.$disconnect();
     process.exit(1);
 });

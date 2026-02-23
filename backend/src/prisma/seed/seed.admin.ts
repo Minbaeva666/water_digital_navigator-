@@ -4,6 +4,7 @@ import { OrganizationState, OrganizationType, Role, SalutationType } from '@pris
 import { prisma } from "../prisma";
 import path from "path";
 import fs from "fs";
+import logger from "../../config/loggerConfig";
 
 async function createAdminUsers() {
     const orgName = 'Institut für nachhaltige Wassersysteme';
@@ -39,9 +40,9 @@ async function createAdminUsers() {
                 region:  { connect: { id: regionBy.id } },
             },
         });
-        console.log(`✅ Organisation "${orgName}" angelegt (ID=${org.id}).`);
+        logger.info(`✅ Organisation "${orgName}" angelegt (ID=${org.id}).`);
     } else {
-        console.log(`ℹ️ Organisation "${orgName}" existiert bereits (ID=${org.id}).`);
+        logger.info(`ℹ️ Organisation "${orgName}" existiert bereits (ID=${org.id}).`);
     }
 
     // 2) Logo aus public/assets laden
@@ -50,7 +51,7 @@ async function createAdminUsers() {
     try {
         logoBuffer = fs.readFileSync(logoFilePath);
     } catch (e) {
-        console.error(`⚠️ Logo-Datei nicht gefunden unter ${logoFilePath}`, e);
+        logger.error(`⚠️ Logo-Datei nicht gefunden unter ${logoFilePath}`, e);
         logoBuffer = Buffer.from([]);
     }
 
@@ -65,7 +66,7 @@ async function createAdminUsers() {
             logoFilename: 'inwa-logo.jpg',
         },
     });
-    console.log(`✅ Logo für Organisation (ID=${org.id}) gesetzt.`);
+    logger.info(`✅ Logo für Organisation (ID=${org.id}) gesetzt.`);
 
     // 4) Admin-User definieren
     const adminUsers = [
@@ -107,13 +108,13 @@ async function createAdminUsers() {
                     organization: { connect: { id: org.id } },
                 },
             });
-            console.log(`✅ Admin-User ${admin.email} wurde erstellt.`);
+            logger.info(`✅ Admin-User ${admin.email} wurde erstellt.`);
         } else {
-            console.log(`ℹ️ Admin-User ${admin.email} existiert bereits.`);
+            logger.info(`ℹ️ Admin-User ${admin.email} existiert bereits.`);
         }
     }
 
-    console.log("Seeding Admin-User abgeschlossen.");
+    logger.info("Seeding Admin-User abgeschlossen.");
 }
 
 // Optionaler Export (falls du es woanders importieren willst)
@@ -124,7 +125,7 @@ export default createAdminUsers;
     await createAdminUsers();
 })()
     .catch(async (e) => {
-        console.error("❌ Seeding fehlgeschlagen:", e);
+        logger.error("❌ Seeding fehlgeschlagen:", e);
         process.exitCode = 1;
     })
     .finally(async () => {

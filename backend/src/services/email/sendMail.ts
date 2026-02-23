@@ -7,6 +7,7 @@ import { loadEmailTemplate } from "../../utils/email";
 import { SalutationType } from "@prisma/client";
 import { salutationLabels } from "../../shared/constants/enums";
 import { DigitalSolution } from "@prisma/client";
+import logger from "../../config/loggerConfig";
 
 
 const EMAIL_FROM =
@@ -53,8 +54,7 @@ function tpl(file: string) {
 function rethrowEmail(error: unknown, ctx: string) {
   const msg = (error as any)?.message || String(error);
   const code = (error as any)?.code;
-  // eslint-disable-next-line no-console
-  console.error("EMAIL SEND FAILED:", { ctx, code, msg, error });
+  logger.error("EMAIL SEND FAILED:", { ctx, code, msg, error });
   throw new EmailError(`Email send failed (${ctx}): ${code ?? ""} ${msg}`);
 }
 
@@ -63,8 +63,7 @@ async function maybeVerifyTransporter(transporter: nodemailer.Transporter) {
   if (!EMAIL_DEBUG) return;
   try {
     await transporter.verify();
-    // eslint-disable-next-line no-console
-    console.log("SMTP connection OK");
+    logger.info("SMTP connection OK");
   } catch (e) {
     rethrowEmail(e, "transporter.verify()");
   }

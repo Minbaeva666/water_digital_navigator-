@@ -1,8 +1,6 @@
 import i18n from 'i18next';
 import axiosInstance from "../auth/axiosInstance.ts";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
 export type TranslatedEnumOption = {
     value: string;
     label: string;
@@ -10,7 +8,7 @@ export type TranslatedEnumOption = {
 
 export const fetchOrganizationTypes = async (): Promise<TranslatedEnumOption[]> => {
     try {
-        const response = await axiosInstance.get(`${backendUrl}/input/organization-types`);
+        const response = await axiosInstance.get(`/input/organization-types`);
         const types: string[] = response.data.organizationTypes ?? [];
 
         const translated = types.map((type) => ({
@@ -30,7 +28,7 @@ export const fetchOrganizationTypes = async (): Promise<TranslatedEnumOption[]> 
 
 export const fetchPublishedByTypes = async (): Promise<TranslatedEnumOption[]> => {
     try {
-        const response = await axiosInstance.get(`${backendUrl}/input/published-by-types`);
+        const response = await axiosInstance.get(`/input/published-by-types`);
         const types: string[] = response.data.publishedByTypes ?? [];
 
         const translated = types.map((type) => ({
@@ -50,7 +48,7 @@ export const fetchPublishedByTypes = async (): Promise<TranslatedEnumOption[]> =
 
 export const fetchDigitalSolutionStateTypes = async (): Promise<TranslatedEnumOption[]> => {
     try {
-        const response = await axiosInstance.get(`${backendUrl}/input/digital-solution-state-types`);
+        const response = await axiosInstance.get(`/input/digital-solution-state-types`);
         const types: string[] = response.data.digitalSolutionStateTypes ?? [];
 
         const translated = types.map((type) => ({

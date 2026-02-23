@@ -1,5 +1,6 @@
 import {Request, Response} from "express";
 import {prisma} from "../prisma/prisma";
+import logger from "../config/loggerConfig";
 import {
     flattenWithParentCtx,
     IncomingNode,
@@ -35,7 +36,7 @@ export const getTaxonomyNodes = async (req: Request, res: Response) => {
 
         res.json(roots);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ error: "Fehler beim Laden der TaxonomyNodes" });
     }
 };
@@ -206,7 +207,7 @@ export const updateTaxonomyNodes = async (req: Request, res: Response) => {
             });
             return
         }
-        console.error("Fehler beim Speichern des Taxonomie-Baums:", err);
+        logger.error("Fehler beim Speichern des Taxonomie-Baums:", err);
         res.status(500).json({ error: { code: "SERVER_ERROR", message: "Serverfehler beim Speichern des Taxonomie-Baums" } });
         return
     }
@@ -287,7 +288,7 @@ export const getTaxonomyNodeStructure = async (req: Request, res: Response) => {
 
         res.json({ tree: roots, index });
     } catch (e) {
-        console.error(e);
+        logger.error(e);
         res.status(500).json({ error: "Fehler beim Laden der Taxonomy-Struktur" });
     }
 };

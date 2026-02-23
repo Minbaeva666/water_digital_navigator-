@@ -38,6 +38,7 @@ import {
 import { getTokenWithUser } from "../helpers/tokenHelpers";
 import { safeEmailRun } from "../utils/email";
 import crypto from "crypto";
+import logger from "../config/loggerConfig";
 
 const prisma = new PrismaClient();
 
@@ -186,7 +187,7 @@ export const registerAsRepresentative = async (
       await safeRun(
         () => sendVerifyEmailToRepresentative(user, confirmLink, revokeLink),
         async () => {
-          console.error(
+          logger.error(
             "E-Mail-Versand fehlgeschlagen (Re-Registration):",
             email
           );
@@ -364,7 +365,7 @@ export const registerAsPrivate = async (
       await safeRun(
         () => sendVerifyEmailToPrivate(user, confirmLink, revokeLink),
         async () => {
-          console.error(
+          logger.error(
             "E-Mail-Versand fehlgeschlagen (Re-Registration private):",
             email
           );
@@ -480,7 +481,7 @@ export const verifyEmail = async (
         await sendAdminHintNewRegistrationEmail(user);
       },
       (error) => {
-        console.error("Email sending failed:", error);
+        logger.error("Email sending failed:", error);
       },
       () => void sendSuccess(res, 200, result, "Email successfully confirmed")
     );

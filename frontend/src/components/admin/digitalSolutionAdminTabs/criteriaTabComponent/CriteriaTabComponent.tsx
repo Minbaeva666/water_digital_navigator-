@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Form, Select, Typography, FormInstance, Row, Col, Empty, Input } from "antd";
 import { DigitalSolutionFormValues } from "../../../../forms/digital-solution/DigitalSolutionFormValues";
 import { TaxonomyNodeDto } from "../../../../types/dtos/TaxonomyNodeDto";
@@ -23,6 +23,7 @@ type TaxonomyGroup = {
 
 const hasChildrenProp = (n: TaxonomyNodeDto) => Array.isArray((n as any).children);
 const normalize = (value: string) => value.trim().toLowerCase();
+const OTHER_OPTION_PREFIX = "__other__:";
 
 function collectDeepestInSubtree(
   root: TaxonomyNodeDto,
@@ -49,6 +50,8 @@ function collectDeepestInSubtree(
 
 const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChange }) => {
   const solutionState = Form.useWatch("state", form);
+  const targetGroupOtherValue = Form.useWatch("targetGroupOther", form);
+  const initializedFromLegacyRef = useRef(false);
 
   const groups: TaxonomyGroup[] = useMemo(() => {
     if (!taxonomyNodes.length) return [];
@@ -109,21 +112,63 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
 
   const syncCombinedOtherField = () => {
     const parts: string[] = [];
+    const taxonomyOtherMap: Record<string, string> = {};
 
     for (const { parent } of groups) {
       const otherNodeId = otherNodeIdByParent[parent.id];
+      const otherOptionValue = otherNodeId ?? `${OTHER_OPTION_PREFIX}${parent.id}`;
       const selected = (form.getFieldValue(["taxonomySelections", parent.id]) as string[]) || [];
-      const requiresOtherSelection = !!otherNodeId;
-      if (requiresOtherSelection && !selected.includes(otherNodeId)) continue;
+      if (!selected.includes(otherOptionValue)) continue;
 
       const text = (form.getFieldValue(["taxonomyOther", parent.id]) as string | undefined)?.trim();
       if (!text) continue;
 
       parts.push(`${parent.nameDe}: ${text}`);
+      taxonomyOtherMap[parent.id] = text;
     }
 
     form.setFieldValue("targetGroupOther", parts.length ? parts.join("\n") : undefined);
+    form.setFieldValue("taxonomyOther", Object.keys(taxonomyOtherMap).length ? taxonomyOtherMap : undefined);
   };
+
+  useEffect(() => {
+    if (initializedFromLegacyRef.current) return;
+    if (!groups.length) return;
+
+    const existingTaxonomyOther = form.getFieldValue("taxonomyOther") as Record<string, string> | undefined;
+    if (existingTaxonomyOther && Object.keys(existingTaxonomyOther).length > 0) {
+      initializedFromLegacyRef.current = true;
+      return;
+    }
+
+    const raw = typeof targetGroupOtherValue === "string" ? targetGroupOtherValue : "";
+    if (!raw.trim()) {
+      initializedFromLegacyRef.current = true;
+      return;
+    }
+
+    const parsedMap: Record<string, string> = {};
+    const byParentName = new Map(groups.map(({ parent }) => [normalize(parent.nameDe), parent.id]));
+    const lines = raw.split("\n").map((line) => line.trim()).filter(Boolean);
+
+    for (const line of lines) {
+      const sep = line.indexOf(":");
+      if (sep <= 0) continue;
+      const parentLabel = line.slice(0, sep).trim();
+      const text = line.slice(sep + 1).trim();
+      if (!text) continue;
+
+      const parentId = byParentName.get(normalize(parentLabel));
+      if (!parentId) continue;
+      parsedMap[parentId] = text;
+    }
+
+    if (Object.keys(parsedMap).length > 0) {
+      form.setFieldValue("taxonomyOther", parsedMap);
+    }
+
+    initializedFromLegacyRef.current = true;
+  }, [form, groups, targetGroupOtherValue]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -144,7 +189,8 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
             const selected = (form.getFieldValue(fieldName) as string[]) || [];
 
             const otherNodeId = otherNodeIdByParent[parent.id];
-            const showOtherInput = true;
+            const otherOptionValue = otherNodeId ?? `${OTHER_OPTION_PREFIX}${parent.id}`;
+            const showOtherInput = selected.includes(otherOptionValue);
             const otherFieldName = ["taxonomyOther", parent.id] as any;
 
             return (
@@ -174,7 +220,7 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
                       placeholder={`Bitte ${min > 0 ? `mindestens ${min}` : "Kriterien"} auswählen`}
                       onChange={(vals) => {
                         onFormChange?.();
-                        if (otherNodeId && !vals.includes(otherNodeId)) {
+                        if (!vals.includes(otherOptionValue)) {
                           form.setFieldValue(otherFieldName, undefined);
                         }
                         syncCombinedOtherField();
@@ -183,14 +229,35 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
                         const label = (option?.label as string) || "";
                         return label.toLowerCase().includes(input.toLowerCase());
                       }}
-                      options={branches.map((b) => ({
-                        label: b.branch.nameDe, 
-                        options: b.options.map((n) => ({
-                          label: n.nameDe,
-                          value: n.id,
-                          disabled: selected.length >= max && !selected.includes(n.id),
+                      options={[
+                        ...branches.map((b) => ({
+                          label: b.branch.nameDe,
+                          options: b.options.map((n) => ({
+                            label:
+                              otherNodeId && n.id === otherNodeId
+                                ? `Andere ${parent.nameDe} angeben`
+                                : n.nameDe,
+                            value: n.id,
+                            disabled: selected.length >= max && !selected.includes(n.id),
+                          })),
                         })),
-                      }))}
+                        ...(otherNodeId
+                          ? []
+                          : [
+                              {
+                                label: "Weitere",
+                                options: [
+                                  {
+                                    label: `Andere ${parent.nameDe} angeben`,
+                                    value: otherOptionValue,
+                                    disabled:
+                                      selected.length >= max &&
+                                      !selected.includes(otherOptionValue),
+                                  },
+                                ],
+                              },
+                            ]),
+                      ]}
                       onSelect={(val) => {
                         const next = [...selected, val as string];
                         if (next.length > max) {
@@ -207,8 +274,7 @@ const CriteriaTabComponent: React.FC<Props> = ({ form, taxonomyNodes, onFormChan
                       rules={[
                         {
                           validator(_, value: string | undefined) {
-                            const otherSelected = !!otherNodeId && selected.includes(otherNodeId);
-                            if (solutionState === "DRAFT" || !otherSelected) {
+                            if (solutionState === "DRAFT" || !showOtherInput) {
                               return Promise.resolve();
                             }
                             if (value && value.trim().length > 0) {

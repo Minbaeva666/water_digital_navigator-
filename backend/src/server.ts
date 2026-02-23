@@ -18,36 +18,52 @@ import expertVideoRoutes from "./routes/expertVideo.routes";
 import path from "path";
 import contactRoutes from "./routes/contact.routes";
 import helpdeskRoutes from "./routes/helpdesk.routes";
-
-
-console.log(process.env.NODE_ENV);
+import { securityHeadersMiddleware } from "./middlewares/securityHeaders";
+import logger from "./config/loggerConfig";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const buildAllowedOrigins = () => {
+    const allowed = [process.env.CLIENT_ORIGIN].filter(Boolean) as string[];
+    if (process.env.NODE_ENV !== 'production') {
+        allowed.push('http://localhost:5173', 'http://localhost:3001');
+    }
+    return allowed;
+};
+
+const isAllowedOrigin = (origin?: string) => {
+    if (!origin) return true;
+    return buildAllowedOrigins().includes(origin);
+};
+
 // Middleware
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (typeof origin === 'string' && !isAllowedOrigin(origin)) {
+        if (process.env.NODE_ENV !== 'production') {
+            logger.warn('[CORS BLOCKED]', { origin, path: req.originalUrl, method: req.method });
+        }
+        res.status(403).json({ error: 'CORS not allowed' });
+        return;
+    }
+    next();
+});
+
 app.use(cors({
     origin: function(origin, callback) {
-        const allowedOrigins = [
-            process.env.CLIENT_ORIGIN,
-            'http://localhost:5173',
-            'http://localhost:3001',
-            'http://192.168.84.86',
-        ].filter(Boolean);
-        
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        if (!origin || isAllowedOrigin(origin)) {
             callback(null, true);
         } else {
-            callback(new Error('CORS not allowed'));
+            callback(null, false);
         }
     },
     credentials: true,
 }));
+app.use(securityHeadersMiddleware);
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-app.use(express.json());
 
 app.get('/api/health', (req, res) => {
     res.status(200).json({
@@ -82,5 +98,5 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, async () => {
-    console.log(`Server running on port ${PORT}`);
+    logger.info(`Server running on port ${PORT}`);
 });

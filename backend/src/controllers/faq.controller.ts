@@ -1,6 +1,7 @@
 // controllers/faq.controller.ts
 import type { Request, Response, RequestHandler } from "express";
 import { prisma } from "../prisma/prisma";
+import logger from "../config/loggerConfig";
 
 
 export const getFaq: RequestHandler = async (req: Request, res: Response) => {
@@ -24,7 +25,7 @@ export const getFaq: RequestHandler = async (req: Request, res: Response) => {
 
         res.status(200).json(faq);
     } catch (err) {
-        console.error("Fehler beim Laden des FAQ:", err);
+        logger.error("Fehler beim Laden des FAQ:", err);
         res.status(500).json({ error: "Serverfehler beim FAQ-Abruf." });
     }
 };
@@ -113,7 +114,7 @@ export const updateFaq: RequestHandler = async (req: Request, res: Response) => 
         res.status(200).json(result);
     } catch (err: any) {
         if (err?.message === "ABORT_TX") return;
-        console.error("Fehler beim Aktualisieren des FAQ:", err);
+        logger.error("Fehler beim Aktualisieren des FAQ:", err);
         res.status(500).json({ error: "Serverfehler beim Aktualisieren des FAQ." });
     }
 };

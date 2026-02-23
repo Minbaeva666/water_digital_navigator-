@@ -5,8 +5,15 @@ import { resizeImageBuffer } from "../utils/image";
 import path from "path";
 import fs from "fs";
 import { checkOrganizationReferences } from "../utils/referenceIntegrityChecker";
+import logger from "../config/loggerConfig";
 
 const prisma = new PrismaClient();
+
+const logError = (...args: unknown[]) => {
+    logger.error("organization.controller error", {
+        details: args,
+    });
+};
 
 // ---- Module-level geocoding helper ----
 const geocodeWithRetry = async (zipStr: string, countryCode: string, maxRetries: number = 3): Promise<{lat: number, lon: number} | null> => {
@@ -74,7 +81,7 @@ export const createOrganization = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        console.log("createOrganization body:", req.body);
+        logger.info("createOrganization body:", req.body);
         // ---- Helpers ----
         const NULL_MARKERS = new Set(["", "null", "undefined"]);
 
@@ -154,11 +161,11 @@ export const createOrganization = async (
         };
 
         // DEBUG: Log coordinate inputs
-        console.log("🔍 Coordinate Debug - manualCoords:", manualCoords, "type:", typeof manualCoords);
-        console.log("🔍 Coordinate Debug - lat:", lat, "type:", typeof lat);
-        console.log("🔍 Coordinate Debug - lon:", lon, "type:", typeof lon);
-        console.log("🔍 Coordinate Debug - zip:", zip);
-        console.log("🔍 Coordinate Debug - countryCode:", countryCode);
+        logger.info("🔍 Coordinate Debug - manualCoords:", manualCoords, "type:", typeof manualCoords);
+        logger.info("🔍 Coordinate Debug - lat:", lat, "type:", typeof lat);
+        logger.info("🔍 Coordinate Debug - lon:", lon, "type:", typeof lon);
+        logger.info("🔍 Coordinate Debug - zip:", zip);
+        logger.info("🔍 Coordinate Debug - countryCode:", countryCode);
 
         // ---- Enums validieren ----
         const orgTypeStr = String(organizationType ?? "").toUpperCase();
@@ -238,7 +245,7 @@ export const createOrganization = async (
         let latitude: number | undefined;
         let longitude: number | undefined;
 
-        console.log("🔍 Coordinates Strategy - manual:", manual);
+        logger.info("🔍 Coordinates Strategy - manual:", manual);
 
         if (manual) {
             // Manuelle Koordinaten sind Pflicht & werden validiert
@@ -254,10 +261,10 @@ export const createOrganization = async (
             longitude = lonNum;
         } else {
             // Geokodierung (best effort)
-            console.log("🔍 Geocoding: Starting auto-geocoding...");
+            logger.info("🔍 Geocoding: Starting auto-geocoding...");
             try {
                 const zipStr = String(zip ?? "").trim();
-                console.log("🔍 Geocoding: zipStr=", zipStr, "country?.code=", country?.code);
+                logger.info("🔍 Geocoding: zipStr=", zipStr, "country?.code=", country?.code);
                 if (zipStr && country?.code) {
                     const result = await geocodeWithRetry(zipStr, country.code);
                     if (result) {
@@ -265,10 +272,10 @@ export const createOrganization = async (
                         longitude = result.lon;
                     }
                 } else {
-                    console.log("[GEOCODE] SKIPPED - no zip or country code");
+                    logger.info("[GEOCODE] SKIPPED - no zip or country code");
                 }
             } catch (err) {
-                console.error("❌ Geocoding error:", err instanceof Error ? err.message : err);
+                logError("❌ Geocoding error:", err instanceof Error ? err.message : err);
             }
         }
 
@@ -330,7 +337,7 @@ export const createOrganization = async (
                 : {}),
         };
 
-        console.log("🔍 Creating organization with data:", {
+        logger.info("🔍 Creating organization with data:", {
             name: data.name,
             zip: data.zip,
             city: data.city,
@@ -340,7 +347,7 @@ export const createOrganization = async (
         });
 
         const organization = await prisma.organization.create({ data });
-        console.log("[SUCCESS] Organization created:", {
+        logger.info("[SUCCESS] Organization created:", {
             id: organization.id,
             lat: organization.lat,
             lon: organization.lon,
@@ -376,7 +383,7 @@ export const createOrganization = async (
             return;
         }
 
-        console.error("Fehler beim Erstellen der Organisation:", error);
+        logError("Fehler beim Erstellen der Organisation:", error);
         next(error);
     }
 };
@@ -639,7 +646,7 @@ export const updateOrganization = async (
                     }
                 }
             } catch (err) {
-                console.error("[ERROR] Geocoding error:", err instanceof Error ? err.message : err);
+                logError("[ERROR] Geocoding error:", err instanceof Error ? err.message : err);
             }
             // Optional: Beim Umschalten auf "auto" lat/lon löschen, wenn kein Treffer:
             // latLonPatch = { ...latLonPatch, lat: null, lon: null };
@@ -693,7 +700,7 @@ export const updateOrganization = async (
 
         res.json(updated);
     } catch (error: any) {
-        console.error("Fehler beim Aktualisieren der Organisation:", error);
+        logError("Fehler beim Aktualisieren der Organisation:", error);
 
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
             const rawTarget = (error.meta as any)?.target;
@@ -747,7 +754,7 @@ export const getOrganization = async (req: Request, res: Response) => {
         }
         res.json(organization);
     } catch (error) {
-        console.error(error);
+        logError(error);
         res.status(500).json({ error: "Fehler beim Abrufen der Organisation" });
     }
 };
@@ -816,7 +823,7 @@ export const deleteOrganization: RequestHandler = async (req, res, next) => {
                     try {
                         fs.rmSync(uploadDir, { recursive: true, force: true });
                     } catch (err) {
-                        console.warn(`Konnte Ordner ${uploadDir} nicht löschen:`, err);
+                        logger.warn(`Konnte Ordner ${uploadDir} nicht löschen:`, err);
                     }
                 }
                 
@@ -840,7 +847,7 @@ export const deleteOrganization: RequestHandler = async (req, res, next) => {
             }
         });
     } catch (error) {
-        console.error(`Fehler beim Löschen der Organisation ${id}:`, error);
+        logError(`Fehler beim Löschen der Organisation ${id}:`, error);
         next(error);
     }
 };
@@ -892,7 +899,7 @@ export const getOrganizationsMinimalWithoutPresenter = async (req: Request, res:
 
         res.status(200).json(organizations);
     } catch (error) {
-        console.error("Fehler beim Abrufen der Organisationen (minimal):", error);
+        logError("Fehler beim Abrufen der Organisationen (minimal):", error);
         res.status(500).json({ error: "Fehler beim Abrufen der Organisationen" });
     }
 };
@@ -931,8 +938,8 @@ export const getOrganizationsForRegistration = async (req: Request, res: Respons
     });
 
     res.status(200).json(organizations);
-  } catch (error) {
-    console.error("Fehler beim Abrufen der Organisationen (for registration):", error);
+    } catch (error) {
+        logError("Fehler beim Abrufen der Organisationen (for registration):", error);
     res.status(500).json({ error: "Fehler beim Abrufen der Organisationen" });
   }
 };

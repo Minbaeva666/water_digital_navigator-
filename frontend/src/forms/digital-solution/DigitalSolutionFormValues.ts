@@ -41,6 +41,7 @@ export interface DigitalSolutionFormValues {
     solutionUserIds: string[];
     taxonomyNodeIds: string[];
     presentedByUserId: string;
+    taxonomyOther?: Record<string, string>;
 
     // Relationen
     user?: UserBaseDto;

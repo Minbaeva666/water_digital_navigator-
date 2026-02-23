@@ -1,5 +1,6 @@
 import type { Request, Response, RequestHandler } from "express";
 import { prisma } from "../prisma/prisma";
+import logger from "../config/loggerConfig";
 
 const selectUpdatedByUser = {
     id: true,
@@ -28,7 +29,7 @@ export const getPrivacyPolicy: RequestHandler = async (req: Request, res: Respon
         }
         res.status(200).json(policy);
     } catch (err) {
-        console.error("Fehler beim Laden der Datenschutzerklärung:", err);
+        logger.error("Fehler beim Laden der Datenschutzerklärung:", err);
         res.status(500).json({ error: "Serverfehler beim Datenschutzerklärungs-Abruf." });
     }
 };
@@ -73,7 +74,7 @@ export const updatePrivacyPolicy: RequestHandler = async (req: Request, res: Res
 
         res.status(201).json(created);
     } catch (err) {
-        console.error("Fehler beim Aktualisieren der Datenschutzerklärung:", err);
+        logger.error("Fehler beim Aktualisieren der Datenschutzerklärung:", err);
         res.status(500).json({ error: "Serverfehler beim Aktualisieren der Datenschutzerklärung." });
     }
 };

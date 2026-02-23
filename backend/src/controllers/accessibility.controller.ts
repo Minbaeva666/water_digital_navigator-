@@ -1,5 +1,6 @@
 import type { Request, Response, RequestHandler } from "express";
 import {prisma} from "../prisma/prisma";
+import logger from "../config/loggerConfig";
 
 const selectUpdatedByUser = {
     id: true,
@@ -28,7 +29,7 @@ export const getAccessibilityStatement: RequestHandler = async (req: Request, re
         }
         res.status(200).json(statement);
     } catch (err) {
-        console.error("Fehler beim Laden der Barrierefreiheitserklärung:", err);
+        logger.error("Fehler beim Laden der Barrierefreiheitserklärung:", err);
         res.status(500).json({ error: "Serverfehler beim Barrierefreiheit-Abruf." });
     }
 };
@@ -72,7 +73,7 @@ export const updateAccessibilityStatement: RequestHandler = async (req: Request,
 
         res.status(201).json(created);
     } catch (err) {
-        console.error("Fehler beim Aktualisieren der Barrierefreiheitserklärung:", err);
+        logger.error("Fehler beim Aktualisieren der Barrierefreiheitserklärung:", err);
         res.status(500).json({ error: "Serverfehler beim Aktualisieren der Barrierefreiheitserklärung." });
     }
 };

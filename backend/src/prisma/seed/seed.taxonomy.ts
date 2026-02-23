@@ -1,5 +1,6 @@
 // Auto-generated from Excel snapshot. Static seed (no runtime file I/O).
 import { PrismaClient } from "@prisma/client";
+import logger from "../../config/loggerConfig";
 const prisma = new PrismaClient();
 
 type Node = { name: string; children?: Node[] };
@@ -414,6 +415,6 @@ export async function createTaxonomyNodes() {
 
 if (require.main === module) {
     createTaxonomyNodes()
-        .then(async () => { console.log("✅ Static taxonomy seeded"); await prisma.$disconnect(); })
-        .catch(async (err) => { console.error("❌ Fehler beim Taxonomy-Seed:", err); await prisma.$disconnect(); process.exit(1); });
+    .then(async () => { logger.info("✅ Static taxonomy seeded"); await prisma.$disconnect(); })
+    .catch(async (err) => { logger.error("❌ Fehler beim Taxonomy-Seed:", err); await prisma.$disconnect(); process.exit(1); });
 }

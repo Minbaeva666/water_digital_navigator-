@@ -9,6 +9,7 @@ import {
   ExpertVideoCreateDto,
   ExpertVideoUpdateDto,
 } from "../services/expertVideo/expertVideo.service";
+import logger from "../config/loggerConfig";
 
 interface MulterErrorRequest extends Request {
   file?: Express.Multer.File;
@@ -174,7 +175,7 @@ export const uploadExpertVideoThumbnail = async (
 
     res.status(201).json(updated);
   } catch (error) {
-    console.error("Error uploading expert video thumbnail:", error);
+    logger.error("Error uploading expert video thumbnail:", error);
     next(error);
   }
 }
