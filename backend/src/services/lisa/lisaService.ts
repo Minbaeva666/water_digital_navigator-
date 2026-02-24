@@ -251,8 +251,9 @@ export async function formatSolutionsWithLisa(
   - One short summary line
   - Then list: "1. [Solution Name](portalLink) - shortDescription" (one line each)
   - Final line: "Die Vorschläge stammen aus unserer Datenbank."
+  - NO footer or suggestion for new chat
 
-  FORBIDDEN: tables, diagrams, architecture, planning steps, extra questions, invented content.
+  FORBIDDEN: tables, diagrams, architecture, planning steps, extra questions, invented content, new chat suggestions.
   Keep total response under 10 lines.`;
 
     const response = await sendMessageToLisa(prompt);
