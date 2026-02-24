@@ -32,18 +32,13 @@ const HelpdeskWidget: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Willkommen bei Digital Lotse Wasser!\nWie kann ich dir helfen?",
+      text: 'Willkommen bei Digital Lotse Wasser!\n\nBeschreibe, welche digitale Lösung du suchst:\n\n **Beispiel:** "Ich suche eine digitale Lösung, die es ermöglicht, die Qualität von Abwasser in Echtzeit zu überwachen."\n\nStelle deine Frage und ich helfe dir weiter!',
       sender: "bot",
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<
-    Array<{ id: string; label: string }>
-  >([]);
-  const [taxonomySelection, setTaxonomySelection] = useState<string[]>([]);
-  const [initialized, setInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -53,40 +48,6 @@ const HelpdeskWidget: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Load initial categories when widget opens
-  useEffect(() => {
-    if (isOpen && !initialized) {
-      loadInitialCategories();
-      setInitialized(true);
-    }
-  }, [isOpen, initialized]);
-
-  const loadInitialCategories = async () => {
-    setLoading(true);
-    try {
-      const botResponse = await helpdeskService.sendChatMessage("", undefined);
-      const botMessage: Message = {
-        id: Date.now().toString(),
-        text: botResponse.text,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      setSuggestions(botResponse.suggestions ?? []);
-    } catch (error) {
-      console.error("Error loading categories:", error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: getChatErrorMessage(error),
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -104,11 +65,7 @@ const HelpdeskWidget: React.FC = () => {
     setLoading(true);
 
     try {
-      // Call helpdesk service (send taxonomySelection when present)
-      const botResponse = await helpdeskService.sendChatMessage(
-        inputValue,
-        taxonomySelection.length ? taxonomySelection : undefined,
-      );
+      const botResponse = await helpdeskService.sendChatMessage(inputValue);
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: botResponse.text,
@@ -116,54 +73,11 @@ const HelpdeskWidget: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
-      // suggestions from backend
-      setSuggestions(botResponse.suggestions ?? []);
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: getChatErrorMessage(error),
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSuggestionClick = async (id: string, label: string) => {
-    // Add user message for the chosen suggestion
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: label,
-      sender: "user",
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-
-    // Update taxonomy selection
-    const newSelection = [...taxonomySelection, id].slice(0, 3);
-    setTaxonomySelection(newSelection);
-    setLoading(true);
-    try {
-      const botResponse = await helpdeskService.sendChatMessage(
-        "",
-        newSelection,
-      );
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: botResponse.text,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      setSuggestions(botResponse.suggestions ?? []);
-    } catch (e) {
-      console.error(e);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: getChatErrorMessage(e),
         sender: "bot",
         timestamp: new Date(),
       };
@@ -224,11 +138,20 @@ const HelpdeskWidget: React.FC = () => {
                     {msg.sender === "bot" ? (
                       <ReactMarkdown
                         components={{
-                          a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-                            <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                          a: ({
+                            href,
+                            children,
+                            ...props
+                          }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              {...props}
+                            >
                               {children}
                             </a>
-                          )
+                          ),
                         }}
                       >
                         {msg.text}
@@ -244,22 +167,6 @@ const HelpdeskWidget: React.FC = () => {
                   <div className="message-bubble">
                     <Spin size="small" spinning={true} />
                   </div>
-                </div>
-              )}
-              {/* suggestion chips */}
-              {suggestions.length > 0 && (
-                <div className="helpdesk-suggestions">
-                  {suggestions.map((s) => (
-                    <Button
-                      key={s.id}
-                      type="default"
-                      size="small"
-                      style={{ marginRight: 8, marginBottom: 8 }}
-                      onClick={() => handleSuggestionClick(s.id, s.label)}
-                    >
-                      {s.label}
-                    </Button>
-                  ))}
                 </div>
               )}
               <div ref={messagesEndRef} />

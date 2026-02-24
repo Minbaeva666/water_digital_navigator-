@@ -26,11 +26,9 @@ interface ContactFormData {
 }
 
 class HelpdeskService {
-  async sendChatMessage(message: string, taxonomySelection?: string[]): Promise<BotResponse> {
+  async sendChatMessage(message: string): Promise<BotResponse> {
     try {
-      const payload: any = { message };
-      if (taxonomySelection) payload.taxonomySelection = taxonomySelection;
-      const response = await axiosInstance.post(`/helpdesk/chat`, payload);
+      const response = await axiosInstance.post(`/helpdesk/chat`, { message });
       return response.data;
     } catch (error) {
       console.error('Error sending chat message:', error);

@@ -133,8 +133,31 @@ export async function sendMessageToLisa(
 }
 
 function getMockLisaResponse(userMessage: string, context?: string): LisaResponse {
+  // Mock: generate up to 3 clarifying questions based on what's missing
+  const normalized = userMessage.toLowerCase();
+  const questions: string[] = [];
+  
+  // Check what is mentioned
+  const hasApplication = /wasser|abwasser|trinkwasser|energie|boden|luft/i.test(userMessage);
+  const hasTask = /überwach|monitor|qualität|alarm|dashboard|analys|bericht|report|daten/i.test(userMessage);
+  const hasTech = /sensor|iot|echtzeit|real.?time|cloud|loRaWan|wifi/i.test(userMessage);
+  
+  if (!hasApplication) {
+    questions.push('1. Für welchen Anwendungsbereich benötigst du die Lösung? (z.B. Trinkwasser, Abwasser, Energie)');
+  }
+  if (!hasTask) {
+    questions.push(`${questions.length + 1}. Welche Aufgaben soll die Lösung erfüllen? (z.B. Qualitätsüberwachung, Alarmierung, Datenanalyse)`);
+  }
+  if (!hasTech && questions.length < 3) {
+    questions.push(`${questions.length + 1}. Welche technischen Anforderungen hast du? (z.B. Echtzeit-Monitoring, Dashboard, Sensoren)`);
+  }
+  
+  const clarification = questions.length > 0 
+    ? `Um dir passende Lösungen zu finden, brauche ich noch ein paar Details:\n\n${questions.slice(0, 3).join('\n')}`
+    : 'Kannst du deine Anfrage bitte etwas präziser beschreiben (z.B. Ziel, Anwendung oder Prozess)?';
+  
   return {
-    content: 'Kannst du deine Anfrage bitte etwas präziser beschreiben (z.B. Ziel, Anwendung oder Prozess)?',
+    content: clarification,
     isJson: false,
     isMock: true
   };
