@@ -23,194 +23,113 @@ const requireChatAuth: RequestHandler = (req, res, next) => {
 helpdeskRouter.post('/chat', requireChatAuth, async (req: Request, res: Response) => {
   try {
     logService.info('[HELPDESK] Chat endpoint called');
-    const { message = '', userId, taxonomySelection } = req.body;
+    const { message = '' } = req.body;
 
-    logService.info(`Helpdesk chat message received: ${message}, taxonomySelection: ${JSON.stringify(taxonomySelection)}`);
+    logService.info(`Helpdesk chat message received: ${message}`);
 
-    const normalized = String(message).trim().toLowerCase();
     const hasMessage = message && message.trim().length > 0;
 
-    // Priority 1: If user has a message, use LISA AI
-    if (hasMessage) {
-      try {
-        // Build context from taxonomy selection if provided
-        let context = 'Bitte antworte knapp. Wenn Informationen fehlen, stelle maximal eine kurze Rückfrage.';
-        if (Array.isArray(taxonomySelection) && taxonomySelection.length > 0) {
-          const selection = taxonomySelection.slice(0, 3);
-          const nodes = await prisma.taxonomyNode.findMany({ 
-            where: { id: { in: selection } },
-            orderBy: { sort: 'asc' }
-          });
-          const names = nodes.map(n => n.nameDe || n.nameEn || n.slug);
-          const selectionPath = names.join(' › ');
-          context = `${context}\nAusgewählte Kategorien: ${selectionPath}`;
-        }
-
-        logService.info('[LISA] Calling LISA AI...');
-        
-        // Step 1: Send message to LISA
-        const lisaResponse = await sendMessageToLisa(message, context);
-
-        logService.info('[LISA] Response received:', { 
-          isJson: lisaResponse.isJson,
-          hasFilters: !!lisaResponse.filters 
-        });
-
-        // Step 2: If LISA returned JSON filters, find matching solutions
-        if (lisaResponse.isJson && lisaResponse.filters) {
-          logService.info('[LISA] Returned filters, finding solutions...', lisaResponse.filters);
-          logService.info('LISA provided filters, searching for solutions...', { 
-            filters: lisaResponse.filters 
-          });
-
-          const solutions = await findSolutionsFromLisaFilters(lisaResponse.filters);
-          logService.info('[SQL] Found solutions', { count: solutions.length });
-
-          if (solutions.length > 0) {
-            // Step 3: Format solutions with LISA
-            const formattedResponse = await formatSolutionsWithLisa(solutions, message);
-
-            const botResponse = {
-              id: Date.now().toString(),
-              text: formattedResponse,
-              sender: 'bot',
-              timestamp: new Date(),
-              solutions: solutions.slice(0, 5).map(s => ({ // Return top 5
-                id: s.id,
-                name: s.name,
-                shortDescription: s.shortDescription,
-                link: s.link
-              }))
-            };
-
-            res.status(200).json(botResponse);
-            return;
-          }
-
-          const clarification = await sendMessageToLisa(
-            `Es wurden keine passenden Lösungen gefunden. Stelle 1–2 kurze Rückfragen in Deutsch, um die Suche zu verfeinern.`
-          );
-          const fallbackText = 'Ich habe keine passenden Lösungen gefunden. Kannst du deine Anfrage präziser formulieren?';
-          const botResponse = {
-            id: Date.now().toString(),
-            text: clarification.isJson ? fallbackText : clarification.content,
-            sender: 'bot',
-            timestamp: new Date(),
-          };
-          res.status(200).json(botResponse);
-          return;
-        }
-
-        // Step 4: If no JSON filters, return LISA's conversational response
-        const botResponse = {
-          id: Date.now().toString(),
-          text: lisaResponse.content,
-          sender: 'bot',
-          timestamp: new Date(),
-        };
-
-        res.status(200).json(botResponse);
-        return;
-
-      } catch (aiError) {
-        logService.error('[ERROR] LISA AI Error:', aiError as Error);
-        logService.error('Error with LISA AI:', aiError as Error);
-        
-        // Intelligent fallback based on keywords
-        let fallbackResponse = 'Entschuldigung, ich konnte deine Anfrage gerade nicht beantworten. Bitte nutze das Kontaktformular unter /kontakt oder versuche es später erneut.';
-        
-        if (message.toLowerCase().includes('lösung') || message.toLowerCase().includes('software')) {
-          fallbackResponse = 'Du suchst nach digitalen Lösungen? Ich kann dir helfen, passende Tools zu finden. Beschreibe mir genauer, was du benötigst (z.B. Wassermanagement, Monitoring, Datenanalyse). Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
-        } else if (message.toLowerCase().includes('wasser')) {
-          fallbackResponse = 'Bei Wasserthemen kann ich dir weiterhelfen! Geht es um Wassersparen, Wasserqualität, Abwasser oder etwas anderes? Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
-        } else if (message.toLowerCase().includes('klima')) {
-          fallbackResponse = 'Klimaschutz ist wichtig! Suchst du nach Informationen zu Klimaanpassung, Emissionsreduktion oder nachhaltigen Technologien? Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
-        }
-        
-        const botResponse = {
-          id: Date.now().toString(),
-          text: fallbackResponse,
-          sender: 'bot',
-          timestamp: new Date(),
-        };
-        res.status(200).json(botResponse);
-        return;
-      }
-    }
-    // STATE MACHINE LOGIC (only for category navigation without message)
-    // If taxonomySelection is provided and NO message, show next-level suggestions
-    if (Array.isArray(taxonomySelection) && taxonomySelection.length > 0 && !hasMessage) {
-      // Limit selection to 3
-      const selection = taxonomySelection.slice(0, 3);
-      // Fetch selected node names
-      const nodes = await prisma.taxonomyNode.findMany({ 
-        where: { id: { in: selection } },
-        orderBy: { sort: 'asc' }
-      });
-      const names = nodes.map(n => n.nameDe || n.nameEn || n.slug);
-
-      // Find children of last selected node (if any)
-      const lastId = selection[selection.length - 1];
-      const children = await prisma.taxonomyNode.findMany({ 
-        where: { parentId: lastId }, 
-        orderBy: { sort: 'asc' } 
-      });
-
-      const suggestions = children.map(c => ({ id: c.id, label: c.nameDe || c.nameEn || c.slug }));
-
-      // Build response text
-      const selectionPath = names.join(' › ');
-      let responseText = '';
-      
-      if (suggestions.length > 0) {
-        responseText = `Du hast ausgewählt: ${selectionPath}.\n\nWähle bitte eine Unterkategorie:`;
-      } else if (selection.length < 3) {
-        responseText = `Du hast ausgewählt: ${selectionPath}.\n\nMöchtest du noch eine weitere Kategorie hinzufügen oder soll ich dir weiterhelfen?`;
-      } else {
-        responseText = `Du hast ausgewählt: ${selectionPath}.\n\nWie kann ich dir noch helfen?`;
-      }
-
+    // User must provide a message
+    if (!hasMessage) {
       const botResponse = {
         id: Date.now().toString(),
-        text: responseText,
+        text: 'Bitte beschreibe, welche digitale Lösung du suchst.',
         sender: 'bot',
         timestamp: new Date(),
-        suggestions,
-        selectedPath: selection,
       };
-
       res.status(200).json(botResponse);
       return;
     }
 
-    // START: If no selection and no message, or message is greeting/empty, show root categories
-    const requestCategoriesTriggers = [
-      'kategorie', 'kategorien', 'category', 'categories', 
-      'hilfe', 'hilfe bitte', 'start', 'menu', 'kategorien anzeigen',
-      'wasser', 'klima', 'boden', ''
-    ];
+    try {
+      logService.info('[LISA] Calling LISA AI...');
+      
+      // Step 1: Send message to LISA
+      const lisaResponse = await sendMessageToLisa(message);
 
-    const shouldShowCategories = 
-      normalized.length === 0 || 
-      normalized.length < 20 || 
-      requestCategoriesTriggers.some(t => t && normalized.includes(t));
-
-    if (shouldShowCategories) {
-      // fetch root nodes (depth: 0 = top-level categories)
-      const nodes = await prisma.taxonomyNode.findMany({ 
-        where: { depth: 0 }, 
-        orderBy: [{ sort: 'asc' }, { nameDe: 'asc' }] 
+      logService.info('[LISA] Response received:', { 
+        isJson: lisaResponse.isJson,
+        hasFilters: !!lisaResponse.filters 
       });
-      const suggestions = nodes.map(n => ({ id: n.id, label: n.nameDe || n.nameEn || n.slug }));
 
+      // Step 2: If LISA returned JSON filters, find matching solutions
+      if (lisaResponse.isJson && lisaResponse.filters) {
+        logService.info('[LISA] Returned filters, finding solutions...', lisaResponse.filters);
+
+        const solutions = await findSolutionsFromLisaFilters(lisaResponse.filters);
+        logService.info('[SQL] Found solutions', { count: solutions.length });
+
+        if (solutions.length > 0) {
+          // Step 3: Format solutions with LISA
+          const formattedResponse = await formatSolutionsWithLisa(solutions, message);
+
+          const botResponse = {
+            id: Date.now().toString(),
+            text: formattedResponse,
+            sender: 'bot',
+            timestamp: new Date(),
+            solutions: solutions.slice(0, 5).map(s => ({ // Return top 5
+              id: s.id,
+              name: s.name,
+              shortDescription: s.shortDescription,
+              link: s.link
+            }))
+          };
+
+          res.status(200).json(botResponse);
+          return;
+        }
+
+        // No solutions found - inform user clearly
+        const clarification = await sendMessageToLisa(
+          `Es wurden keine passenden Lösungen gefunden. Stelle genau 1 kurze, spezifische Rückfrage in Deutsch, um die Suche zu verfeinern.`
+        );
+        const noResultsMessage = 'Leider konnte ich keine passenden Lösungen finden.';
+        const clarificationText = clarification.isJson 
+          ? 'Kannst du deine Anfrage präziser formulieren?'
+          : clarification.content;
+        
+        const botResponse = {
+          id: Date.now().toString(),
+          text: `${noResultsMessage}\n\n${clarificationText}`,
+          sender: 'bot',
+          timestamp: new Date(),
+        };
+        res.status(200).json(botResponse);
+        return;
+      }
+
+      // Step 3: If no JSON filters, return LISA's conversational response (clarifying questions)
       const botResponse = {
         id: Date.now().toString(),
-        text: 'Willkommen! Bitte wähle eine Kategorie, damit ich dir besser helfen kann:',
+        text: lisaResponse.content,
         sender: 'bot',
         timestamp: new Date(),
-        suggestions,
       };
 
+      res.status(200).json(botResponse);
+      return;
+
+    } catch (aiError) {
+      logService.error('[ERROR] LISA AI Error:', aiError as Error);
+      
+      // Intelligent fallback based on keywords
+      let fallbackResponse = 'Entschuldigung, ich konnte deine Anfrage gerade nicht beantworten. Bitte nutze das Kontaktformular unter /kontakt oder versuche es später erneut.';
+      
+      if (message.toLowerCase().includes('lösung') || message.toLowerCase().includes('software')) {
+        fallbackResponse = 'Du suchst nach digitalen Lösungen? Ich kann dir helfen, passende Tools zu finden. Beschreibe mir genauer, was du benötigst (z.B. Wassermanagement, Monitoring, Datenanalyse). Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
+      } else if (message.toLowerCase().includes('wasser')) {
+        fallbackResponse = 'Bei Wasserthemen kann ich dir weiterhelfen! Geht es um Wassersparen, Wasserqualität, Abwasser oder etwas anderes? Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
+      } else if (message.toLowerCase().includes('klima')) {
+        fallbackResponse = 'Klimaschutz ist wichtig! Suchst du nach Informationen zu Klimaanpassung, Emissionsreduktion oder nachhaltigen Technologien? Wenn das nicht hilft, nutze bitte das Kontaktformular unter /kontakt.';
+      }
+      
+      const botResponse = {
+        id: Date.now().toString(),
+        text: fallbackResponse,
+        sender: 'bot',
+        timestamp: new Date(),
+      };
       res.status(200).json(botResponse);
       return;
     }
