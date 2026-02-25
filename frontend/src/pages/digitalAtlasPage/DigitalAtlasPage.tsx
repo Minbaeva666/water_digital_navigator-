@@ -45,6 +45,47 @@ const { useBreakpoint } = Grid;
 const { Search } = Input;
 const KI_TAXONOMY_PATH = "/digitalisierungsthemen/kuenstliche-intelligenz";
 
+const normalizeTaxonomyText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const resolveKiTaxonomyPath = (
+  index: Record<string, TaxonomyIndexRecord> | null,
+) => {
+  if (!index) return undefined;
+
+  const entries = Object.values(index);
+  const underDigitalization = entries.filter((node) =>
+    node.path.startsWith("/digitalisierungsthemen/"),
+  );
+
+  const findByName = underDigitalization.find((node) => {
+    const name = normalizeTaxonomyText(node.nameDe ?? "");
+    return name.includes("kunstliche") && name.includes("intelligenz");
+  });
+  if (findByName?.path) return findByName.path;
+
+  const findByPath = underDigitalization.find((node) =>
+    /\/k(u|ue)nstliche-intelligenz(\/|$)/.test(node.path),
+  );
+  if (findByPath?.path) return findByPath.path;
+
+  const findByKiName = underDigitalization.find((node) => {
+    const name = normalizeTaxonomyText(node.nameDe ?? "");
+    return name === "ki" || name.endsWith(" ki") || name.includes(" ki ");
+  });
+  return findByKiName?.path;
+};
+
 type SortKey = "newest" | "oldest" | "az" | "za";
 
 const DigitalAtlasPage = () => {
@@ -77,14 +118,34 @@ const DigitalAtlasPage = () => {
   const isMobile = !screens.md; // < md => Drawer
   const [filterOpen, setFilterOpen] = useState(false);
   const isKiAtlasRoute = location.pathname.startsWith("/ki-atlas");
-  const forcedTaxonomyPath = isKiAtlasRoute ? KI_TAXONOMY_PATH : undefined;
+  const resolvedKiTaxonomyPath = useMemo(
+    () => resolveKiTaxonomyPath(taxonomyIndex),
+    [taxonomyIndex],
+  );
+  const forcedTaxonomyPath = isKiAtlasRoute
+    ? resolvedKiTaxonomyPath ?? KI_TAXONOMY_PATH
+    : undefined;
+  const pickedWithinForcedPath =
+    !!forcedTaxonomyPath &&
+    !!picked?.path &&
+    picked.path.startsWith(forcedTaxonomyPath);
+  const effectiveTaxonomyPath = forcedTaxonomyPath
+    ? pickedWithinForcedPath
+      ? picked?.path
+      : forcedTaxonomyPath
+    : picked?.path;
+  const effectiveTaxonomyNodeId = forcedTaxonomyPath
+    ? pickedWithinForcedPath
+      ? picked?.id
+      : undefined
+    : picked?.id;
 
   const loadParams = useMemo(
     () => ({
       page: current,
       pageSize,
-      taxonomyNodeId: picked?.id,
-      taxonomyPath: picked?.path ?? forcedTaxonomyPath,
+      taxonomyNodeId: effectiveTaxonomyNodeId,
+      taxonomyPath: effectiveTaxonomyPath,
       q: query || undefined,
       sort: sortBy,
       dateFrom: toApiDate(dateFrom),
@@ -93,9 +154,8 @@ const DigitalAtlasPage = () => {
     [
       current,
       pageSize,
-      picked?.id,
-      picked?.path,
-      forcedTaxonomyPath,
+      effectiveTaxonomyNodeId,
+      effectiveTaxonomyPath,
       query,
       sortBy,
       dateFrom,

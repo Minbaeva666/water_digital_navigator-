@@ -42,6 +42,7 @@ export function DigitalSolutionCard({
     titleImage,
     offeringCategory,
     id,
+    createdAtOverride,
     createdAt,
   } = digitalSolution;
   const MAX_TAGS = 6;
@@ -87,7 +88,7 @@ export function DigitalSolutionCard({
   const offeringCategoryLabel = offeringCategory
     ? t(`offeringCategoryTypes.${offeringCategory}`)
     : undefined;
-  const createdAtDate = formatDateToGerman(digitalSolution.createdAt);
+  const createdAtDate = formatDateToGerman(createdAtOverride ?? createdAt);
 
   const getNodeName = (n: any) => {
     const isDe = i18n.language?.startsWith("de");

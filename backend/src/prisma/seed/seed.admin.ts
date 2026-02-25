@@ -66,7 +66,7 @@ async function createAdminUsers() {
             logoFilename: 'inwa-logo.jpg',
         },
     });
-    logger.info(`✅ Logo für Organisation (ID=${org.id}) gesetzt.`);
+    logger.info(`Logo für Organisation (ID=${org.id}) gesetzt.`);
 
     // 4) Admin-User definieren
     const adminUsers = [
