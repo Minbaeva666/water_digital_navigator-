@@ -1432,8 +1432,49 @@ export const getActiveDigitalSolutions = async (req: Request, res: Response) => 
 
 export const getAllCoordinates = async (req: Request, res: Response) => {
     try {
+        const includeTaxonomyPath =
+            typeof req.query.includeTaxonomyPath === "string" && req.query.includeTaxonomyPath.trim().length > 0
+                ? req.query.includeTaxonomyPath.trim()
+                : undefined;
+        const excludeTaxonomyPath =
+            typeof req.query.excludeTaxonomyPath === "string" && req.query.excludeTaxonomyPath.trim().length > 0
+                ? req.query.excludeTaxonomyPath.trim()
+                : undefined;
+
+        const where: Prisma.DigitalSolutionWhereInput = {
+            state: "ACTIVATED",
+            ...(includeTaxonomyPath
+                ? {
+                    taxonomyNodes: {
+                        some: {
+                            taxonomyNode: {
+                                is: {
+                                    path: { startsWith: includeTaxonomyPath },
+                                },
+                            },
+                        },
+                    },
+                }
+                : {}),
+            ...(excludeTaxonomyPath
+                ? {
+                    NOT: {
+                        taxonomyNodes: {
+                            some: {
+                                taxonomyNode: {
+                                    is: {
+                                        path: { startsWith: excludeTaxonomyPath },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                }
+                : {}),
+        };
+
         const solutions = await prisma.digitalSolution.findMany({
-            where: { state: "ACTIVATED" },
+            where,
             select: {
                 id: true,
                 name: true,

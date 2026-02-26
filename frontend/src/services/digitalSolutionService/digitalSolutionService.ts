@@ -348,10 +348,15 @@ const fetchActiveDigitalSolutions = async (): Promise<DigitalSolutionWithRelatio
     }
 };
 
-export const fetchAllCoordinates = async (): Promise<DigitalSolutionWithRelationsDto[]> => {
+export const fetchAllCoordinates = async (params?: {
+    includeTaxonomyPath?: string;
+    excludeTaxonomyPath?: string;
+}): Promise<DigitalSolutionWithRelationsDto[]> => {
     try {
         console.log(`📍 Fetching all coordinates from: ${baseUrl}/all-coordinates`);
-        const {data} = await axiosInstance.get(`${baseUrl}/all-coordinates`);
+        const {data} = await axiosInstance.get(`${baseUrl}/all-coordinates`, {
+            params,
+        });
         console.log(`✅ Fetched ${data?.length || 0} digital solutions from API`, data);
         return data;
     } catch (error) {

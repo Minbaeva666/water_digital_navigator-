@@ -125,6 +125,7 @@ const DigitalAtlasPage = () => {
   const forcedTaxonomyPath = isKiAtlasRoute
     ? resolvedKiTaxonomyPath ?? KI_TAXONOMY_PATH
     : undefined;
+  const kiTaxonomyPathForMap = resolvedKiTaxonomyPath ?? KI_TAXONOMY_PATH;
   const pickedWithinForcedPath =
     !!forcedTaxonomyPath &&
     !!picked?.path &&
@@ -182,7 +183,11 @@ const DigitalAtlasPage = () => {
             loadParams.dateTo,
           ),
           taxonomyNodeService.fetchTaxonomyStructure(),
-          digitalSolutionService.fetchAllCoordinates(),
+          digitalSolutionService.fetchAllCoordinates(
+            isKiAtlasRoute
+              ? { includeTaxonomyPath: kiTaxonomyPathForMap }
+              : { excludeTaxonomyPath: kiTaxonomyPathForMap },
+          ),
         ]);
 
         if (cancelled) return;
@@ -220,7 +225,7 @@ const DigitalAtlasPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [loadParams]);
+  }, [loadParams, isKiAtlasRoute, kiTaxonomyPathForMap]);
 
   const onPageChange = (page: number, size: number) => {
     setCurrent(page);
