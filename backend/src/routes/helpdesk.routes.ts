@@ -80,18 +80,15 @@ helpdeskRouter.post('/chat', requireChatAuth, async (req: Request, res: Response
           return;
         }
 
-        // No solutions found - inform user clearly
-        const clarification = await sendMessageToLisa(
-          `Es wurden keine passenden Lösungen gefunden. Stelle genau 1 kurze, spezifische Rückfrage in Deutsch, um die Suche zu verfeinern.`
-        );
-        const noResultsMessage = 'Leider konnte ich keine passenden Lösungen finden.';
-        const clarificationText = clarification.isJson 
-          ? 'Kannst du deine Anfrage präziser formulieren?'
-          : clarification.content;
-        
+        // No solutions found - let LISA handle according to its prompt
+        const clarification = await sendMessageToLisa(JSON.stringify({
+          type: 'no_results',
+          request: message
+        }));
+
         const botResponse = {
           id: Date.now().toString(),
-          text: `${noResultsMessage}\n\n${clarificationText}`,
+          text: clarification.content,
           sender: 'bot',
           timestamp: new Date(),
         };

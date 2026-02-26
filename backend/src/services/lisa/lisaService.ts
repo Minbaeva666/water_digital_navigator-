@@ -224,55 +224,28 @@ export async function formatSolutionsWithLisa(
   solutions: any[],
   originalQuery: string
 ): Promise<string> {
-  const finalLine = 'Die Vorschläge stammen aus unserer Datenbank.';
   try {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    
     if (USE_MOCK_LISA) {
-      return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-        solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
-   ${s.shortDescription || 'Keine Beschreibung verfügbar'}`).join('\n\n')
-      }\n\nMehr Details sind verfügbar.`;
+      return getMockLisaResponse(originalQuery).content;
     }
 
     const solutionPayload = solutions.map(s => ({
       id: s.id,
       name: s.name,
       shortDescription: s.shortDescription,
-      portalLink: `${frontendUrl}/digital-atlas/digitale-solution/${s.id}`
+      portalLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/digital-atlas/digitale-solution/${s.id}`
     }));
 
-    const prompt = `SOLUTIONS (use ONLY these):
-  ${JSON.stringify(solutionPayload, null, 2)}
-
-  Request: "${originalQuery}"
-
-  STRICT FORMAT (do not add anything else):
-  - One short summary line
-  - Then list: "1. [Solution Name](portalLink) - shortDescription" (one line each)
-  - Final line: "Die Vorschläge stammen aus unserer Datenbank."
-  - NO footer or suggestion for new chat
-
-  FORBIDDEN: tables, diagrams, architecture, planning steps, extra questions, invented content, new chat suggestions.
-  Keep total response under 10 lines.`;
+    const prompt = JSON.stringify({
+      type: 'solutions',
+      request: originalQuery,
+      solutions: solutionPayload
+    });
 
     const response = await sendMessageToLisa(prompt);
-    if (response.isMock || response.isJson) {
-      return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-        solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})
-   ${s.shortDescription || 'Keine Beschreibung verfügbar'}`).join('\n\n')
-      }\n\n${finalLine}`;
-    }
-    const trimmed = response.content.trim();
-    if (!trimmed.endsWith(finalLine)) {
-      return `${trimmed}\n${finalLine}`;
-    }
     return response.content;
   } catch (error) {
     logService.error('Error formatting solutions with LISA:', error as Error);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    return `Ich habe ${solutions.length} passende Lösungen gefunden:\n\n${
-      solutions.map((s, idx) => `${idx + 1}. [${s.name || 'Unbenannt'}](${frontendUrl}/digital-atlas/digitale-solution/${s.id})`).join('\n')
-    }\n\n${finalLine}`;
+    return 'Entschuldigung, ich konnte die Lösungen gerade nicht formatieren.';
   }
 }
