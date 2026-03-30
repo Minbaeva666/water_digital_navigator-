@@ -20,7 +20,7 @@ services:
       dockerfile: Dockerfile
     container_name: dilowa-backend
     env_file:
-      - ./backend/.env.development
+      - ./backend/.env.development 
     environment:
       - CLIENT_ORIGIN=http://localhost:8080
       - DATABASE_URL=mysql://root:dilowa_admiN25@mysql:3306/dilowa-db

@@ -1,4 +1,5 @@
 stages:
+  - test
   - build
   - deploy
 
@@ -9,13 +10,31 @@ cache:
     - node_modules/
   policy: pull-push
 
-# === Сборка backend ===
-build_backend:
-  stage: build
+# === Tests backend ===
+test_backend:
+  stage: test
   script:
     - cd backend
     - npm ci
-    - npm run build         # тут команда, которая делает dist/ (как ты делаешь локально)
+    - npm test
+
+# === Tests frontend ===
+test_frontend:
+  stage: test
+  script:
+    - cd frontend
+    - npm ci
+    - npm test
+
+build_backend:
+  stage: build
+  needs:
+    - test_backend
+    - test_frontend
+  script:
+    - cd backend
+    - npm ci
+    - npm run build         
   artifacts:
     paths:
       - backend/dist/
@@ -26,9 +45,11 @@ build_backend:
       - backend/docker-compose.yml
     expire_in: 1 week
 
-# === Сборка frontend ===
 build_frontend:
   stage: build
+  needs:
+    - test_backend
+    - test_frontend
   script:
     - cd frontend
     - npm ci
@@ -38,7 +59,6 @@ build_frontend:
       - frontend/dist/
     expire_in: 1 week
 
-# === Деплой на сервер (как твоя инструкция, но автоматом) ===
 deploy_production:
   stage: deploy
   needs:

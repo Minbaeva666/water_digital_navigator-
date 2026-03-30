@@ -1,0 +1,26 @@
+flowchart LR
+
+subgraph Browser[Browser]
+	UI[React UI]
+	Router[React Router]
+	Ctx[Auth and App Context]
+	Services[API Services Axios]
+	I18N[i18n]
+end
+
+subgraph Backend[Backend API]
+	Auth[Auth Routes]
+	Catalog[Digital Solutions and Taxonomy]
+	Helpdesk[Helpdesk Route]
+	Admin[Admin and Content Routes]
+end
+
+UI --> Router
+UI --> Ctx
+UI --> I18N
+UI --> Services
+Services --> Auth
+Services --> Catalog
+Services --> Helpdesk
+Services --> Admin
+

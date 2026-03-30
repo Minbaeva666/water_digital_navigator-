@@ -1,0 +1,32 @@
+Issue Type,External ID,Summary,Description,Priority,Labels,Sprint,Epic Name,Epic Link
+Epic,E01,Requirements And Governance,"Baseline requirements, stakeholder validation, and change control.",Highest,"roadmap,srs,product",S1,Requirements And Governance,
+Epic,E02,Platform And Security Foundation,"Auth, RBAC, environment hardening, CI baseline.",Highest,"roadmap,srs,backend,security",S2,Platform And Security Foundation,
+Epic,E03,Digital Atlas Core,"Solution catalog, taxonomy integration, filtering and details.",Highest,"roadmap,srs,frontend,backend",S3,Digital Atlas Core,
+Epic,E04,Organization And User Workflows,"User profile and organization lifecycle workflows.",High,"roadmap,srs,frontend,backend",S4,Organization And User Workflows,
+Epic,E05,AI Helpdesk,"LISA-based query understanding and recommendation flow.",Highest,"roadmap,srs,ai,backend,frontend",S5,AI Helpdesk,
+Epic,E06,Content And Compliance,"Expert videos and legal content management.",High,"roadmap,srs,backend,frontend,compliance",S5,Content And Compliance,
+Epic,E07,Quality UAT And Release,"Regression, UAT, go-live readiness, hypercare.",Highest,"roadmap,qa,release,devops",S6,Quality UAT And Release,
+Story,US-001,Stakeholder Interview Completion,"Conduct interviews across sponsor, moderators, end-users, and ops. AC: notes for all groups; >=20 actionable requirements; open questions with owners.",Highest,"roadmap,product",S1,,E01
+Story,US-002,Requirements Baseline Sign-Off,"Approve SRS baseline and lock MVP scope. AC: SRS approved; MoSCoW agreed; scope-change workflow documented.",Highest,"roadmap,srs,product",S1,,E01
+Story,US-003,UAT Scenario Definition,"Define UAT scenarios for critical flows. AC: scenarios for auth, catalog, helpdesk, admin with pass/fail criteria.",High,"roadmap,qa,product",S2,,E01
+Story,US-004,Auth Hardening,"Implement and verify register/login/refresh/logout reliability. AC: staging success; invalid tokens rejected; logout invalidates refresh path.",Highest,"roadmap,backend,security",S2,,E02
+Story,US-005,RBAC Middleware Coverage,"Ensure all protected endpoints enforce role/scoped permissions. AC: matrix verified; unauthorized blocked; own/others checks tested.",Highest,"roadmap,backend,security",S2,,E02
+Story,US-006,Environment And Secret Validation,"Add startup validation and env checklist. AC: missing vars fail startup with actionable errors; dev/prod checklists documented.",Highest,"roadmap,backend,devops,security",S2,,E02
+Story,US-007,CI Build And Smoke Baseline,"Establish CI build and smoke checks for frontend/backend. AC: builds run; API health and app load smoke checks pass.",High,"roadmap,devops,qa",S3,,E02
+Story,US-008,Taxonomy Tree Retrieval,"Deliver reliable taxonomy tree API and UI binding. AC: hierarchical endpoint output and UI rendering without broken nodes.",Highest,"roadmap,backend,frontend",S3,,E03
+Story,US-009,Solution Search And Filter,"Implement end-to-end search/filter for digital solutions. AC: taxonomy-filtered subsets correct; pagination and sort consistent.",Highest,"roadmap,backend,frontend",S3,,E03
+Story,US-010,Solution Detail Experience,"Provide detail page with metadata, tags, links, related content. AC: complete payload rendered; optional fields handled gracefully.",High,"roadmap,frontend",S3,,E03
+Story,US-011,Taxonomy Integrity Protection,"Prevent destructive taxonomy updates when in use. AC: conflict response returned; UI shows clear blocked-operation state.",Highest,"roadmap,backend,frontend",S4,,E03
+Story,US-012,User Profile Management,"Allow users to view/edit own profile with validation. AC: allowed fields editable; invalid inputs return feedback.",High,"roadmap,frontend,backend",S4,,E04
+Story,US-013,Organization CRUD By Role,"Implement role-based organization CRUD with reference-safe deletes. AC: role checks enforced; forbidden blocked; conflicts return 409.",High,"roadmap,frontend,backend",S4,,E04
+Story,US-014,LISA Intent And Filter Extraction,"Process helpdesk prompts into structured filters or clarification. AC: valid prompts handled; failures return graceful fallback.",Highest,"roadmap,ai,backend",S5,,E05
+Story,US-015,Filter To Taxonomy Mapping,"Map LISA filter terms to taxonomy IDs. AC: quality validated on representative prompts; unmatched terms handled safely.",Highest,"roadmap,ai,backend",S5,,E05
+Story,US-016,DB Backed Helpdesk Response Formatting,"Ensure helpdesk output is based on activated DB solutions only. AC: suggestions correspond to DB records; response includes source note.",Highest,"roadmap,ai,backend",S5,,E05
+Story,US-017,Helpdesk UX Integration,"Integrate widget with loading/error/empty states. AC: send and retry work; mobile and desktop remain usable.",High,"roadmap,frontend,ai",S5,,E05
+Story,US-018,Expert Video Management,"Deliver role-based expert video CRUD with metadata consistency. AC: authorized actions work; errors are clear.",High,"roadmap,backend,frontend",S5,,E06
+Story,US-019,Legal Content Management,"Manage terms/privacy/accessibility/imprint by role. AC: latest content editable/retrievable; changes persisted with metadata.",High,"roadmap,backend,frontend,compliance",S5,,E06
+Story,US-020,Consent Logging,"Record user acceptance for required policies. AC: timestamp + user association stored; duplicate handling follows policy.",High,"roadmap,backend,compliance",S5,,E06
+Story,US-021,RBAC Regression Suite,"Automate high-risk permission regression coverage. AC: matrix coverage in tests; authz failures block release.",Highest,"roadmap,qa,backend,security",S6,,E07
+Story,US-022,End To End Smoke Suite,"Verify critical journeys in staging. AC: login/search/detail/helpdesk/admin smoke flows pass on release candidate.",Highest,"roadmap,qa,frontend,backend",S6,,E07
+Story,US-023,UAT Execution And Defect Closure,"Execute UAT with stakeholders and close critical defects. AC: completion report signed; no Sev-1/Sev-2 at go-live decision.",Highest,"roadmap,qa,product",S6,,E07
+Story,US-024,Production Readiness And Hypercare,"Complete release checklist and run initial hypercare. AC: rollback and checklist approved; monitoring ownership active.",Highest,"roadmap,release,devops,qa",S6,,E07

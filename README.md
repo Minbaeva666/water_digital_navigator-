@@ -23,6 +23,18 @@ The platform includes:
 
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide for dev and production
 - **[ROLE_ACCESS_CONTROL.md](ROLE_ACCESS_CONTROL.md)** - Roles, authorized pages, and permission matrix
+- **[PROJECT_CHARTER.md](PROJECT_CHARTER.md)** - Project charter and stakeholder model
+- **[SRS.md](SRS.md)** - Software requirements specification
+- **[FEASIBILITY_RISK_ANALYSIS.md](FEASIBILITY_RISK_ANALYSIS.md)** - Feasibility study and risk register
+- **[SYSTEM_DESIGN_DOCUMENT.md](SYSTEM_DESIGN_DOCUMENT.md)** - System architecture, data flow, and interfaces
+- **[TECHNOLOGY_STACK.md](TECHNOLOGY_STACK.md)** - Technology selection and rationale
+- **[PROJECT_ROADMAP.md](PROJECT_ROADMAP.md)** - Timeline, work breakdown, and resource plan
+- **[JIRA_BACKLOG.md](JIRA_BACKLOG.md)** - Jira-ready epics, stories, acceptance criteria, and sprint mapping
+- **[jira-import.csv](jira-import.csv)** - Jira bulk import CSV (epics + stories)
+- **[TEST_CASE_REPORT.md](TEST_CASE_REPORT.md)** - Current executed unit test case report and outcomes
+- **[INTEGRATION_SYSTEM_TEST_REPORT_TEMPLATE.md](INTEGRATION_SYSTEM_TEST_REPORT_TEMPLATE.md)** - Integration/system report template for staging and release cycles
+- **[frontend/docs/WIREFRAMES_AND_PROTOTYPES.md](frontend/docs/WIREFRAMES_AND_PROTOTYPES.md)** - UX wireframes and prototype spec
+- **[frontend/docs/wireframe-prototype.html](frontend/docs/wireframe-prototype.html)** - Interactive low-fidelity prototype
 
 ## Tech Stack
 

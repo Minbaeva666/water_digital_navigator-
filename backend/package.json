@@ -5,20 +5,23 @@
   "scripts": {
     "dev": "nodemon --exec \"ts-node --files\" src/index.ts",
     "start": "NODE_ENV=production node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test-db": "ts-node scripts/test-db.ts",
     "setup": "ts-node src/scripts/setup.ts",
     "prisma generate": "npx prisma generate",
     "prisma push": "npx prisma db push",
     "build": "tsc",
     "prod": "npm run build && npm run start",
-    "seed:taxonomy": "ts-node --transpile-only src/prisma/seed/seed.taxonomy.ts",
-    "seed:faq": "ts-node --transpile-only src/prisma/seed/seed.faq.ts",
-    "seed:digital-solution": "ts-node --transpile-only src/prisma/seed/seed.digitalSolution.ts",
-    "seed:admin": "ts-node --transpile-only src/prisma/seed/seed.admin.ts",
-    "seed:moderator": "ts-node --transpile-only src/prisma/seed/seed.moderator.ts",
-    "seed:testuser": "ts-node --transpile-only src/prisma/seed/seed.testuser.ts",
-    "seed:countries": "ts-node --transpile-only src/prisma/seed/seed.countries.ts",
-    "migrate:org-coordinates": "ts-node --transpile-only scripts/regenerate-org-coordinates.ts"
+    "seed:taxonomy": "ts-node -r dotenv/config --transpile-only src/prisma/seed/seed.taxonomy.ts",
+    "seed:faq": "ts-node -r dotenv/config --transpile-only src/prisma/seed/seed.faq.ts",
+    "seed:digital-solution": "ts-node -r dotenv/config --transpile-only src/prisma/seed/seed.digitalSolution.ts",
+    "seed:admin": "ts-node -r dotenv/config --transpile-only src/prisma/seed/seed.admin.ts",
+    "seed:moderator": "ts-node -r dotenv/config --transpile-only src/prisma/seed/seed.moderator.ts",
+    "seed:testuser": "ts-node -r dotenv/config --transpile-only src/prisma/seed/seed.testuser.ts",
+    "seed:countries": "ts-node -r dotenv/config --transpile-only src/prisma/seed/seed.countries.ts",
+    "migrate:org-coordinates": "ts-node -r dotenv/config --transpile-only scripts/regenerate-org-coordinates.ts"
   },
   "keywords": [],
   "author": "",
@@ -65,6 +68,8 @@
     "ts-node": "^10.9.2",
     "typedoc": "^0.28.14",
     "typedoc-umlclass": "^0.10.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4",
+    "@vitest/coverage-v8": "^3.2.4"
   }
 }
