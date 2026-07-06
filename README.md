@@ -19,23 +19,6 @@ The platform includes:
 - **AI-Powered Helpdesk**: LISA chatbot for solution recommendations
 - **User Dashboard**: Manage your organization's solutions and profile
 
-## Documentation
-
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide for dev and production
-- **[ROLE_ACCESS_CONTROL.md](ROLE_ACCESS_CONTROL.md)** - Roles, authorized pages, and permission matrix
-- **[PROJECT_CHARTER.md](PROJECT_CHARTER.md)** - Project charter and stakeholder model
-- **[SRS.md](SRS.md)** - Software requirements specification
-- **[FEASIBILITY_RISK_ANALYSIS.md](FEASIBILITY_RISK_ANALYSIS.md)** - Feasibility study and risk register
-- **[SYSTEM_DESIGN_DOCUMENT.md](SYSTEM_DESIGN_DOCUMENT.md)** - System architecture, data flow, and interfaces
-- **[TECHNOLOGY_STACK.md](TECHNOLOGY_STACK.md)** - Technology selection and rationale
-- **[PROJECT_ROADMAP.md](PROJECT_ROADMAP.md)** - Timeline, work breakdown, and resource plan
-- **[JIRA_BACKLOG.md](JIRA_BACKLOG.md)** - Jira-ready epics, stories, acceptance criteria, and sprint mapping
-- **[jira-import.csv](jira-import.csv)** - Jira bulk import CSV (epics + stories)
-- **[TEST_CASE_REPORT.md](TEST_CASE_REPORT.md)** - Current executed unit test case report and outcomes
-- **[INTEGRATION_SYSTEM_TEST_REPORT_TEMPLATE.md](INTEGRATION_SYSTEM_TEST_REPORT_TEMPLATE.md)** - Integration/system report template for staging and release cycles
-- **[frontend/docs/WIREFRAMES_AND_PROTOTYPES.md](frontend/docs/WIREFRAMES_AND_PROTOTYPES.md)** - UX wireframes and prototype spec
-- **[frontend/docs/wireframe-prototype.html](frontend/docs/wireframe-prototype.html)** - Interactive low-fidelity prototype
-
 ## Tech Stack
 
 ### Backend
@@ -107,9 +90,7 @@ dilowa/
 │   └── vite.config.ts
 │
 ├── docker-compose.dev.yml      # Local development
-├── docker-compose.prod.yml     # Production setup
-├── DEPLOYMENT.md               # Deployment guide
-└── SECURITY_AUDIT_REPORT.md    # Security audit findings
+└── docker-compose.prod.yml     # Production setup
 
 ```
 
@@ -189,7 +170,7 @@ npm run seed:faq
 
 ## Production Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed production deployment instructions.
+Use `docker-compose.prod.yml` with your environment-specific `.env` values to build and run the production containers.
 
 ## API Documentation
 
@@ -217,7 +198,3 @@ Key endpoints:
 - `npm run dev` - Start Vite dev server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
-
-## Security
-
-See [SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md) for security audit findings and [SECURITY_REMEDIATION_QUICKSTART.md](SECURITY_REMEDIATION_QUICKSTART.md) for remediation steps.

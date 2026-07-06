@@ -67,6 +67,7 @@ pids/
 # Prisma (backend)
 backend/prisma/
 backend/src/prisma/seed/
+backend/src/prisma/schemas/
 
 # OS
 .DS_Store
